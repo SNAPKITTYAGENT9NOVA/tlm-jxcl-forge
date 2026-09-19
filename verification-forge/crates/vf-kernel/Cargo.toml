@@ -6,3 +6,5 @@ description = "The trusted proof-checking kernel: infer_type, check, definitiona
 license = "MIT"
 
 [dependencies]
+vf-core = { path = "../vf-core" }
+vf-reducer = { path = "../vf-reducer" }
