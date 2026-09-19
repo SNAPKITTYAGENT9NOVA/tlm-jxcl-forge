@@ -1,0 +1,25 @@
+[package]
+name = "photo-cache-service"
+version = "0.1.0"
+edition = "2021"
+description = "Rust port of the original Express/Redis /photos caching demo, with post-quantum envelope encryption at rest"
+license = "MIT"
+
+[[bin]]
+name = "server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "server-cached"
+path = "src/bin/server_cached.rs"
+
+[dependencies]
+pq-cache = { path = "../pq-cache" }
+pq-crypto = { path = "../pq-crypto" }
+axum = "0.8"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "time"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

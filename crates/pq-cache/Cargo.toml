@@ -1,0 +1,15 @@
+[package]
+name = "pq-cache"
+version = "0.1.0"
+edition = "2021"
+description = "Redis-backed cache with post-quantum envelope encryption at rest"
+license = "MIT"
+
+[dependencies]
+pq-crypto = { path = "../pq-crypto" }
+redis = { version = "1", features = ["tokio-comp", "connection-manager"] }
+tokio = { version = "1", features = ["rt", "macros", "time"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }

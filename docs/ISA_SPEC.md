@@ -2,7 +2,9 @@
 
 This is the authoritative architectural specification for **TLM JXCL**
 ("Pure Raw Dense ISA Forge"): a deterministic, byte-addressable, 64-bit
-instruction set, and the reference implementation of it in `src/`.
+instruction set, and the reference implementation of it in the `jxcl`
+crate. Every bare file path in this document (`src/...`, `alu.rs`,
+`execution.rs`, etc.) is relative to `crates/jxcl/`.
 
 The implementation (`isa::opcodes::ALL`/`all_defs()`) is the single
 source of truth for opcode numbers, formats and flag effects; this

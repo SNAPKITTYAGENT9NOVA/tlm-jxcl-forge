@@ -4,7 +4,8 @@ Spec §36-38 ask for an architectural boundary that a future RTL
 (SystemVerilog/Verilog/VHDL) implementation can be built against without
 either side needing to change the other's architectural semantics. This
 document is that boundary, plus how the golden test vectors in
-`tests/golden_vectors.rs` become hardware test vectors.
+`tests/golden_vectors.rs` become hardware test vectors. (As in
+`ISA_SPEC.md`, every bare file path here is relative to `crates/jxcl/`.)
 
 **This repository does not contain RTL.** It contains the reference
 software model and the contract a future RTL implementation must honor.
