@@ -64,7 +64,10 @@ fn as_pi<E: KernelEnv>(
 
 /// `term`'s own type must reduce to a [`Term::Sort`]: the shared
 /// Pi/Lam/Let/Eq formation check ("is `term` a well-formed type").
-fn sort_of<E: KernelEnv>(
+/// Public so callers that register top-level declarations (e.g.
+/// `vf-axioms`) can run the same check the kernel itself uses on a
+/// `Pi`/`Lam`/`Let`/`Eq`'s own annotations, without duplicating it.
+pub fn sort_of<E: KernelEnv>(
     arena: &mut TermArena,
     interner: &mut Interner,
     env: &E,

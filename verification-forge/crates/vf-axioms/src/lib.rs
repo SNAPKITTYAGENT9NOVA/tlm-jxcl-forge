@@ -1,11 +1,25 @@
-//! The explicit axiom registry and axiom policies (NO_AXIOMS / EXPLICIT_AXIOMS_ONLY / etc).
+//! The explicit axiom/definition registry.
 //!
-//! Status: scaffolded -- real implementation lands per
-//! verification-forge's specified implementation order.
+//! ## Trust status: UNTRUSTED, but fail-closed
+//!
+//! This crate is not part of the trusted computing base (that's
+//! `vf-kernel` + `vf-reducer`, per `docs/TRUST_MODEL.md`), but it is
+//! the single gate every axiom, definition, and theorem in a
+//! verification-forge session passes through: [`Registry`] rejects
+//! (never silently drops or "fixes up") a duplicate name, a policy
+//! violation, or anything the kernel doesn't independently confirm.
+//! There is exactly one function that can introduce an axiom
+//! ([`Registry::declare_axiom`]), it always requires a caller-supplied
+//! justification string when [`AxiomPolicy`] calls for one, and
+//! nothing in this crate ever adds an axiom as a side effect of
+//! something else -- this is what "never silently introduce an axiom"
+//! means in code.
 #![forbid(unsafe_code)]
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn scaffold_placeholder() {}
-}
+mod error;
+mod policy;
+mod registry;
+
+pub use error::RegistryError;
+pub use policy::AxiomPolicy;
+pub use registry::Registry;

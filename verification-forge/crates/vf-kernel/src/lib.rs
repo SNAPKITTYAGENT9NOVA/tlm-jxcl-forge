@@ -39,4 +39,4 @@ pub mod judgment;
 pub use context::Context;
 pub use env::{EmptyEnv, KernelEnv};
 pub use error::KernelError;
-pub use judgment::{check, definitional_equal, infer_type};
+pub use judgment::{check, definitional_equal, infer_type, sort_of};

@@ -6,3 +6,8 @@ description = "Proof-term and theorem representation with explicit axiom/definit
 license = "MIT"
 
 [dependencies]
+vf-core = { path = "../vf-core" }
+vf-axioms = { path = "../vf-axioms" }
+
+[dev-dependencies]
+vf-reducer = { path = "../vf-reducer" }

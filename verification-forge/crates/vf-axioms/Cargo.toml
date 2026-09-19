@@ -6,3 +6,8 @@ description = "The explicit axiom registry and axiom policies (NO_AXIOMS / EXPLI
 license = "MIT"
 
 [dependencies]
+vf-core = { path = "../vf-core" }
+vf-kernel = { path = "../vf-kernel" }
+
+[dev-dependencies]
+vf-reducer = { path = "../vf-reducer" }
