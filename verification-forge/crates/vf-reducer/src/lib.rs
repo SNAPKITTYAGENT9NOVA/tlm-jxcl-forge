@@ -14,10 +14,18 @@
 //!
 //! ## Known, documented simplifications (not bugs)
 //!
-//! - **No iota reduction yet.** Recursor/pattern-match reduction is
-//!   added once inductive types exist (verification-forge's
-//!   implementation order puts that after this crate). [`whnf`] and
-//!   [`normalize`] only ever perform beta, zeta, and delta reduction.
+//! - **Iota reduction is generic, table-driven primitive recursion.**
+//!   [`whnf`]/[`normalize`] perform beta, zeta, delta, *and* iota
+//!   reduction, but this crate has no idea what `Nat` or `List` are --
+//!   it only knows the shape "a fully-applied recursor whose major
+//!   premise is constructor-headed reduces to that constructor's case
+//!   function, applied to the constructor's arguments plus a
+//!   recursive sub-call for each recursive argument", described
+//!   generically via [`RecursorSpec`]/[`ConstructorSpec`]. `vf-axioms`
+//!   supplies the specs for the actual built-in types. See
+//!   [`iota`]'s module doc for the full mechanism, and its doc comment
+//!   on why this is enough to support indexed families (`Vector`,
+//!   `Fin`) too, not just simple ones.
 //! - **No eta reduction.** `fun (x : T) => f x` is not identified with
 //!   `f` even when `x` does not occur free in `f`. This is a real
 //!   restriction on what [`def_eq`] can prove equal, not an oversight.
@@ -33,8 +41,12 @@
 //!   error.
 #![forbid(unsafe_code)]
 
+mod iota;
+
 use std::fmt;
 use vf_core::{ArenaError, Symbol, Term, TermArena, TermId};
+
+pub use iota::{ConstructorSpec, RecursorSpec};
 
 /// The default step budget passed to [`whnf`]/[`normalize`]/[`def_eq`]
 /// by callers that don't have a more specific bound in mind.
@@ -51,6 +63,21 @@ pub trait DeltaContext {
     /// unknown name -- all three are indistinguishable to a reducer
     /// that only ever *unfolds*, never *checks*, a name).
     fn unfold(&self, name: Symbol) -> Option<TermId>;
+
+    /// If `name` is a registered recursor, its reduction shape.
+    /// Defaulted to `None` so implementors with no inductive types to
+    /// register (the common case: [`NoDelta`], most tests) need no
+    /// changes at all; `vf-axioms`'s registry is the one real override.
+    fn recursor(&self, _name: Symbol) -> Option<&RecursorSpec> {
+        None
+    }
+
+    /// If `name` is a registered constructor, which recursor (by its
+    /// `Const` symbol) it belongs to and its 0-based index among that
+    /// recursor's constructors. Also defaulted to `None`.
+    fn constructor_index(&self, _name: Symbol) -> Option<(Symbol, usize)> {
+        None
+    }
 }
 
 /// A [`DeltaContext`] with no unfoldable definitions at all. Useful in
@@ -104,10 +131,10 @@ fn consume(fuel: &mut u64) -> Result<(), ReduceError> {
 }
 
 /// Reduce `term` to weak head normal form: keep rewriting the
-/// outermost redex (beta/zeta/delta) until the head is a variable, a
-/// constant with no unfolding, a sort, a lambda, a pi, or an equality
-/// -- i.e. until no more progress can be made *at the top* without
-/// looking inside a binder.
+/// outermost redex (beta/zeta/delta/iota) until the head is a
+/// variable, a constant with no unfolding, a sort, a lambda, a pi, or
+/// an equality -- i.e. until no more progress can be made *at the
+/// top* without looking inside a binder.
 pub fn whnf<C: DeltaContext>(
     arena: &mut TermArena,
     ctx: &C,
@@ -116,6 +143,10 @@ pub fn whnf<C: DeltaContext>(
 ) -> Result<TermId, ReduceError> {
     let mut current = term;
     loop {
+        if let Some(reduced) = iota::try_iota_reduce(arena, ctx, current, fuel)? {
+            current = reduced;
+            continue;
+        }
         let t = arena.get(current)?.clone();
         match t {
             Term::App(f, a) => {
