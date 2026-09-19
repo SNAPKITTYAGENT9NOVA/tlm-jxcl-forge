@@ -71,6 +71,7 @@ use ark_relations::gr1cs::{ConstraintSynthesizer, ConstraintSystemRef, Synthesis
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_snark::SNARK;
 use ark_std::rand::{CryptoRng, RngCore};
+use pq_proof_types::{AttestationBytes, ProofError, ProofScheme};
 use sha2::{Digest, Sha256};
 use std::fmt;
 
@@ -337,6 +338,34 @@ pub fn verify(
 
     Groth16::<Bls12_381>::verify_with_processed_vk(&pvk, &public_inputs, &attestation.proof)
         .map_err(|_| Error::Verification)
+}
+
+/// This scheme's identifier in `pq-proof-registry`. Bumped only if the
+/// circuit or its public-input layout ever changes incompatibly (see
+/// [`MESSAGE_DOMAIN`]'s versioning note).
+pub const SCHEME_ID: &str = "pq-error-proof/groth16-pedersen-commitment-opening/v1";
+
+/// Registers this crate's existing, unchanged `verify` behind
+/// `pq-proof-types`'s backend-independent [`ProofScheme`] trait, so a
+/// caller holding only a `pq-proof-registry::ProofRegistry` and
+/// [`AttestationBytes`] can verify a `pq-error-proof` attestation
+/// without importing arkworks types.
+///
+/// This is glue, not a reimplementation: the trait method below decodes
+/// the incoming bytes with this crate's own `Attestation::from_bytes`
+/// and then calls this crate's own free-standing `verify` function
+/// directly. Nothing about the circuit, `attest`, or `verify`'s own
+/// signature or behavior changes.
+impl ProofScheme for Params {
+    fn scheme_id(&self) -> &'static str {
+        SCHEME_ID
+    }
+
+    fn verify(&self, context: &[u8], attestation: &AttestationBytes) -> Result<bool, ProofError> {
+        let attestation = Attestation::from_bytes(attestation.as_slice())
+            .map_err(|err| ProofError::Decoding(err.to_string()))?;
+        verify(self, context, &attestation).map_err(|err| ProofError::Verification(err.to_string()))
+    }
 }
 
 #[cfg(test)]

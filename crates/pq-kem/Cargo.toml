@@ -1,0 +1,10 @@
+[package]
+name = "pq-kem"
+version = "0.1.0"
+edition = "2021"
+description = "ML-KEM-768 (NIST FIPS 203) key generation and encapsulation/decapsulation."
+license = "MIT"
+
+[dependencies]
+kem = "0.3"
+ml-kem = { version = "0.3", features = ["getrandom"] }

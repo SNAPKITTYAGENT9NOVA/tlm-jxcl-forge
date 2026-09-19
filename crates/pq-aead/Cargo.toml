@@ -1,0 +1,9 @@
+[package]
+name = "pq-aead"
+version = "0.1.0"
+edition = "2021"
+description = "AES-256-GCM authenticated encryption/decryption of the plaintext under the derived key."
+license = "MIT"
+
+[dependencies]
+aes-gcm = { version = "0.11", features = ["getrandom"] }

@@ -31,6 +31,7 @@
 
 use pq_crypto::{Envelope, KeyRing};
 use std::fmt;
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tiberius::{Client, Config};
 use tokio::net::TcpStream;
@@ -57,6 +58,8 @@ pub enum VaultError {
     /// crate would rather report that clearly than panic on a `None`
     /// from `Row::get`).
     UnexpectedRowShape(&'static str),
+    /// Applying `sql/*.sql` via [`SqlVault::connect_and_migrate`] failed.
+    Migration(pq_migration::MigrationError),
 }
 
 impl fmt::Display for VaultError {
@@ -67,6 +70,7 @@ impl fmt::Display for VaultError {
             VaultError::Crypto(e) => write!(f, "envelope sealing/opening failed: {}", e),
             VaultError::ConnectionString(e) => write!(f, "invalid connection string: {}", e),
             VaultError::UnexpectedRowShape(what) => write!(f, "unexpected row shape: {}", what),
+            VaultError::Migration(e) => write!(f, "migration failed: {}", e),
         }
     }
 }
@@ -80,6 +84,11 @@ impl From<tiberius::error::Error> for VaultError {
 impl From<std::io::Error> for VaultError {
     fn from(e: std::io::Error) -> Self {
         VaultError::Io(e)
+    }
+}
+impl From<pq_migration::MigrationError> for VaultError {
+    fn from(e: pq_migration::MigrationError) -> Self {
+        VaultError::Migration(e)
     }
 }
 
@@ -99,6 +108,30 @@ impl SqlVault {
 
         let client = Client::connect(config, tcp.compat_write()).await?;
         Ok(SqlVault { client, key_ring })
+    }
+
+    /// Like [`SqlVault::connect`], but additionally applies every
+    /// migration under `migrations_dir` (typically this crate's own
+    /// `sql/` directory) via [`pq_migration::run_migrations`]
+    /// immediately after connecting, before returning -- so a fresh
+    /// deployment doesn't need a separate out-of-band migration step
+    /// before it can start using the vault. Safe to call on every
+    /// startup of every replica: `run_migrations` only ever applies
+    /// what a shared `dbo.SchemaMigrations` tracking table doesn't
+    /// already record as applied.
+    ///
+    /// Use plain [`SqlVault::connect`] instead when migrations are
+    /// deliberately applied by a separate deployment step (e.g. a
+    /// release pipeline that must not grant the application's own
+    /// database login schema-modification rights).
+    pub async fn connect_and_migrate(
+        ado_connection_string: &str,
+        key_ring: KeyRing,
+        migrations_dir: &Path,
+    ) -> Result<Self, VaultError> {
+        let mut vault = Self::connect(ado_connection_string, key_ring).await?;
+        pq_migration::run_migrations(&mut vault.client, migrations_dir).await?;
+        Ok(vault)
     }
 
     /// Mutable access to the key ring, for `register`/`set_active`/`retire`
@@ -303,6 +336,34 @@ pub fn redact_ado_connection_string(connection_string: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(";")
+}
+
+/// [`pq_storage::SealedStore`] impl so generic code (e.g.
+/// `pq-object-store`) can use a [`SqlVault`] without depending on
+/// `pq-sql-vault`/`tiberius` directly. This doesn't change how
+/// `SqlVault` seals or opens a value -- it forwards to the existing,
+/// already-tested inherent methods, bridging only the TTL type (see
+/// this crate's docs above on the `u64`/`i64` convention).
+impl pq_storage::SealedStore for SqlVault {
+    type Error = VaultError;
+
+    async fn get(&mut self, key: &str) -> Result<Option<Vec<u8>>, Self::Error> {
+        SqlVault::get(self, key).await
+    }
+
+    async fn set_with_ttl(
+        &mut self,
+        key: &str,
+        value: &[u8],
+        ttl_seconds: u64,
+    ) -> Result<(), Self::Error> {
+        let ttl_seconds = i64::try_from(ttl_seconds).unwrap_or(i64::MAX);
+        SqlVault::set_with_ttl(self, key, value, ttl_seconds).await
+    }
+
+    async fn ping(&mut self) -> Result<(), Self::Error> {
+        SqlVault::ping(self).await
+    }
 }
 
 #[cfg(test)]

@@ -1,0 +1,17 @@
+[package]
+name = "jxcl-execution"
+version = "0.1.0"
+edition = "2021"
+description = "The fetch/decode/execute loop: owns instruction execution, wiring together decoding, dispatch, the ALU, memory, and exceptions."
+license = "MIT"
+
+[dependencies]
+jxcl-machine = { path = "../jxcl-machine" }
+jxcl-alu = { path = "../jxcl-alu" }
+jxcl-control = { path = "../jxcl-control" }
+jxcl-decoding = { path = "../jxcl-decoding" }
+jxcl-memory = { path = "../jxcl-memory" }
+jxcl-dispatch = { path = "../jxcl-dispatch" }
+jxcl-exceptions = { path = "../jxcl-exceptions" }
+jxcl-load-store = { path = "../jxcl-load-store" }
+jxcl-errors = { path = "../jxcl-errors" }

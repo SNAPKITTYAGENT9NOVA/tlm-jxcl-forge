@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-audit"
+version = "0.1.0"
+edition = "2021"
+description = "A structured audit-event schema and emission helper, distinct from jxcl-logging's generic initialization."
+license = "MIT"
+
+[dependencies]
+jxcl-logging = { path = "../jxcl-logging" }

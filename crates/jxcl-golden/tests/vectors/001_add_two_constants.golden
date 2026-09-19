@@ -1,0 +1,6 @@
+name: add_two_constants
+program: 02 01 0A 00 00 00 00 00 00 00 02 02 14 00 00 00 00 00 00 00 10 01 02 60
+halted: true
+fault: none
+registers: 1=30, 2=20
+flags: none

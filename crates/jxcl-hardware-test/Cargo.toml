@@ -1,0 +1,15 @@
+[package]
+name = "jxcl-hardware-test"
+version = "0.1.0"
+edition = "2021"
+description = "Golden-file regression tests for generated Verilog/VHDL/netlist, plus the mechanical width/opcode-count cross-check against the ISA schema."
+license = "MIT"
+
+[dependencies]
+jxcl-hardware = { path = "../jxcl-hardware" }
+jxcl-isa-schema = { path = "../jxcl-isa-schema" }
+jxcl-hdl = { path = "../jxcl-hdl" }
+jxcl-netlist = { path = "../jxcl-netlist" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }
+jxcl-constants = { path = "../jxcl-constants" }
+jxcl-rtl = { path = "../jxcl-rtl" }

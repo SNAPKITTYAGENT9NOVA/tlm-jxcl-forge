@@ -1,0 +1,21 @@
+[package]
+name = "jxcl-loader"
+version = "0.1.0"
+edition = "2021"
+description = "Loads a linked binary container into a memory image laid out per jxcl-memory-map, ready to run."
+license = "MIT"
+
+[dependencies]
+jxcl-binary = { path = "../jxcl-binary" }
+jxcl-memory-map = { path = "../jxcl-memory-map" }
+jxcl-memory = { path = "../jxcl-memory" }
+jxcl-errors = { path = "../jxcl-errors" }
+# Not in docs/crates.toml's dependency list -- see this crate's
+# module-level "Deviation" doc comment: the code/data permission split
+# a loaded, runnable program needs is jxcl-address-space's invariant,
+# not jxcl-memory's (jxcl-memory is bounds/alignment only), and
+# jxcl-constants supplies the same headroom constant jxcl-memory-map
+# itself is sized against.
+jxcl-address-space = { path = "../jxcl-address-space" }
+jxcl-constants = { path = "../jxcl-constants" }
+jxcl-types = { path = "../jxcl-types" }

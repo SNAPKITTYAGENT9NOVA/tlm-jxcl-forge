@@ -1,0 +1,12 @@
+[package]
+name = "pq-signature"
+version = "0.1.0"
+edition = "2021"
+description = "ML-DSA (NIST FIPS 204 / Dilithium) signing and verification -- a second, complementary post-quantum primitive (authenticity, alongside pq-kem's confidentiality)."
+license = "MIT"
+
+[dependencies]
+ml-dsa = "0.1.1"
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

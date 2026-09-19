@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-vhdl"
+version = "0.1.0"
+edition = "2021"
+description = "Renders the same jxcl-hdl AST to VHDL text, proving the AST is backend-agnostic."
+license = "MIT"
+
+[dependencies]
+jxcl-hdl = { path = "../jxcl-hdl" }

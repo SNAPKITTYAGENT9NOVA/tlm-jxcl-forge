@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-logging"
+version = "0.1.0"
+edition = "2021"
+description = "Shared tracing/logging initialization used by the CLI and the network services."
+license = "MIT"
+
+[dependencies]
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }

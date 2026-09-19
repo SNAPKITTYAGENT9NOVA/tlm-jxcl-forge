@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-dispatch"
+version = "0.1.0"
+edition = "2021"
+description = "Table-driven opcode-to-handler dispatch, extracted from the fetch/decode/execute loop's match statement so dispatch can be tested and extended independently of execution semantics."
+license = "MIT"
+
+[dependencies]
+jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }

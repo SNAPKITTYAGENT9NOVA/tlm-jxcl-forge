@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-relocations"
+version = "0.1.0"
+edition = "2021"
+description = "Relocation entry types and the patch-in-place logic that fixes up an encoded instruction once a symbol's final address is known."
+license = "MIT"
+
+[dependencies]
+jxcl-symbols = { path = "../jxcl-symbols" }
+jxcl-encoding = { path = "../jxcl-encoding" }
+jxcl-bitops = { path = "../jxcl-bitops" }

@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-debugger"
+version = "0.1.0"
+edition = "2021"
+description = "Interactive/trace-mode debugger: step, breakpoint, and inspect a running machine."
+license = "MIT"
+
+[dependencies]
+jxcl-machine = { path = "../jxcl-machine" }
+jxcl-execution = { path = "../jxcl-execution" }
+jxcl-trace = { path = "../jxcl-trace" }

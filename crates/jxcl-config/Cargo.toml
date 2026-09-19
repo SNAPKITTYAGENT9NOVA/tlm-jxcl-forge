@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-config"
+version = "0.1.0"
+edition = "2021"
+description = "Environment-variable configuration parsing helpers (typed env_or, hex-seed decoding) shared by the CLI and services."
+license = "MIT"
+
+[dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

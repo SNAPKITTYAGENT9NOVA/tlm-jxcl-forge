@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-control"
+version = "0.1.0"
+edition = "2021"
+description = "Branch/jump condition evaluation against the flags register."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }
+jxcl-flags = { path = "../jxcl-flags" }
+jxcl-registers = { path = "../jxcl-registers" }

@@ -1,0 +1,10 @@
+[package]
+name = "pq-kdf"
+version = "0.1.0"
+edition = "2021"
+description = "HKDF-SHA256 expansion of a KEM shared secret into an AES-256 key, with fixed domain separation."
+license = "MIT"
+
+[dependencies]
+hkdf = "0.13"
+sha2 = "0.11"

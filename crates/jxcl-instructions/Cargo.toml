@@ -1,0 +1,13 @@
+[package]
+name = "jxcl-instructions"
+version = "0.1.0"
+edition = "2021"
+description = "The Instruction type tying an opcode to its operands -- the canonical in-memory instruction representation."
+license = "MIT"
+
+[dependencies]
+jxcl-opcodes = { path = "../jxcl-opcodes" }
+jxcl-operands = { path = "../jxcl-operands" }
+
+[dev-dependencies]
+jxcl-registers = { path = "../jxcl-registers" }

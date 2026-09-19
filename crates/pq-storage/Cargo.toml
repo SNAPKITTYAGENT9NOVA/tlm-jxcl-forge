@@ -1,0 +1,12 @@
+[package]
+name = "pq-storage"
+version = "0.1.0"
+edition = "2021"
+description = "The SealedStore trait both pq-cache and pq-sql-vault implement, letting callers be storage-agnostic."
+license = "MIT"
+
+[dependencies]
+pq-envelope = { path = "../pq-envelope" }
+
+[dev-dependencies]
+tokio = { version = "1.53.1", features = ["rt", "macros"] }

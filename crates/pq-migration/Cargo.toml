@@ -1,0 +1,22 @@
+[package]
+name = "pq-migration"
+version = "0.1.0"
+edition = "2021"
+description = "Applies pq-sql-vault's sql/*.sql migration files in order against a live connection and tracks which have been applied."
+license = "MIT"
+
+[dependencies]
+# Same feature set as pq-sql-vault (native-tls, not rustls -- see that
+# crate's Cargo.toml comment on RUSTSEC-2026-0098/0099/0104).
+tiberius = { version = "0.12", default-features = false, features = ["tds73", "native-tls", "tokio-util"] }
+# Only the AsyncRead/AsyncWrite trait definitions `tiberius::Client<S>`
+# is generic over (tiberius itself depends on this already; this crate
+# needs the same traits in scope to name the bound on `run_migrations`
+# without depending on a concrete stream type -- and, in particular,
+# without depending on pq-sql-vault for one, which would be a cycle).
+futures-io = "0.3"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+tempfile = "3"

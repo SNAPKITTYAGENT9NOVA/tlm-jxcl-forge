@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-fuzz"
+version = "0.1.0"
+edition = "2021"
+description = "A structured fuzz harness for the decoder (and other parser/decoder boundaries) against malformed input."
+license = "MIT"
+
+[dependencies]
+jxcl-decoding = { path = "../jxcl-decoding" }
+jxcl-instructions = { path = "../jxcl-instructions" }

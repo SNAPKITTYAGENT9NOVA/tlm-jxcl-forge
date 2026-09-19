@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-rpc"
+version = "0.1.0"
+edition = "2021"
+description = "A minimal RPC server/client implementing jxcl-protocol over line-delimited JSON on TCP."
+license = "MIT"
+
+[dependencies]
+jxcl-protocol = { path = "../jxcl-protocol" }
+jxcl-network = { path = "../jxcl-network" }

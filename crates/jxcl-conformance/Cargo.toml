@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-conformance"
+version = "0.1.0"
+edition = "2021"
+description = "The mechanical spec-vs-code conformance suite: checks docs/ISA_SPEC.md and docs/RTL_CONTRACT.md's stated facts against jxcl-isa-schema and jxcl-hardware's generated RTL."
+license = "MIT"
+
+[dependencies]
+jxcl-isa-schema = { path = "../jxcl-isa-schema" }
+jxcl-hardware = { path = "../jxcl-hardware" }
+jxcl-golden = { path = "../jxcl-golden" }

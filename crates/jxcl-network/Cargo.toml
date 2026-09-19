@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-network"
+version = "0.1.0"
+edition = "2021"
+description = "Low-level network utilities: connection-string credential redaction, address/port parsing."
+license = "MIT"
+
+[dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

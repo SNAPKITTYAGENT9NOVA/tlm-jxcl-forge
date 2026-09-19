@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-address-space"
+version = "0.1.0"
+edition = "2021"
+description = "Named memory regions (code/data/stack) with permission flags layered over raw storage."
+license = "MIT"
+
+[dependencies]
+jxcl-memory = { path = "../jxcl-memory" }
+jxcl-types = { path = "../jxcl-types" }

@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-synthesis"
+version = "0.1.0"
+edition = "2021"
+description = "A toy (explicitly documented, non-production) structural synthesis pass lowering a subset of the HDL AST into primitive-gate netlist form."
+license = "MIT"
+
+[dependencies]
+jxcl-hdl = { path = "../jxcl-hdl" }
+jxcl-netlist = { path = "../jxcl-netlist" }

@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-memory"
+version = "0.1.0"
+edition = "2021"
+description = "Raw byte-addressable memory storage and bounds-checked byte-level access."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }
+jxcl-errors = { path = "../jxcl-errors" }
+jxcl-endian = { path = "../jxcl-endian" }

@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-lexer"
+version = "0.1.0"
+edition = "2021"
+description = "Tokenizes assembly source text."
+license = "MIT"
+
+[dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

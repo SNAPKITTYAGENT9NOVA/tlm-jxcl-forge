@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-observability"
+version = "0.1.0"
+edition = "2021"
+description = "Metrics/span conventions (a RequestSpan helper, standard metric names) built atop jxcl-logging, consumed by jxcl-service."
+license = "MIT"
+
+[dependencies]
+jxcl-logging = { path = "../jxcl-logging" }

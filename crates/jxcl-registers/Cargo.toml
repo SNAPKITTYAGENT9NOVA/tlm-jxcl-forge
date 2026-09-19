@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-registers"
+version = "0.1.0"
+edition = "2021"
+description = "The register file model: indices, names, widths."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }
+jxcl-constants = { path = "../jxcl-constants" }

@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-errors"
+version = "0.1.0"
+edition = "2021"
+description = "The crate-wide error type shared across the ISA/execution/toolchain crates."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }

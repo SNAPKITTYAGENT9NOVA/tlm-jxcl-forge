@@ -1,0 +1,15 @@
+[package]
+name = "jxcl-load-store"
+version = "0.1.0"
+edition = "2021"
+description = "Typed, sign-extension-aware load/store helpers (u8/u16/u32/u64 and signed variants) between raw memory and the execution engine."
+license = "MIT"
+
+[dependencies]
+jxcl-memory = { path = "../jxcl-memory" }
+jxcl-endian = { path = "../jxcl-endian" }
+jxcl-exceptions = { path = "../jxcl-exceptions" }
+jxcl-types = { path = "../jxcl-types" }
+
+[dev-dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

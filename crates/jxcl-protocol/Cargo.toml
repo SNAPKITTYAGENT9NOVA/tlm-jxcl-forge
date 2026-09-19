@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-protocol"
+version = "0.1.0"
+edition = "2021"
+description = "A serde-serializable request/response protocol for remote jxcl-machine control: assemble, run, return trace/final state."
+license = "MIT"
+
+[dependencies]
+jxcl-simulator = { path = "../jxcl-simulator" }
+jxcl-trace = { path = "../jxcl-trace" }

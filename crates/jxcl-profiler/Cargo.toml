@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-profiler"
+version = "0.1.0"
+edition = "2021"
+description = "Aggregates a trace, the cycle model, and the cache model into run statistics (instruction count, cycles, cache hit rate)."
+license = "MIT"
+
+[dependencies]
+jxcl-trace = { path = "../jxcl-trace" }
+jxcl-cycle-model = { path = "../jxcl-cycle-model" }
+jxcl-cache-model = { path = "../jxcl-cache-model" }

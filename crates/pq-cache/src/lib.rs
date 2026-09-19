@@ -115,6 +115,33 @@ impl EncryptedCache {
     }
 }
 
+/// [`pq_storage::SealedStore`] impl so generic code (e.g.
+/// `pq-object-store`) can use an [`EncryptedCache`] without depending
+/// on `pq-cache`/`redis` directly. This doesn't change how
+/// `EncryptedCache` seals or opens a value -- every method here just
+/// forwards to the existing, already-tested inherent method of the
+/// same name.
+impl pq_storage::SealedStore for EncryptedCache {
+    type Error = CacheError;
+
+    async fn get(&mut self, key: &str) -> Result<Option<Vec<u8>>, Self::Error> {
+        EncryptedCache::get(self, key).await
+    }
+
+    async fn set_with_ttl(
+        &mut self,
+        key: &str,
+        value: &[u8],
+        ttl_seconds: u64,
+    ) -> Result<(), Self::Error> {
+        EncryptedCache::set_with_ttl(self, key, value, ttl_seconds).await
+    }
+
+    async fn ping(&mut self) -> Result<(), Self::Error> {
+        EncryptedCache::ping(self).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     //! Real integration tests against a locally spawned `redis-server`

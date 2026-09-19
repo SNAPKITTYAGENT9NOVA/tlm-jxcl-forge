@@ -1,0 +1,11 @@
+[package]
+name = "pq-envelope"
+version = "0.1.0"
+edition = "2021"
+description = "The sealed-value wire format: key version, KEM ciphertext, nonce, AEAD ciphertext."
+license = "MIT"
+
+[dependencies]
+pq-kem = { path = "../pq-kem" }
+pq-kdf = { path = "../pq-kdf" }
+pq-aead = { path = "../pq-aead" }

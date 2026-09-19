@@ -1,0 +1,14 @@
+[package]
+name = "jxcl-memory-map"
+version = "0.1.0"
+edition = "2021"
+description = "The concrete default memory layout (where code/stack/heap/MMIO live) consumed by the loader and machine setup."
+license = "MIT"
+
+[dependencies]
+jxcl-address-space = { path = "../jxcl-address-space" }
+jxcl-constants = { path = "../jxcl-constants" }
+jxcl-types = { path = "../jxcl-types" }
+
+[dev-dependencies]
+jxcl-memory = { path = "../jxcl-memory" }

@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-machine"
+version = "0.1.0"
+edition = "2021"
+description = "Architectural state: the register file, flags, and program counter as one cohesive Machine struct."
+license = "MIT"
+
+[dependencies]
+jxcl-registers = { path = "../jxcl-registers" }
+jxcl-flags = { path = "../jxcl-flags" }
+jxcl-types = { path = "../jxcl-types" }

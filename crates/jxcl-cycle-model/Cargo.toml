@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-cycle-model"
+version = "0.1.0"
+edition = "2021"
+description = "A per-opcode cycle-cost table and accumulator giving a deterministic total-cycle count for a run."
+license = "MIT"
+
+[dependencies]
+jxcl-opcodes = { path = "../jxcl-opcodes" }

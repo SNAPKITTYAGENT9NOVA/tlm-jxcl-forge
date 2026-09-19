@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-isa-versioning"
+version = "0.1.0"
+edition = "2021"
+description = "ISA/binary-format version negotiation so old binaries fail closed against an incompatible newer decoder rather than silently misdecoding."
+license = "MIT"
+
+[dependencies]
+jxcl-constants = { path = "../jxcl-constants" }

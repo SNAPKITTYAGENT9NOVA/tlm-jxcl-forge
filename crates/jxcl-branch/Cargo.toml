@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-branch"
+version = "0.1.0"
+edition = "2021"
+description = "Branch-target address computation (relative/absolute addressing) split out of condition evaluation."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }
+jxcl-operands = { path = "../jxcl-operands" }

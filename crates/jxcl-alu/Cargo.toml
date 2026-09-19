@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-alu"
+version = "0.1.0"
+edition = "2021"
+description = "Arithmetic/logic unit semantics: add/sub/mul/div/shift/bitwise, with flag updates."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }
+jxcl-flags = { path = "../jxcl-flags" }
+jxcl-errors = { path = "../jxcl-errors" }

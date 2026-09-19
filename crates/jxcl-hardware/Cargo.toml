@@ -1,0 +1,14 @@
+[package]
+name = "jxcl-hardware"
+version = "0.1.0"
+edition = "2021"
+description = "Top-level facade integrating the HDL AST, both text backends, and the toy synthesis pass behind one emit API."
+license = "MIT"
+
+[dependencies]
+jxcl-hdl = { path = "../jxcl-hdl" }
+jxcl-rtl = { path = "../jxcl-rtl" }
+jxcl-verilog = { path = "../jxcl-verilog" }
+jxcl-vhdl = { path = "../jxcl-vhdl" }
+jxcl-netlist = { path = "../jxcl-netlist" }
+jxcl-synthesis = { path = "../jxcl-synthesis" }

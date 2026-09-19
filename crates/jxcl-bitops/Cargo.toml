@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-bitops"
+version = "0.1.0"
+edition = "2021"
+description = "Bitfield extraction/insertion and sign-extension helpers used by encoding, decoding, and the ALU."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }
