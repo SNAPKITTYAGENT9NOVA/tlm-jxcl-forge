@@ -1,0 +1,8 @@
+[package]
+name = "vf-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core term representation for verification-forge's dependent type kernel: a hash-consed term arena, a name interner, and a minimal (non-polymorphic) universe hierarchy. No dependents on any other vf-* crate -- this is the bottom of the stack."
+license = "MIT"
+
+[dependencies]

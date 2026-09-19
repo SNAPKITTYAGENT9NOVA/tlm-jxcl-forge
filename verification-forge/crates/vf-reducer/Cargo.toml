@@ -1,0 +1,8 @@
+[package]
+name = "vf-reducer"
+version = "0.1.0"
+edition = "2021"
+description = "Beta/zeta/delta/iota reduction and definitional equality, with fuel/depth limits and cycle detection."
+license = "MIT"
+
+[dependencies]

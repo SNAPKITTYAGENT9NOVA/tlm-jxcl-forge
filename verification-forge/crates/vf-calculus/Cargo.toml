@@ -1,0 +1,8 @@
+[package]
+name = "vf-calculus"
+version = "0.1.0"
+edition = "2021"
+description = "Symbolic calculus judgments (typing/evaluation/equivalence/derivative) shared infrastructure."
+license = "MIT"
+
+[dependencies]

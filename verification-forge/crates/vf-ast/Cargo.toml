@@ -1,0 +1,8 @@
+[package]
+name = "vf-ast"
+version = "0.1.0"
+edition = "2021"
+description = "Surface-syntax AST for the .vf theorem language (distinct from vf-core's internal Term representation)."
+license = "MIT"
+
+[dependencies]

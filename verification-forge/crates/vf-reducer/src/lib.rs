@@ -1,0 +1,11 @@
+//! Beta/zeta/delta/iota reduction and definitional equality, with fuel/depth limits and cycle detection.
+//!
+//! Status: scaffolded -- real implementation lands per
+//! verification-forge's specified implementation order.
+#![forbid(unsafe_code)]
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn scaffold_placeholder() {}
+}

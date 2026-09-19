@@ -1,0 +1,8 @@
+[package]
+name = "vf-elucidian"
+version = "0.1.0"
+edition = "2021"
+description = "Elucidian Algebra: a user-defined algebraic theory (not an established discipline) built on vf-algebra."
+license = "MIT"
+
+[dependencies]

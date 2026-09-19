@@ -1,0 +1,8 @@
+[package]
+name = "vf-workerman"
+version = "0.1.0"
+edition = "2021"
+description = "Workerman's Calculus: a user-defined formal calculus (not an established discipline) built on vf-calculus."
+license = "MIT"
+
+[dependencies]

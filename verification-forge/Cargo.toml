@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/vf-core",
+    "crates/vf-ast",
+    "crates/vf-lexer",
+    "crates/vf-parser",
+    "crates/vf-elab",
+    "crates/vf-typecheck",
+    "crates/vf-reducer",
+    "crates/vf-kernel",
+    "crates/vf-proof",
+    "crates/vf-axioms",
+    "crates/vf-algebra",
+    "crates/vf-elucidian",
+    "crates/vf-calculus",
+    "crates/vf-workerman",
+    "crates/vf-rust",
+    "crates/vf-kani",
+    "crates/vf-smt",
+    "crates/vf-counterexample",
+    "crates/vf-ledger",
+    "crates/vf-cli",
+    "crates/vf-tests",
+]
+
+[profile.release]
+opt-level = 3
