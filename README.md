@@ -1,15 +1,18 @@
 # tlm-jxcl-forge
 TLM JXCL PURE RAW DENSE ISA FORGE - 3500-line implementation specification
 
-A Cargo workspace with four crates, all Rust, zero external dependencies
+A Cargo workspace with six crates, all Rust, zero external dependencies
 in the ISA forge and real, audited dependencies everywhere they add
-genuine value (async HTTP/Redis, post-quantum cryptography):
+genuine value (async HTTP/Redis/SQL Server, post-quantum cryptography,
+zero-knowledge proofs):
 
 | Crate | What it is |
 |---|---|
 | [`crates/jxcl`](./crates/jxcl) | The TLM JXCL instruction-set architecture: opcode registry, encoder/decoder, ALU, memory, execution engine, binary format, validator, assembler, disassembler, CLI. Zero dependencies. |
-| [`crates/pq-crypto`](./crates/pq-crypto) | Post-quantum envelope encryption: ML-KEM-768 (NIST FIPS 203) + HKDF-SHA256 + AES-256-GCM. |
+| [`crates/pq-crypto`](./crates/pq-crypto) | Post-quantum envelope encryption: ML-KEM-768 (NIST FIPS 203) + HKDF-SHA256 + AES-256-GCM, with key rotation via `KeyRing`. |
 | [`crates/pq-cache`](./crates/pq-cache) | A Redis-backed cache whose entries are sealed with `pq-crypto` before they ever reach Redis. |
+| [`crates/pq-sql-vault`](./crates/pq-sql-vault) | A SQL Server-backed alternative store for `pq-crypto`-sealed values, with key-rotation policy enforced in T-SQL. |
+| [`crates/pq-error-proof`](./crates/pq-error-proof) | Groth16 zero-knowledge proofs (via `arkworks`) that an error attestation was honestly derived, without revealing its secret opening randomness. |
 | [`crates/photo-cache-service`](./crates/photo-cache-service) | Rust port of the original `server.js`/`server-cached.js` Express+Redis demo, using `pq-cache`. |
 
 ## TLM JXCL (`crates/jxcl`)
@@ -93,3 +96,42 @@ Config (all optional, shown with defaults): `PORT` (3000 / 3001),
 
 See [`docs/HARDENING.md`](./docs/HARDENING.md) for the production
 hardening checklist and the post-quantum scheme's threat model/scope.
+
+## SQL Server vault (`pq-sql-vault`)
+
+An alternative to `pq-cache` for services that already run SQL Server:
+same `pq-crypto` sealing, same `KeyRing` rotation, but backed by
+`tiberius` (a pure-Rust TDS client) instead of Redis, with key-rotation
+policy enforced by the schema itself (a filtered unique index guarantees
+at most one `Active` key version at the database level) rather than only
+by application code. See [`crates/pq-sql-vault`](./crates/pq-sql-vault)
+for the schema (`sql/001_schema.sql` onward) and Rust API, and
+[`docs/HARDENING.md`](./docs/HARDENING.md) for why this crate's
+integration tests are `#[ignore]`d by default (no live SQL Server in
+this environment) and how to run them against a real one.
+
+## Verifiable error attestations (`pq-error-proof`)
+
+A Groth16 zero-knowledge circuit (BLS12-381/Jubjub, via `arkworks`,
+pure-Rust and crates.io-only) proving that a published error-attestation
+commitment was honestly opened for a specific, publicly-known error
+context, without revealing the secret randomness that opens it:
+
+```rust
+use ark_std::rand::{rngs::StdRng, SeedableRng};
+use pq_error_proof::{attest, verify, Params};
+
+let mut rng = StdRng::from_entropy();
+let params = Params::generate(&mut rng)?; // one-time setup; persist and share via to_bytes/from_bytes
+
+let context = b"error_code=DECRYPT_AEAD_MISMATCH;key_version=7;envelope=deadbeef";
+let attestation = attest(&params, context, &mut rng)?;
+
+assert!(verify(&params, context, &attestation)?);
+```
+
+See [`crates/pq-error-proof`](./crates/pq-error-proof)'s module docs for
+exactly what this does and does not prove, and
+[`docs/HARDENING.md`](./docs/HARDENING.md) for why it exists (a
+crates.io-only substitute for a circom-based approach, which this
+environment's GitHub-blocking egress policy rules out).

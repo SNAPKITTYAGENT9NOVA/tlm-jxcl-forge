@@ -9,15 +9,14 @@
 //! errors would not be.
 #![forbid(unsafe_code)]
 
-use pq_crypto::{DecapsulationKey, EncapsulationKey, Envelope, KeyPair};
+use pq_crypto::{Envelope, KeyPair, KeyRing, KeyStatus};
 use redis::aio::ConnectionManager;
 use redis::AsyncCommands;
 use std::fmt;
 
 pub struct EncryptedCache {
     conn: ConnectionManager,
-    encapsulation_key: EncapsulationKey,
-    decapsulation_key: DecapsulationKey,
+    key_ring: KeyRing,
 }
 
 #[derive(Debug)]
@@ -43,16 +42,22 @@ impl From<redis::RedisError> for CacheError {
 }
 
 impl EncryptedCache {
-    /// Connect to Redis at `redis_url` and take ownership of `keypair`
-    /// for sealing/opening cache entries.
-    pub async fn connect(redis_url: &str, keypair: KeyPair) -> Result<Self, CacheError> {
+    /// Connect to Redis at `redis_url`, sealing/opening cache entries
+    /// with `key_ring` (see [`pq_crypto::KeyRing`] for key rotation).
+    pub async fn connect_with_ring(redis_url: &str, key_ring: KeyRing) -> Result<Self, CacheError> {
         let client = redis::Client::open(redis_url)?;
         let conn = client.get_connection_manager().await?;
-        Ok(EncryptedCache {
-            conn,
-            encapsulation_key: keypair.encapsulation_key,
-            decapsulation_key: keypair.decapsulation_key,
-        })
+        Ok(EncryptedCache { conn, key_ring })
+    }
+
+    /// Convenience for the common single-key-version case: wraps
+    /// `keypair` in a one-entry, all-`Active` [`KeyRing`] under version
+    /// `1`. Use [`EncryptedCache::connect_with_ring`] directly to manage
+    /// multiple key versions / rotation.
+    pub async fn connect(redis_url: &str, keypair: KeyPair) -> Result<Self, CacheError> {
+        let mut ring = KeyRing::new();
+        ring.insert(1, keypair, KeyStatus::Active);
+        Self::connect_with_ring(redis_url, ring).await
     }
 
     /// Fetch and decrypt a cache entry. Returns `Ok(None)` both for a
@@ -70,26 +75,37 @@ impl EncryptedCache {
                 return Ok(None);
             }
         };
-        match pq_crypto::open(&self.decapsulation_key, &envelope) {
+        match self.key_ring.open(&envelope) {
             Ok(plaintext) => Ok(Some(plaintext)),
             Err(e) => {
+                // Includes the ordinary post-rotation case of a
+                // Retired key version -- still just a miss, never an
+                // error: the cache will naturally repopulate under the
+                // active key on the next write.
                 tracing::warn!(cache_key = key, error = %e, "cache entry failed to decrypt; treating as miss");
                 Ok(None)
             }
         }
     }
 
-    /// Encrypt `value` and store it with a TTL of `ttl_seconds`.
+    /// Encrypt `value` under the ring's current active key version and
+    /// store it with a TTL of `ttl_seconds`.
     pub async fn set_with_ttl(
         &mut self,
         key: &str,
         value: &[u8],
         ttl_seconds: u64,
     ) -> Result<(), CacheError> {
-        let envelope = pq_crypto::seal(&self.encapsulation_key, value).map_err(CacheError::Seal)?;
+        let envelope = self.key_ring.seal(value).map_err(CacheError::Seal)?;
         let bytes = envelope.to_bytes();
         let _: () = self.conn.set_ex(key, bytes, ttl_seconds).await?;
         Ok(())
+    }
+
+    /// Mutable access to the underlying key ring, for performing
+    /// rotation (`insert`/`set_active`/`retire`) against a live cache.
+    pub fn key_ring_mut(&mut self) -> &mut KeyRing {
+        &mut self.key_ring
     }
 
     /// Liveness check for the Redis connection (used by health endpoints).

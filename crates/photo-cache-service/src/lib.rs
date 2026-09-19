@@ -142,6 +142,51 @@ pub fn env_or_u64(name: &str, default: u64) -> u64 {
     }
 }
 
+/// True when `APP_ENV` names a production environment (case-insensitive
+/// exact match on `"production"`). Anything else -- unset, `"dev"`,
+/// `"staging"`, a typo -- is treated as non-production, so a
+/// misconfigured deployment fails open to "allow plaintext Redis" rather
+/// than failing closed and refusing to start; see
+/// `check_redis_tls_requirement`'s doc comment for why that's the
+/// intentional trade-off here.
+pub fn is_production_env() -> bool {
+    std::env::var("APP_ENV")
+        .map(|v| v.eq_ignore_ascii_case("production"))
+        .unwrap_or(false)
+}
+
+/// In a production environment (`APP_ENV=production`), refuse to start
+/// against a Redis URL that doesn't request TLS (`rediss://`). Outside
+/// production this is a no-op: local development against a plaintext
+/// `redis://127.0.0.1` is expected and fine (see `docs/HARDENING.md`
+/// "Threat model" -- encrypting values with `pq-crypto` before they
+/// reach Redis is not a substitute for transport security, so
+/// production deployments must not skip it).
+///
+/// This only checks the URL scheme, not that the target actually speaks
+/// TLS -- `redis::Client::open` will fail fast on that mismatch, and
+/// this check exists to catch the *configuration* mistake of pointing a
+/// production deployment at a plaintext endpoint in the first place.
+pub fn check_redis_tls_requirement(redis_url: &str) -> Result<(), String> {
+    check_redis_tls_requirement_for(redis_url, is_production_env())
+}
+
+/// The actual (pure, env-independent) check behind
+/// [`check_redis_tls_requirement`], split out so it's testable without
+/// mutating process-global environment variables (which would race
+/// against other tests running in parallel in the same process).
+fn check_redis_tls_requirement_for(redis_url: &str, is_production: bool) -> Result<(), String> {
+    if is_production && !redis_url.starts_with("rediss://") {
+        return Err(
+            "APP_ENV=production requires REDIS_URL to use the rediss:// (TLS) scheme, \
+             but a non-TLS URL was given. Use rediss:// (with a TLS-capable Redis), \
+             or unset APP_ENV for local/non-production use."
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
 /// Replace any `user:password@` userinfo in a URL with `***@` before
 /// it's logged. Best-effort string surgery (not a full URL parser) is
 /// deliberate here: we never want a parse failure to fall back to
@@ -271,5 +316,17 @@ mod tests {
     fn decode_hex_seed_rejects_wrong_length_or_bad_hex() {
         assert!(decode_hex_seed("ab").is_none());
         assert!(decode_hex_seed(&"zz".repeat(pq_crypto::SEED_LEN)).is_none());
+    }
+
+    #[test]
+    fn production_requires_tls_redis_url() {
+        assert!(check_redis_tls_requirement_for("redis://127.0.0.1:6379", true).is_err());
+        assert!(check_redis_tls_requirement_for("rediss://127.0.0.1:6379", true).is_ok());
+    }
+
+    #[test]
+    fn non_production_allows_plaintext_redis_url() {
+        assert!(check_redis_tls_requirement_for("redis://127.0.0.1:6379", false).is_ok());
+        assert!(check_redis_tls_requirement_for("rediss://127.0.0.1:6379", false).is_ok());
     }
 }
