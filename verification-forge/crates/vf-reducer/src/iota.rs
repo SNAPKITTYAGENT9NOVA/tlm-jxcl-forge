@@ -60,9 +60,14 @@ pub struct RecursorSpec {
     /// argument index (among the recursor's own `arity` arguments)
     /// holding constructor `i`'s case function.
     pub case_positions: Vec<u32>,
-    /// The constructor names, in the same order as `case_positions`,
-    /// so `vf-axioms` can build the constructor-to-recursor lookup
-    /// table when it registers this spec.
+    /// The constructor names this recursor eliminates, in the same
+    /// order as `case_positions`/`constructors`. A major premise whose
+    /// head isn't in this list simply isn't reduced (see
+    /// `try_iota_reduce`) -- the same inductive type can have more
+    /// than one eliminator over it (e.g. one valued in `Type` for
+    /// computation, one in `Prop` for proofs), each naming the same
+    /// constructors independently, so this is deliberately per-spec
+    /// rather than a single global table.
     pub constructor_names: Vec<Symbol>,
     pub constructors: Vec<ConstructorSpec>,
 }
@@ -114,17 +119,24 @@ pub(crate) fn try_iota_reduce<C: DeltaContext>(
     let Term::Const(ctor_sym) = arena.get(ctor_head)?.clone() else {
         return Ok(None); // major premise isn't (yet) constructor-headed
     };
-    let Some((owning_recursor, ctor_index)) = ctx.constructor_index(ctor_sym) else {
+    // Look up `ctor_sym` directly within *this* recursor's own
+    // constructor list, rather than through a global constructor ->
+    // recursor table: a global table can only ever name one "owning"
+    // recursor per constructor, but the same inductive type can have
+    // more than one eliminator over it (e.g. a `Type`-valued one for
+    // computing data and a `Prop`-valued one for proving propositions
+    // by cases, since this kernel has no universe polymorphism to
+    // unify the two into one recursor). A constructor belonging to a
+    // genuinely different, unrelated type just won't appear in this
+    // list, which is exactly the same "decline, don't guess" outcome
+    // as before.
+    let Some(ctor_index) = spec
+        .constructor_names
+        .iter()
+        .position(|&name| name == ctor_sym)
+    else {
         return Ok(None);
     };
-    if owning_recursor != rec_name {
-        // `ctor_sym` belongs to a different recursor's type than the
-        // one being applied here -- ill-typed input. vf-kernel's
-        // typing judgment is what rejects this; iota reduction simply
-        // declines to reduce a term it can't make sense of, rather
-        // than guessing.
-        return Ok(None);
-    }
     let ctor_spec = &spec.constructors[ctor_index];
     let skip = ctor_spec.skip as usize;
     if ctor_args.len() != skip + ctor_spec.recursive_args.len() {
@@ -181,15 +193,6 @@ mod tests {
         }
         fn recursor(&self, name: Symbol) -> Option<&RecursorSpec> {
             (name == self.rec).then_some(&self.spec)
-        }
-        fn constructor_index(&self, name: Symbol) -> Option<(Symbol, usize)> {
-            if name == self.zero {
-                Some((self.rec, 0))
-            } else if name == self.succ {
-                Some((self.rec, 1))
-            } else {
-                None
-            }
         }
     }
 
@@ -336,8 +339,6 @@ mod tests {
         struct TwoFamilies {
             nat: NatCtx,
             bool_rec: Symbol,
-            true_: Symbol,
-            false_: Symbol,
             bool_spec: RecursorSpec,
         }
         impl DeltaContext for TwoFamilies {
@@ -349,19 +350,6 @@ mod tests {
                     Some(&self.nat.spec)
                 } else if name == self.bool_rec {
                     Some(&self.bool_spec)
-                } else {
-                    None
-                }
-            }
-            fn constructor_index(&self, name: Symbol) -> Option<(Symbol, usize)> {
-                if name == self.nat.zero {
-                    Some((self.nat.rec, 0))
-                } else if name == self.nat.succ {
-                    Some((self.nat.rec, 1))
-                } else if name == self.true_ {
-                    Some((self.bool_rec, 0))
-                } else if name == self.false_ {
-                    Some((self.bool_rec, 1))
                 } else {
                     None
                 }
@@ -392,8 +380,6 @@ mod tests {
         let ctx = TwoFamilies {
             nat,
             bool_rec,
-            true_,
-            false_,
             bool_spec,
         };
 

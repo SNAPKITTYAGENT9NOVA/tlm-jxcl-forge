@@ -71,13 +71,6 @@ pub trait DeltaContext {
     fn recursor(&self, _name: Symbol) -> Option<&RecursorSpec> {
         None
     }
-
-    /// If `name` is a registered constructor, which recursor (by its
-    /// `Const` symbol) it belongs to and its 0-based index among that
-    /// recursor's constructors. Also defaulted to `None`.
-    fn constructor_index(&self, _name: Symbol) -> Option<(Symbol, usize)> {
-        None
-    }
 }
 
 /// A [`DeltaContext`] with no unfoldable definitions at all. Useful in

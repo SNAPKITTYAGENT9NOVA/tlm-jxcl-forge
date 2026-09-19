@@ -79,6 +79,8 @@ fn app4(arena: &mut TermArena, f: TermId, a: TermId, b: TermId, c: TermId, d: Te
 /// declaration/recursor-case order), and its recursor.
 #[derive(Debug, Clone, Copy)]
 pub struct Prelude {
+    pub refl: Symbol,
+
     pub nat: Symbol,
     pub zero: Symbol,
     pub succ: Symbol,
@@ -88,6 +90,9 @@ pub struct Prelude {
     pub true_: Symbol,
     pub false_: Symbol,
     pub bool_rec: Symbol,
+    /// Same computation, but eliminating into `Prop`; see this
+    /// function's doc comment on why both exist.
+    pub bool_ind: Symbol,
 
     pub list: Symbol,
     pub nil: Symbol,
@@ -129,6 +134,23 @@ pub fn register_prelude(
     fuel: &mut u64,
 ) -> Result<Prelude, RegistryError> {
     let type0 = arena.sort(Sort::Type(0));
+
+    // ---- Eq (the equality proposition's introduction rule) ----
+    // `Term::Eq` (vf-core) is only the proposition *former* -- nothing
+    // in the kernel so far can actually construct a proof of one.
+    // `refl` is that missing piece: the standard (Lean/Coq-style)
+    // primitive that every `x : A` trivially equals itself. Like a
+    // constructor, it's opaque/irreducible and its soundness rests on
+    // the type theory's metatheory, not on anything the kernel can
+    // bootstrap-check -- exactly the same trust position as `zero`
+    // or `nil`.
+    let refl = interner.intern("refl");
+    let refl_ty = dep_pi(arena, interner, "A", type0, |arena, interner, a| {
+        dep_pi(arena, interner, "x", a, move |arena, _interner, x| {
+            Ok(arena.eq(a, x, x))
+        })
+    })?;
+    registry.declare_builtin(arena, interner, refl, refl_ty, fuel)?;
 
     // ---- Nat ----
     let nat = interner.intern("Nat");
@@ -246,7 +268,61 @@ pub fn register_prelude(
             },
         ],
     };
-    registry.declare_recursor(arena, interner, bool_rec, bool_rec_ty, bool_rec_spec, fuel)?;
+    registry.declare_recursor(
+        arena,
+        interner,
+        bool_rec,
+        bool_rec_ty,
+        bool_rec_spec.clone(),
+        fuel,
+    )?;
+
+    // ---- Bool_ind: the same eliminator, but into Prop instead of Type 0 ----
+    // This kernel has no universe polymorphism (see vf-core's crate
+    // docs), so one recursor's type cannot be generic over which sort
+    // its motive returns into: `Bool_rec` above can only produce
+    // *data* (a `Bool -> Type 0` motive), never prove a *proposition*
+    // (a `Bool -> Prop` motive) about an abstract `Bool`, since `Prop`
+    // and `Type 0` are unrelated sorts here (no cumulativity between
+    // them). `Bool_ind` is the same computation rule (identical
+    // RecursorSpec -- iota reduction only cares about term shape, not
+    // which sort a motive targets) registered again under its own
+    // symbol with a Prop-valued motive, purely so it can be used to
+    // prove things by case-splitting on a `Bool`. See `vf-elucidian`
+    // for a real use of this (the `reflect` involution proof).
+    let bool_ind = interner.intern("Bool_ind");
+    let prop = arena.sort(Sort::Prop);
+    let bool_ind_motive_ty = arrow(arena, interner, "_", bool_c, prop);
+    let bool_ind_ty = dep_pi(
+        arena,
+        interner,
+        "P",
+        bool_ind_motive_ty,
+        |arena, interner, p| {
+            let p_true = arena.app(p, true_c);
+            dep_pi(
+                arena,
+                interner,
+                "pt",
+                p_true,
+                move |arena, interner, _pt| {
+                    let p_false = arena.app(p, false_c);
+                    dep_pi(
+                        arena,
+                        interner,
+                        "pf",
+                        p_false,
+                        move |arena, interner, _pf| {
+                            dep_pi(arena, interner, "b", bool_c, move |arena, _interner, b| {
+                                Ok(arena.app(p, b))
+                            })
+                        },
+                    )
+                },
+            )
+        },
+    )?;
+    registry.declare_recursor(arena, interner, bool_ind, bool_ind_ty, bool_rec_spec, fuel)?;
 
     // ---- List ----
     let list = interner.intern("List");
@@ -747,6 +823,7 @@ pub fn register_prelude(
     registry.declare_recursor(arena, interner, fin_rec, fin_rec_ty, fin_rec_spec, fuel)?;
 
     Ok(Prelude {
+        refl,
         nat,
         zero,
         succ,
@@ -755,6 +832,7 @@ pub fn register_prelude(
         true_,
         false_,
         bool_rec,
+        bool_ind,
         list,
         nil,
         cons,
@@ -807,6 +885,7 @@ mod tests {
         let (mut arena, mut interner, mut registry, mut fuel) = setup();
         let p = register_prelude(&mut registry, &mut arena, &mut interner, &mut fuel).unwrap();
         for name in [
+            p.refl,
             p.nat,
             p.zero,
             p.succ,
@@ -815,6 +894,7 @@ mod tests {
             p.true_,
             p.false_,
             p.bool_rec,
+            p.bool_ind,
             p.list,
             p.nil,
             p.cons,

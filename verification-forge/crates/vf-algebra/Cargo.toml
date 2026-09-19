@@ -6,3 +6,4 @@ description = "Generic algebraic-structure/law framework (structures, operations
 license = "MIT"
 
 [dependencies]
+vf-core = { path = "../vf-core" }

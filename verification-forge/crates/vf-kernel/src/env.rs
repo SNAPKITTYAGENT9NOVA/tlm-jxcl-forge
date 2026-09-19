@@ -33,13 +33,6 @@ pub trait KernelEnv {
     fn recursor(&self, _name: Symbol) -> Option<&vf_reducer::RecursorSpec> {
         None
     }
-
-    /// If `name` is a registered constructor, which recursor it
-    /// belongs to and its 0-based index among that recursor's
-    /// constructors. Also defaulted to `None`.
-    fn constructor_index(&self, _name: Symbol) -> Option<(Symbol, usize)> {
-        None
-    }
 }
 
 /// A [`KernelEnv`] with no declared constants. Useful for checking
@@ -67,8 +60,5 @@ impl<E: KernelEnv> vf_reducer::DeltaContext for AsDeltaContext<'_, E> {
     }
     fn recursor(&self, name: Symbol) -> Option<&vf_reducer::RecursorSpec> {
         self.0.recursor(name)
-    }
-    fn constructor_index(&self, name: Symbol) -> Option<(Symbol, usize)> {
-        self.0.constructor_index(name)
     }
 }

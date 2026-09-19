@@ -6,3 +6,10 @@ description = "Elucidian Algebra: a user-defined algebraic theory (not an establ
 license = "MIT"
 
 [dependencies]
+vf-core = { path = "../vf-core" }
+vf-axioms = { path = "../vf-axioms" }
+vf-algebra = { path = "../vf-algebra" }
+
+[dev-dependencies]
+vf-reducer = { path = "../vf-reducer" }
+vf-kernel = { path = "../vf-kernel" }

@@ -50,11 +50,6 @@ pub struct Registry {
     policy: AxiomPolicy,
     order: Vec<Symbol>,
     entries: HashMap<Symbol, Entry>,
-    /// Populated by `declare_recursor`: maps a constructor's symbol to
-    /// `(owning recursor, 0-based index among that recursor's
-    /// constructors)`, exactly what `KernelEnv::constructor_index`
-    /// (and, through it, `vf-reducer`'s iota reduction) needs.
-    constructor_lookup: HashMap<Symbol, (Symbol, usize)>,
 }
 
 impl Registry {
@@ -63,7 +58,6 @@ impl Registry {
             policy,
             order: Vec::new(),
             entries: HashMap::new(),
-            constructor_lookup: HashMap::new(),
         }
     }
 
@@ -217,9 +211,6 @@ impl Registry {
             }
         }
         vf_kernel::sort_of(arena, interner, self, &Context::new(), ty, fuel)?;
-        for (index, &ctor) in spec.constructor_names.iter().enumerate() {
-            self.constructor_lookup.insert(ctor, (name, index));
-        }
         self.entries.insert(name, Entry::Recursor { ty, spec });
         self.order.push(name);
         Ok(())
@@ -248,10 +239,6 @@ impl KernelEnv for Registry {
             Entry::Recursor { spec, .. } => Some(spec),
             _ => None,
         }
-    }
-
-    fn constructor_index(&self, name: Symbol) -> Option<(Symbol, usize)> {
-        self.constructor_lookup.get(&name).copied()
     }
 }
 
