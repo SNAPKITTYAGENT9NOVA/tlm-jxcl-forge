@@ -1,0 +1,23 @@
+[package]
+name = "pq-sql-vault"
+version = "0.1.0"
+edition = "2021"
+description = "SQL Server-backed vault for post-quantum-sealed values (pq-crypto), storing only ciphertext and enforcing key-rotation policy in T-SQL"
+license = "MIT"
+
+[dependencies]
+pq-crypto = { path = "../pq-crypto" }
+# `native-tls` (wraps the system TLS library: OpenSSL/Schannel/Security
+# Framework), not `rustls`: as of tiberius 0.12.3 the `rustls` feature
+# pulls in an old rustls 0.21 / rustls-webpki 0.101.7 that `cargo audit`
+# flags with 3 known advisories (RUSTSEC-2026-0098/0099/0104, all in
+# certificate/CRL parsing) -- exactly the code path a SQL Server TLS
+# connection would exercise. `native-tls` avoids that dependency chain
+# entirely. See `docs/HARDENING.md`.
+tiberius = { version = "0.12", default-features = false, features = ["tds73", "native-tls", "tokio-util"] }
+tokio = { version = "1", features = ["rt", "net", "time"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }

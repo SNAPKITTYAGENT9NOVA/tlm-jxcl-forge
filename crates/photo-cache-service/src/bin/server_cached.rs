@@ -8,8 +8,9 @@ use axum::extract::State;
 use axum::routing::get;
 use axum::{Json, Router};
 use photo_cache_service::{
-    build_http_client, env_or, env_or_u16, env_or_u64, fetch_photos, init_tracing,
-    keypair_from_env, redact_url_credentials, shutdown_signal, AppError, PhotosResponse,
+    build_http_client, check_redis_tls_requirement, env_or, env_or_u16, env_or_u64, fetch_photos,
+    init_tracing, keypair_from_env, redact_url_credentials, shutdown_signal, AppError,
+    PhotosResponse,
 };
 use pq_cache::EncryptedCache;
 use std::sync::Arc;
@@ -88,6 +89,11 @@ async fn main() {
     let redis_url = env_or("REDIS_URL", "redis://127.0.0.1:6379");
     let ttl_seconds = env_or_u64("CACHE_TTL_SECONDS", 3600);
     tracing::info!(port, redis_url = %redact_url_credentials(&redis_url), ttl_seconds, "config resolved");
+
+    if let Err(e) = check_redis_tls_requirement(&redis_url) {
+        tracing::error!(error = %e, "refusing to start");
+        std::process::exit(1);
+    }
 
     let keypair = keypair_from_env();
     let cache = match EncryptedCache::connect(&redis_url, keypair).await {

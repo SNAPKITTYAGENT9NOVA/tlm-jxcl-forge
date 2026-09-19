@@ -28,6 +28,10 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
+      # pq-sql-vault's tiberius dependency links against the system TLS
+      # library (native-tls, not rustls -- see docs/HARDENING.md).
+      - name: Install OpenSSL dev headers
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
       - run: cargo clippy --workspace --all-targets -- -D warnings
 
   build-and-test:
@@ -39,7 +43,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       # pq-cache's integration tests spawn a real redis-server rather
       # than mocking Redis; install the server binary the tests exec.
-      - name: Install redis-server
-        run: sudo apt-get update && sudo apt-get install -y redis-server
+      # pq-sql-vault's tiberius dependency links against the system TLS
+      # library (native-tls, not rustls -- see docs/HARDENING.md).
+      - name: Install redis-server and OpenSSL dev headers
+        run: sudo apt-get update && sudo apt-get install -y redis-server libssl-dev
       - run: cargo build --workspace --all-targets
       - run: cargo test --workspace

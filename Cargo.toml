@@ -4,6 +4,8 @@ members = [
     "crates/jxcl",
     "crates/pq-crypto",
     "crates/pq-cache",
+    "crates/pq-sql-vault",
+    "crates/pq-error-proof",
     "crates/photo-cache-service",
 ]
 
