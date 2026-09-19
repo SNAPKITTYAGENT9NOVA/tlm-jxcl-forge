@@ -2,7 +2,9 @@
 name = "vf-parser"
 version = "0.1.0"
 edition = "2021"
-description = "Recursive-descent parser producing vf-ast from .vf source text."
+description = "Recursive-descent parser producing vf-ast::Module from .vf source text."
 license = "MIT"
 
 [dependencies]
+vf-lexer = { path = "../vf-lexer" }
+vf-ast = { path = "../vf-ast" }
