@@ -9,3 +9,7 @@ license = "MIT"
 jxcl-memory = { path = "../jxcl-memory" }
 jxcl-endian = { path = "../jxcl-endian" }
 jxcl-exceptions = { path = "../jxcl-exceptions" }
+jxcl-types = { path = "../jxcl-types" }
+
+[dev-dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

@@ -5,6 +5,7 @@
 
 use pq_cache::EncryptedCache;
 use pq_crypto::KeyPair;
+use pq_storage::SealedStore;
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicU16, Ordering};
 use std::time::Duration;
@@ -168,4 +169,30 @@ async fn ping_succeeds_against_a_live_server() {
         .await
         .unwrap();
     cache.ping().await.unwrap();
+}
+
+/// Written against the `SealedStore` trait bound alone (not
+/// `EncryptedCache` directly), proving `EncryptedCache` is actually
+/// usable as generic storage-agnostic code (e.g. `pq-object-store`)
+/// would use it, against a real live Redis server.
+async fn round_trip_through_sealed_store<S: SealedStore>(store: &mut S) -> Result<(), S::Error> {
+    store.ping().await?;
+    assert_eq!(store.get("missing").await?, None);
+    store
+        .set_with_ttl("through-trait", b"seen only via SealedStore", 60)
+        .await?;
+    assert_eq!(
+        store.get("through-trait").await?,
+        Some(b"seen only via SealedStore".to_vec())
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn encrypted_cache_round_trips_through_the_sealed_store_trait() {
+    let redis = RedisGuard::start().await;
+    let mut cache = EncryptedCache::connect(&redis.url(), KeyPair::generate())
+        .await
+        .unwrap();
+    round_trip_through_sealed_store(&mut cache).await.unwrap();
 }

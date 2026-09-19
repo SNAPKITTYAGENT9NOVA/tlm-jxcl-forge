@@ -10,3 +10,9 @@ jxcl-bytes = { path = "../jxcl-bytes" }
 jxcl-endian = { path = "../jxcl-endian" }
 jxcl-errors = { path = "../jxcl-errors" }
 jxcl-isa-versioning = { path = "../jxcl-isa-versioning" }
+# Not in docs/crates.toml's dependency list -- added because
+# jxcl-isa-versioning is still a scaffolded placeholder (see this
+# crate's module-level "Deviation" doc comment for why the
+# version/architecture check is implemented directly against these
+# constants for now).
+jxcl-constants = { path = "../jxcl-constants" }

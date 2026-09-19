@@ -8,3 +8,4 @@ license = "MIT"
 [dependencies]
 jxcl-simulator = { path = "../jxcl-simulator" }
 jxcl-assembler = { path = "../jxcl-assembler" }
+serde = { version = "1.0.229", features = ["derive"] }

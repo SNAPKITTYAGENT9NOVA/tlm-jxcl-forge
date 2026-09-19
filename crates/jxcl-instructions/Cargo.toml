@@ -8,3 +8,6 @@ license = "MIT"
 [dependencies]
 jxcl-opcodes = { path = "../jxcl-opcodes" }
 jxcl-operands = { path = "../jxcl-operands" }
+
+[dev-dependencies]
+jxcl-registers = { path = "../jxcl-registers" }

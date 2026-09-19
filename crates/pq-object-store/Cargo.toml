@@ -8,3 +8,6 @@ license = "MIT"
 [dependencies]
 pq-storage = { path = "../pq-storage" }
 pq-envelope = { path = "../pq-envelope" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

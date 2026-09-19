@@ -18,9 +18,14 @@
 
 use pq_crypto::{KeyPair, KeyRing, KeyStatus};
 use pq_sql_vault::SqlVault;
+use std::path::PathBuf;
 
 fn connection_string() -> Option<String> {
     std::env::var("PQ_SQL_VAULT_TEST_CONNECTION_STRING").ok()
+}
+
+fn sql_migrations_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("sql")
 }
 
 #[tokio::test]
@@ -85,4 +90,38 @@ async fn rotation_keeps_old_entries_readable_until_retired_against_a_real_server
 
     // Now it's a miss, not an error.
     assert_eq!(vault.get("pq-sql-vault-rotation-test").await.unwrap(), None);
+}
+
+#[tokio::test]
+#[ignore = "requires a live SQL Server; see this file's module docs"]
+async fn connect_and_migrate_applies_schema_and_is_safe_to_call_repeatedly() {
+    let Some(conn_str) = connection_string() else {
+        eprintln!("PQ_SQL_VAULT_TEST_CONNECTION_STRING not set; skipping");
+        return;
+    };
+
+    let mut ring = KeyRing::new();
+    ring.insert(1, KeyPair::generate(), KeyStatus::Active);
+
+    let mut vault = SqlVault::connect_and_migrate(&conn_str, ring, &sql_migrations_dir())
+        .await
+        .expect("connect_and_migrate should apply sql/*.sql against an empty test database");
+
+    vault
+        .set_with_ttl(
+            "pq-sql-vault-migrated-key",
+            b"schema came from run_migrations",
+            60,
+        )
+        .await
+        .expect("the vault's schema/procedures must exist and work after migrating");
+
+    // Reconnecting and migrating again must be a safe no-op, not an
+    // error (e.g. re-running sql/001_schema.sql's CREATE SCHEMA/TABLE
+    // would fail loudly if applied-migration tracking weren't working).
+    let mut ring2 = KeyRing::new();
+    ring2.insert(1, KeyPair::generate(), KeyStatus::Active);
+    let _vault2 = SqlVault::connect_and_migrate(&conn_str, ring2, &sql_migrations_dir())
+        .await
+        .expect("a second connect_and_migrate against the same database must be a no-op");
 }

@@ -1812,6 +1812,7 @@ name = "jxcl-binary"
 version = "0.1.0"
 dependencies = [
  "jxcl-bytes",
+ "jxcl-constants",
  "jxcl-endian",
  "jxcl-errors",
  "jxcl-isa-versioning",
@@ -1846,6 +1847,7 @@ version = "0.1.0"
 dependencies = [
  "jxcl-address-space",
  "jxcl-memory",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -1922,9 +1924,11 @@ version = "0.1.0"
 dependencies = [
  "jxcl-bitops",
  "jxcl-bytes",
+ "jxcl-encoding",
  "jxcl-endian",
  "jxcl-errors",
  "jxcl-instructions",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -2019,12 +2023,14 @@ version = "0.1.0"
 dependencies = [
  "jxcl-assembler",
  "jxcl-simulator",
+ "serde",
 ]
 
 [[package]]
 name = "jxcl-hardware"
 version = "0.1.0"
 dependencies = [
+ "jxcl-hdl",
  "jxcl-netlist",
  "jxcl-rtl",
  "jxcl-synthesis",
@@ -2036,8 +2042,13 @@ dependencies = [
 name = "jxcl-hardware-test"
 version = "0.1.0"
 dependencies = [
+ "jxcl-constants",
  "jxcl-hardware",
+ "jxcl-hdl",
  "jxcl-isa-schema",
+ "jxcl-netlist",
+ "jxcl-opcodes",
+ "jxcl-rtl",
 ]
 
 [[package]]
@@ -2054,6 +2065,8 @@ dependencies = [
  "jxcl-address-space",
  "jxcl-exceptions",
  "jxcl-load-store",
+ "jxcl-memory",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -2079,6 +2092,7 @@ version = "0.1.0"
 dependencies = [
  "jxcl-opcodes",
  "jxcl-operands",
+ "jxcl-registers",
 ]
 
 [[package]]
@@ -2147,18 +2161,23 @@ name = "jxcl-load-store"
 version = "0.1.0"
 dependencies = [
  "jxcl-endian",
+ "jxcl-errors",
  "jxcl-exceptions",
  "jxcl-memory",
+ "jxcl-types",
 ]
 
 [[package]]
 name = "jxcl-loader"
 version = "0.1.0"
 dependencies = [
+ "jxcl-address-space",
  "jxcl-binary",
+ "jxcl-constants",
  "jxcl-errors",
  "jxcl-memory",
  "jxcl-memory-map",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -2193,6 +2212,8 @@ version = "0.1.0"
 dependencies = [
  "jxcl-address-space",
  "jxcl-constants",
+ "jxcl-memory",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -2248,6 +2269,8 @@ version = "0.1.0"
 dependencies = [
  "jxcl-address-space",
  "jxcl-exceptions",
+ "jxcl-memory",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -2368,7 +2391,9 @@ version = "0.1.0"
 dependencies = [
  "jxcl-exceptions",
  "jxcl-load-store",
+ "jxcl-memory",
  "jxcl-registers",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -2877,6 +2902,7 @@ name = "pq-cache"
 version = "0.1.0"
 dependencies = [
  "pq-crypto",
+ "pq-storage",
  "redis",
  "tokio",
  "tracing",
@@ -2961,6 +2987,13 @@ dependencies = [
 [[package]]
 name = "pq-migration"
 version = "0.1.0"
+dependencies = [
+ "futures-io",
+ "tempfile",
+ "tiberius",
+ "tokio",
+ "tokio-util",
+]
 
 [[package]]
 name = "pq-object-store"
@@ -2968,6 +3001,7 @@ version = "0.1.0"
 dependencies = [
  "pq-envelope",
  "pq-storage",
+ "tokio",
 ]
 
 [[package]]
@@ -3027,6 +3061,8 @@ name = "pq-sql-vault"
 version = "0.1.0"
 dependencies = [
  "pq-crypto",
+ "pq-migration",
+ "pq-storage",
  "tiberius",
  "tokio",
  "tokio-util",

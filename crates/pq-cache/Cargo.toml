@@ -7,6 +7,7 @@ license = "MIT"
 
 [dependencies]
 pq-crypto = { path = "../pq-crypto" }
+pq-storage = { path = "../pq-storage" }
 redis = { version = "1", features = ["tokio-comp", "connection-manager"] }
 tokio = { version = "1", features = ["rt", "macros", "time"] }
 tracing = "0.1"

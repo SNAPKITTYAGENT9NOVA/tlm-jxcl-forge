@@ -8,3 +8,4 @@ license = "MIT"
 [dependencies]
 jxcl-memory = { path = "../jxcl-memory" }
 jxcl-address-space = { path = "../jxcl-address-space" }
+jxcl-types = { path = "../jxcl-types" }

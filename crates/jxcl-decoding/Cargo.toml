@@ -11,3 +11,7 @@ jxcl-bitops = { path = "../jxcl-bitops" }
 jxcl-endian = { path = "../jxcl-endian" }
 jxcl-bytes = { path = "../jxcl-bytes" }
 jxcl-errors = { path = "../jxcl-errors" }
+jxcl-types = { path = "../jxcl-types" }
+
+[dev-dependencies]
+jxcl-encoding = { path = "../jxcl-encoding" }

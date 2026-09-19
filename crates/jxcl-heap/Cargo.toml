@@ -9,3 +9,7 @@ license = "MIT"
 jxcl-address-space = { path = "../jxcl-address-space" }
 jxcl-load-store = { path = "../jxcl-load-store" }
 jxcl-exceptions = { path = "../jxcl-exceptions" }
+jxcl-types = { path = "../jxcl-types" }
+
+[dev-dependencies]
+jxcl-memory = { path = "../jxcl-memory" }

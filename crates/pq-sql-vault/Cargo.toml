@@ -7,6 +7,8 @@ license = "MIT"
 
 [dependencies]
 pq-crypto = { path = "../pq-crypto" }
+pq-storage = { path = "../pq-storage" }
+pq-migration = { path = "../pq-migration" }
 # `native-tls` (wraps the system TLS library: OpenSSL/Schannel/Security
 # Framework), not `rustls`: as of tiberius 0.12.3 the `rustls` feature
 # pulls in an old rustls 0.21 / rustls-webpki 0.101.7 that `cargo audit`

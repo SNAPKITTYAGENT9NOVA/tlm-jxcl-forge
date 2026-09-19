@@ -4,13 +4,22 @@ The machine's exception model: illegal opcode, misaligned access, division by ze
 
 ## Architecture
 
-**Owns:** The Exception enum and the trap dispatch contract.
+**Owns:** The `Exception` enum and the `TrapHandler` trap-dispatch contract.
 
-**Category:** execution · **Source:** new
+**Category:** execution · **Source:** new (generalizes
+`crates/jxcl/src/errors.rs`'s `ExecutionFault` into the shared vocabulary
+of exceptions the execution-group and memory-group crates -- page table,
+stack, heap, execution -- all need to signal).
 
 ## Public API
 
-`Exception`, `TrapHandler`
+- `Exception` -- `IllegalOpcode`, `InvalidRegister`, `IllegalOperand`,
+  `MisalignedAccess`, `DivisionByZero`, `StackOverflow`,
+  `StackUnderflow`, `PageFault`, `PermissionViolation`, `Memory(..)`
+  (wraps `jxcl-errors::MemoryFault`)
+- `TrapHandler` -- a trait a host implements to decide `TrapAction::Halt`
+  or `TrapAction::Resume` after observing an exception
+- `HaltOnException` / `RecordingTrapHandler` -- two ready-made handlers
 
 ## Dependencies
 
@@ -25,9 +34,10 @@ External crates:
 
 ## Testing
 
-Planned test kinds: unit, error-path.
+`cargo test -p jxcl-exceptions`: unit tests for the `MemoryFault` ->
+`Exception` conversion, `Display` formatting (error-path), and both
+built-in `TrapHandler` implementations.
 
 ## Status
 
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+`implemented`.

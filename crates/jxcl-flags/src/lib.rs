@@ -149,10 +149,10 @@ mod tests {
 
     #[test]
     fn from_bits_decodes_each_flag_independently() {
-        assert_eq!(Flags::from_bits(Z_BIT).z, true);
-        assert_eq!(Flags::from_bits(N_BIT).n, true);
-        assert_eq!(Flags::from_bits(C_BIT).c, true);
-        assert_eq!(Flags::from_bits(V_BIT).v, true);
+        assert!(Flags::from_bits(Z_BIT).z);
+        assert!(Flags::from_bits(N_BIT).n);
+        assert!(Flags::from_bits(C_BIT).c);
+        assert!(Flags::from_bits(V_BIT).v);
         assert_eq!(Flags::from_bits(0), Flags::default());
     }
 
