@@ -1,0 +1,9 @@
+; Sum 1..=5 into R1 using a countdown loop, then halt.
+    MOVI R1, 0      ; accumulator
+    MOVI R2, 5      ; counter
+loop:
+    ADD  R1, R2
+    DEC  R2
+    CMP  R2, R0
+    JG   loop
+    HALT
