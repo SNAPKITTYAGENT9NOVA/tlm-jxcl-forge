@@ -1629,6 +1629,646 @@ name = "jxcl"
 version = "0.1.0"
 
 [[package]]
+name = "jxcl-address-space"
+version = "0.1.0"
+dependencies = [
+ "jxcl-memory",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-alu"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+ "jxcl-flags",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-assembler"
+version = "0.1.0"
+dependencies = [
+ "jxcl-debug-info",
+ "jxcl-encoding",
+ "jxcl-instructions",
+ "jxcl-lexer",
+ "jxcl-linker",
+ "jxcl-object",
+ "jxcl-parser",
+ "jxcl-relocations",
+ "jxcl-symbols",
+]
+
+[[package]]
+name = "jxcl-audit"
+version = "0.1.0"
+dependencies = [
+ "jxcl-logging",
+]
+
+[[package]]
+name = "jxcl-binary"
+version = "0.1.0"
+dependencies = [
+ "jxcl-bytes",
+ "jxcl-endian",
+ "jxcl-errors",
+ "jxcl-isa-versioning",
+]
+
+[[package]]
+name = "jxcl-bitops"
+version = "0.1.0"
+dependencies = [
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-branch"
+version = "0.1.0"
+dependencies = [
+ "jxcl-operands",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-bytes"
+version = "0.1.0"
+dependencies = [
+ "jxcl-endian",
+ "jxcl-errors",
+]
+
+[[package]]
+name = "jxcl-cache-model"
+version = "0.1.0"
+dependencies = [
+ "jxcl-address-space",
+ "jxcl-memory",
+]
+
+[[package]]
+name = "jxcl-cli"
+version = "0.1.0"
+dependencies = [
+ "jxcl-assembler",
+ "jxcl-config",
+ "jxcl-debugger",
+ "jxcl-disassembler",
+ "jxcl-instruction-validation",
+ "jxcl-isa-metadata",
+ "jxcl-loader",
+ "jxcl-logging",
+ "jxcl-simulator",
+]
+
+[[package]]
+name = "jxcl-config"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+]
+
+[[package]]
+name = "jxcl-conformance"
+version = "0.1.0"
+dependencies = [
+ "jxcl-golden",
+ "jxcl-hardware",
+ "jxcl-isa-schema",
+]
+
+[[package]]
+name = "jxcl-constants"
+version = "0.1.0"
+
+[[package]]
+name = "jxcl-control"
+version = "0.1.0"
+dependencies = [
+ "jxcl-flags",
+ "jxcl-registers",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-cycle-model"
+version = "0.1.0"
+dependencies = [
+ "jxcl-opcodes",
+]
+
+[[package]]
+name = "jxcl-debug-info"
+version = "0.1.0"
+dependencies = [
+ "jxcl-bytes",
+ "jxcl-symbols",
+]
+
+[[package]]
+name = "jxcl-debugger"
+version = "0.1.0"
+dependencies = [
+ "jxcl-execution",
+ "jxcl-machine",
+ "jxcl-trace",
+]
+
+[[package]]
+name = "jxcl-decoding"
+version = "0.1.0"
+dependencies = [
+ "jxcl-bitops",
+ "jxcl-bytes",
+ "jxcl-endian",
+ "jxcl-errors",
+ "jxcl-instructions",
+]
+
+[[package]]
+name = "jxcl-determinism"
+version = "0.1.0"
+dependencies = [
+ "jxcl-machine",
+ "jxcl-memory",
+]
+
+[[package]]
+name = "jxcl-disassembler"
+version = "0.1.0"
+dependencies = [
+ "jxcl-debug-info",
+ "jxcl-decoding",
+ "jxcl-instructions",
+ "jxcl-symbols",
+]
+
+[[package]]
+name = "jxcl-dispatch"
+version = "0.1.0"
+dependencies = [
+ "jxcl-instructions",
+ "jxcl-opcodes",
+]
+
+[[package]]
+name = "jxcl-encoding"
+version = "0.1.0"
+dependencies = [
+ "jxcl-bitops",
+ "jxcl-bytes",
+ "jxcl-endian",
+ "jxcl-errors",
+ "jxcl-instructions",
+]
+
+[[package]]
+name = "jxcl-endian"
+version = "0.1.0"
+
+[[package]]
+name = "jxcl-errors"
+version = "0.1.0"
+dependencies = [
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-exceptions"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-execution"
+version = "0.1.0"
+dependencies = [
+ "jxcl-alu",
+ "jxcl-control",
+ "jxcl-decoding",
+ "jxcl-dispatch",
+ "jxcl-errors",
+ "jxcl-exceptions",
+ "jxcl-load-store",
+ "jxcl-machine",
+ "jxcl-memory",
+]
+
+[[package]]
+name = "jxcl-flags"
+version = "0.1.0"
+dependencies = [
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-fuzz"
+version = "0.1.0"
+dependencies = [
+ "jxcl-decoding",
+ "jxcl-instructions",
+]
+
+[[package]]
+name = "jxcl-golden"
+version = "0.1.0"
+dependencies = [
+ "jxcl-assembler",
+ "jxcl-simulator",
+]
+
+[[package]]
+name = "jxcl-hardware"
+version = "0.1.0"
+dependencies = [
+ "jxcl-netlist",
+ "jxcl-rtl",
+ "jxcl-synthesis",
+ "jxcl-verilog",
+ "jxcl-vhdl",
+]
+
+[[package]]
+name = "jxcl-hardware-test"
+version = "0.1.0"
+dependencies = [
+ "jxcl-hardware",
+ "jxcl-isa-schema",
+]
+
+[[package]]
+name = "jxcl-hdl"
+version = "0.1.0"
+dependencies = [
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-heap"
+version = "0.1.0"
+dependencies = [
+ "jxcl-address-space",
+ "jxcl-exceptions",
+ "jxcl-load-store",
+]
+
+[[package]]
+name = "jxcl-http"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+]
+
+[[package]]
+name = "jxcl-instruction-validation"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+ "jxcl-instructions",
+ "jxcl-operands",
+ "jxcl-registers",
+]
+
+[[package]]
+name = "jxcl-instructions"
+version = "0.1.0"
+dependencies = [
+ "jxcl-opcodes",
+ "jxcl-operands",
+]
+
+[[package]]
+name = "jxcl-integration"
+version = "0.1.0"
+dependencies = [
+ "jxcl-assembler",
+ "jxcl-simulator",
+ "pq-cache",
+ "pq-error-proof",
+]
+
+[[package]]
+name = "jxcl-interrupts"
+version = "0.1.0"
+dependencies = [
+ "jxcl-exceptions",
+ "jxcl-flags",
+]
+
+[[package]]
+name = "jxcl-isa-metadata"
+version = "0.1.0"
+dependencies = [
+ "jxcl-constants",
+ "jxcl-opcodes",
+]
+
+[[package]]
+name = "jxcl-isa-schema"
+version = "0.1.0"
+dependencies = [
+ "jxcl-constants",
+ "jxcl-flags",
+ "jxcl-opcodes",
+ "jxcl-registers",
+]
+
+[[package]]
+name = "jxcl-isa-versioning"
+version = "0.1.0"
+dependencies = [
+ "jxcl-constants",
+]
+
+[[package]]
+name = "jxcl-lexer"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+]
+
+[[package]]
+name = "jxcl-linker"
+version = "0.1.0"
+dependencies = [
+ "jxcl-binary",
+ "jxcl-errors",
+ "jxcl-object",
+ "jxcl-relocations",
+ "jxcl-symbols",
+]
+
+[[package]]
+name = "jxcl-load-store"
+version = "0.1.0"
+dependencies = [
+ "jxcl-endian",
+ "jxcl-exceptions",
+ "jxcl-memory",
+]
+
+[[package]]
+name = "jxcl-loader"
+version = "0.1.0"
+dependencies = [
+ "jxcl-binary",
+ "jxcl-errors",
+ "jxcl-memory",
+ "jxcl-memory-map",
+]
+
+[[package]]
+name = "jxcl-logging"
+version = "0.1.0"
+
+[[package]]
+name = "jxcl-machine"
+version = "0.1.0"
+dependencies = [
+ "jxcl-flags",
+ "jxcl-registers",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-memory"
+version = "0.1.0"
+dependencies = [
+ "jxcl-endian",
+ "jxcl-errors",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-memory-map"
+version = "0.1.0"
+dependencies = [
+ "jxcl-address-space",
+ "jxcl-constants",
+]
+
+[[package]]
+name = "jxcl-netlist"
+version = "0.1.0"
+dependencies = [
+ "jxcl-hdl",
+]
+
+[[package]]
+name = "jxcl-network"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+]
+
+[[package]]
+name = "jxcl-object"
+version = "0.1.0"
+dependencies = [
+ "jxcl-bytes",
+ "jxcl-errors",
+ "jxcl-relocations",
+ "jxcl-symbols",
+]
+
+[[package]]
+name = "jxcl-observability"
+version = "0.1.0"
+dependencies = [
+ "jxcl-logging",
+]
+
+[[package]]
+name = "jxcl-opcodes"
+version = "0.1.0"
+dependencies = [
+ "jxcl-constants",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-operands"
+version = "0.1.0"
+dependencies = [
+ "jxcl-registers",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-page-table"
+version = "0.1.0"
+dependencies = [
+ "jxcl-address-space",
+ "jxcl-exceptions",
+]
+
+[[package]]
+name = "jxcl-parser"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+ "jxcl-instructions",
+ "jxcl-lexer",
+ "jxcl-operands",
+]
+
+[[package]]
+name = "jxcl-pipeline"
+version = "0.1.0"
+dependencies = [
+ "jxcl-cycle-model",
+ "jxcl-instructions",
+]
+
+[[package]]
+name = "jxcl-profiler"
+version = "0.1.0"
+dependencies = [
+ "jxcl-cache-model",
+ "jxcl-cycle-model",
+ "jxcl-trace",
+]
+
+[[package]]
+name = "jxcl-protocol"
+version = "0.1.0"
+dependencies = [
+ "jxcl-simulator",
+ "jxcl-trace",
+]
+
+[[package]]
+name = "jxcl-registers"
+version = "0.1.0"
+dependencies = [
+ "jxcl-constants",
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-relocations"
+version = "0.1.0"
+dependencies = [
+ "jxcl-bitops",
+ "jxcl-encoding",
+ "jxcl-symbols",
+]
+
+[[package]]
+name = "jxcl-replay"
+version = "0.1.0"
+dependencies = [
+ "jxcl-determinism",
+ "jxcl-machine",
+ "jxcl-trace",
+]
+
+[[package]]
+name = "jxcl-rpc"
+version = "0.1.0"
+dependencies = [
+ "jxcl-network",
+ "jxcl-protocol",
+]
+
+[[package]]
+name = "jxcl-rtl"
+version = "0.1.0"
+dependencies = [
+ "jxcl-alu",
+ "jxcl-constants",
+ "jxcl-hdl",
+ "jxcl-opcodes",
+]
+
+[[package]]
+name = "jxcl-runtime"
+version = "0.1.0"
+dependencies = [
+ "jxcl-config",
+]
+
+[[package]]
+name = "jxcl-security"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+]
+
+[[package]]
+name = "jxcl-service"
+version = "0.1.0"
+dependencies = [
+ "jxcl-config",
+ "jxcl-http",
+ "jxcl-logging",
+]
+
+[[package]]
+name = "jxcl-simulator"
+version = "0.1.0"
+dependencies = [
+ "jxcl-execution",
+ "jxcl-loader",
+ "jxcl-machine",
+ "jxcl-memory-map",
+]
+
+[[package]]
+name = "jxcl-stack"
+version = "0.1.0"
+dependencies = [
+ "jxcl-exceptions",
+ "jxcl-load-store",
+ "jxcl-registers",
+]
+
+[[package]]
+name = "jxcl-symbols"
+version = "0.1.0"
+dependencies = [
+ "jxcl-types",
+]
+
+[[package]]
+name = "jxcl-synthesis"
+version = "0.1.0"
+dependencies = [
+ "jxcl-hdl",
+ "jxcl-netlist",
+]
+
+[[package]]
+name = "jxcl-trace"
+version = "0.1.0"
+dependencies = [
+ "jxcl-instructions",
+ "jxcl-machine",
+]
+
+[[package]]
+name = "jxcl-types"
+version = "0.1.0"
+
+[[package]]
+name = "jxcl-verilog"
+version = "0.1.0"
+dependencies = [
+ "jxcl-hdl",
+]
+
+[[package]]
+name = "jxcl-vhdl"
+version = "0.1.0"
+dependencies = [
+ "jxcl-hdl",
+]
+
+[[package]]
 name = "keccak"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2014,6 +2654,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "pq-aead"
+version = "0.1.0"
+
+[[package]]
+name = "pq-attestation"
+version = "0.1.0"
+dependencies = [
+ "pq-envelope",
+ "pq-proof-types",
+]
+
+[[package]]
 name = "pq-cache"
 version = "0.1.0"
 dependencies = [
@@ -2035,6 +2687,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pq-envelope"
+version = "0.1.0"
+dependencies = [
+ "pq-aead",
+ "pq-kdf",
+ "pq-kem",
+]
+
+[[package]]
 name = "pq-error-proof"
 version = "0.1.0"
 dependencies = [
@@ -2052,6 +2713,93 @@ dependencies = [
 ]
 
 [[package]]
+name = "pq-journal"
+version = "0.1.0"
+dependencies = [
+ "jxcl-bytes",
+]
+
+[[package]]
+name = "pq-kdf"
+version = "0.1.0"
+
+[[package]]
+name = "pq-kem"
+version = "0.1.0"
+
+[[package]]
+name = "pq-keyring"
+version = "0.1.0"
+dependencies = [
+ "pq-envelope",
+]
+
+[[package]]
+name = "pq-ledger"
+version = "0.1.0"
+dependencies = [
+ "pq-journal",
+ "pq-proof-types",
+]
+
+[[package]]
+name = "pq-migration"
+version = "0.1.0"
+
+[[package]]
+name = "pq-object-store"
+version = "0.1.0"
+dependencies = [
+ "pq-envelope",
+ "pq-storage",
+]
+
+[[package]]
+name = "pq-policy"
+version = "0.1.0"
+dependencies = [
+ "jxcl-errors",
+]
+
+[[package]]
+name = "pq-proof-bench"
+version = "0.1.0"
+dependencies = [
+ "pq-error-proof",
+ "pq-proof-registry",
+]
+
+[[package]]
+name = "pq-proof-registry"
+version = "0.1.0"
+dependencies = [
+ "pq-proof-types",
+]
+
+[[package]]
+name = "pq-proof-types"
+version = "0.1.0"
+
+[[package]]
+name = "pq-proof-verifier"
+version = "0.1.0"
+dependencies = [
+ "pq-proof-registry",
+ "pq-proof-types",
+]
+
+[[package]]
+name = "pq-rotation"
+version = "0.1.0"
+dependencies = [
+ "pq-keyring",
+]
+
+[[package]]
+name = "pq-signature"
+version = "0.1.0"
+
+[[package]]
 name = "pq-sql-vault"
 version = "0.1.0"
 dependencies = [
@@ -2060,6 +2808,13 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
+]
+
+[[package]]
+name = "pq-storage"
+version = "0.1.0"
+dependencies = [
+ "pq-envelope",
 ]
 
 [[package]]

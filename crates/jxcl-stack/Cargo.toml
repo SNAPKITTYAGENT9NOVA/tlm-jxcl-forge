@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-stack"
+version = "0.1.0"
+edition = "2021"
+description = "Typed stack-pointer push/pop with overflow/underflow checking for call/return semantics."
+license = "MIT"
+
+[dependencies]
+jxcl-load-store = { path = "../jxcl-load-store" }
+jxcl-exceptions = { path = "../jxcl-exceptions" }
+jxcl-registers = { path = "../jxcl-registers" }

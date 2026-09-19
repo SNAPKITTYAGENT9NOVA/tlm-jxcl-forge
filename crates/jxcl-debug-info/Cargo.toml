@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-debug-info"
+version = "0.1.0"
+edition = "2021"
+description = "A simple address-to-source-line debug info format emitted by the assembler and consumed by the disassembler/debugger."
+license = "MIT"
+
+[dependencies]
+jxcl-symbols = { path = "../jxcl-symbols" }
+jxcl-bytes = { path = "../jxcl-bytes" }

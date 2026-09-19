@@ -1,0 +1,12 @@
+[package]
+name = "jxcl-disassembler"
+version = "0.1.0"
+edition = "2021"
+description = "Disassembles a binary/object file back to readable assembly text, symbolizing addresses when debug info is present."
+license = "MIT"
+
+[dependencies]
+jxcl-decoding = { path = "../jxcl-decoding" }
+jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-symbols = { path = "../jxcl-symbols" }
+jxcl-debug-info = { path = "../jxcl-debug-info" }

@@ -1,0 +1,11 @@
+[package]
+name = "pq-migration"
+version = "0.1.0"
+edition = "2021"
+description = "Applies pq-sql-vault's sql/*.sql migration files in order against a live connection and tracks which have been applied."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

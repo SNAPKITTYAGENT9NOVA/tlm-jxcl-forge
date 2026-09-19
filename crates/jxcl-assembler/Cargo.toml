@@ -1,0 +1,17 @@
+[package]
+name = "jxcl-assembler"
+version = "0.1.0"
+edition = "2021"
+description = "The two-pass assembler: source text to an object file (plus a convenience path assembling and linking a single file straight to a binary, preserving the original single-step CLI workflow)."
+license = "MIT"
+
+[dependencies]
+jxcl-lexer = { path = "../jxcl-lexer" }
+jxcl-parser = { path = "../jxcl-parser" }
+jxcl-object = { path = "../jxcl-object" }
+jxcl-symbols = { path = "../jxcl-symbols" }
+jxcl-relocations = { path = "../jxcl-relocations" }
+jxcl-encoding = { path = "../jxcl-encoding" }
+jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-linker = { path = "../jxcl-linker" }
+jxcl-debug-info = { path = "../jxcl-debug-info" }

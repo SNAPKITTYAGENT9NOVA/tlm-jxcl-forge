@@ -1,0 +1,12 @@
+[package]
+name = "jxcl-integration"
+version = "0.1.0"
+edition = "2021"
+description = "An integration-test-only crate exercising the full stack end-to-end: assemble, run in jxcl-simulator, seal/store in pq-cache, attest with pq-error-proof."
+license = "MIT"
+
+[dependencies]
+jxcl-assembler = { path = "../jxcl-assembler" }
+jxcl-simulator = { path = "../jxcl-simulator" }
+pq-cache = { path = "../pq-cache" }
+pq-error-proof = { path = "../pq-error-proof" }

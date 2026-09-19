@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-types"
+version = "0.1.0"
+edition = "2021"
+description = "Shared newtype wrappers for architectural primitive values (word, address, register index, immediate) so every ISA/execution crate agrees on one representation."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

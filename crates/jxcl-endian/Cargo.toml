@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-endian"
+version = "0.1.0"
+edition = "2021"
+description = "The ISA's fixed-endianness integer <-> byte conversions, isolated from the general byte-buffer cursor."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

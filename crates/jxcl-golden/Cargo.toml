@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-golden"
+version = "0.1.0"
+edition = "2021"
+description = "The golden-vector format, loader, and canonical vector files used as the ISA conformance baseline."
+license = "MIT"
+
+[dependencies]
+jxcl-simulator = { path = "../jxcl-simulator" }
+jxcl-assembler = { path = "../jxcl-assembler" }

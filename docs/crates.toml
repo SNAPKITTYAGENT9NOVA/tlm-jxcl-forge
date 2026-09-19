@@ -1,0 +1,1249 @@
+# Machine-readable crate registry for the tlm-jxcl-forge 100-crate
+# workspace expansion. This is the frozen contract every crate is
+# generated and implemented from -- see docs/CRATE_ARCHITECTURE.md for
+# the narrative version and docs/DEPENDENCY_GRAPH.md for the DAG this
+# file's `dependencies` fields must be acyclic under.
+#
+# Fields:
+#   name                  - crate/package name (must match workspace member path)
+#   category              - one of the 12 workstream categories
+#   purpose               - one sentence: what this crate is for
+#   owns                  - the invariant/data type/API this crate is the single source of truth for
+#   public_api            - representative public items (not exhaustive)
+#   dependencies          - other workspace crates this depends on (path deps)
+#   external_dependencies - crates.io dependencies (empty = std only)
+#   tests                 - test kinds this crate carries
+#   source                - "extraction" (real code moved from an existing crate),
+#                           "new" (genuinely new functionality built for this expansion),
+#                           or "facade" (existing crate kept for API compatibility,
+#                           re-exporting the crates it was split into)
+#   status                - "planned" | "scaffolded" | "implemented"
+
+# ============================== FOUNDATION (8) ==============================
+
+[[crate]]
+name = "jxcl-types"
+category = "foundation"
+purpose = "Shared newtype wrappers for architectural primitive values (word, address, register index, immediate) so every ISA/execution crate agrees on one representation."
+owns = "The Word/Address/RegisterIndex/Immediate newtypes and their arithmetic/conversion impls."
+public_api = ["Word", "Address", "RegisterIndex", "Immediate"]
+dependencies = []
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-errors"
+category = "foundation"
+purpose = "The crate-wide error type shared across the ISA/execution/toolchain crates."
+owns = "The Error enum and its Display/std::error::Error impls."
+public_api = ["Error"]
+dependencies = ["jxcl-types"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:jxcl/src/errors.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-bitops"
+category = "foundation"
+purpose = "Bitfield extraction/insertion and sign-extension helpers used by encoding, decoding, and the ALU."
+owns = "extract_bits/insert_bits/sign_extend and related bit-level primitives."
+public_api = ["extract_bits", "insert_bits", "sign_extend"]
+dependencies = ["jxcl-types"]
+external_dependencies = []
+tests = ["unit", "property"]
+source = "extraction:jxcl/src/isa/opcodes.rs,jxcl/src/encoding/*"
+status = "planned"
+
+[[crate]]
+name = "jxcl-endian"
+category = "foundation"
+purpose = "The ISA's fixed-endianness integer <-> byte conversions, isolated from the general byte-buffer cursor."
+owns = "to_arch_bytes/from_arch_bytes for each integer width."
+public_api = ["to_arch_bytes", "from_arch_bytes"]
+dependencies = []
+external_dependencies = []
+tests = ["unit", "property"]
+source = "extraction:jxcl/src/encoding/*"
+status = "planned"
+
+[[crate]]
+name = "jxcl-bytes"
+category = "foundation"
+purpose = "A bounds-checked byte-buffer cursor used by the encoder, decoder, binary container, and object format."
+owns = "The ByteCursor read/write-with-bounds-checking API."
+public_api = ["ByteCursor"]
+dependencies = ["jxcl-errors", "jxcl-endian"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-constants"
+category = "foundation"
+purpose = "Architecture-wide constants: word width, register count, memory size, opcode width."
+owns = "The single authoritative set of ISA width/count constants."
+public_api = ["WORD_BITS", "REGISTER_COUNT", "MEMORY_SIZE", "OPCODE_BITS"]
+dependencies = []
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:jxcl/src/isa/constants.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-logging"
+category = "foundation"
+purpose = "Shared tracing/logging initialization used by the CLI and the network services."
+owns = "init_logging() and the RUST_LOG-driven subscriber setup convention."
+public_api = ["init_logging"]
+dependencies = []
+external_dependencies = ["tracing", "tracing-subscriber"]
+tests = ["unit"]
+source = "extraction:jxcl/src/main.rs,photo-cache-service/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-config"
+category = "foundation"
+purpose = "Environment-variable configuration parsing helpers (typed env_or, hex-seed decoding) shared by the CLI and services."
+owns = "env_or/env_or_parse/decode_hex_seed and the 'log the resolved value only if not secret' convention."
+public_api = ["env_or", "env_or_parse", "decode_hex_seed"]
+dependencies = ["jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "extraction:photo-cache-service/src/lib.rs,pq-crypto/src/lib.rs"
+status = "planned"
+
+# ================================== ISA (12) ==================================
+
+[[crate]]
+name = "jxcl"
+category = "isa"
+purpose = "Backward-compatible facade preserving the original crate's public API and `jxcl` binary name over the newly split crates."
+owns = "Nothing new -- re-exports the ISA/execution/toolchain crates under their original module paths (isa::, encoding::, alu::, memory::, machine::, execution::, control::, binary::, validator::, assembler::, disassembler::, debugger::)."
+public_api = ["(re-exports of the pre-expansion public API, unchanged)"]
+dependencies = ["jxcl-opcodes", "jxcl-registers", "jxcl-flags", "jxcl-operands", "jxcl-instructions", "jxcl-encoding", "jxcl-decoding", "jxcl-alu", "jxcl-memory", "jxcl-machine", "jxcl-execution", "jxcl-control", "jxcl-binary", "jxcl-instruction-validation", "jxcl-assembler", "jxcl-disassembler", "jxcl-debugger", "jxcl-cli"]
+external_dependencies = []
+tests = ["integration"]
+source = "facade"
+status = "planned"
+
+[[crate]]
+name = "jxcl-opcodes"
+category = "isa"
+purpose = "The single authoritative opcode registry: ids, mnemonics, operand-shape metadata."
+owns = "The opcode table -- no other crate may define or duplicate opcode identifiers."
+public_api = ["Opcode", "OPCODE_TABLE", "opcode_by_mnemonic"]
+dependencies = ["jxcl-types", "jxcl-constants"]
+external_dependencies = []
+tests = ["unit", "golden"]
+source = "extraction:jxcl/src/isa/opcodes.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-registers"
+category = "isa"
+purpose = "The register file model: indices, names, widths."
+owns = "The Register enum/index type and register metadata."
+public_api = ["Register", "RegisterFile"]
+dependencies = ["jxcl-types", "jxcl-constants"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:jxcl/src/isa/registers.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-flags"
+category = "isa"
+purpose = "The flags register: zero/carry/overflow/negative/interrupt-mask bit semantics."
+owns = "The Flags type and its bit-level get/set semantics."
+public_api = ["Flags"]
+dependencies = ["jxcl-types"]
+external_dependencies = []
+tests = ["unit", "property"]
+source = "extraction:jxcl/src/isa/flags.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-operands"
+category = "isa"
+purpose = "The operand/addressing-mode model (register-direct, immediate, memory-indirect, etc.)."
+owns = "The Operand enum and addressing-mode variants."
+public_api = ["Operand", "AddressingMode"]
+dependencies = ["jxcl-types", "jxcl-registers"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:jxcl/src/isa/operand.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-instructions"
+category = "isa"
+purpose = "The Instruction type tying an opcode to its operands -- the canonical in-memory instruction representation."
+owns = "The Instruction struct."
+public_api = ["Instruction"]
+dependencies = ["jxcl-opcodes", "jxcl-operands"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:jxcl/src/isa/instruction.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-encoding"
+category = "isa"
+purpose = "Encodes an Instruction to its binary wire format."
+owns = "encode(Instruction) -> bytes; the only place instruction bit layout is written."
+public_api = ["encode"]
+dependencies = ["jxcl-instructions", "jxcl-bitops", "jxcl-endian", "jxcl-bytes", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "property", "golden"]
+source = "extraction:jxcl/src/encoding/encoder.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-decoding"
+category = "isa"
+purpose = "Decodes an Instruction from its binary wire format -- the exact inverse of jxcl-encoding."
+owns = "decode(bytes) -> Instruction; the only place instruction bit layout is read."
+public_api = ["decode"]
+dependencies = ["jxcl-instructions", "jxcl-bitops", "jxcl-endian", "jxcl-bytes", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "property", "golden", "fuzz"]
+source = "extraction:jxcl/src/encoding/decoder.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-instruction-validation"
+category = "isa"
+purpose = "Per-instruction operand-legality checks (register range, immediate range, addressing-mode compatibility with the opcode) shared by the decoder and the static binary validator."
+owns = "validate_instruction(&Instruction) -> Result<(), Error> -- the single source of truth for 'is this a legal instruction', so the decoder and jxcl-validator never diverge."
+public_api = ["validate_instruction"]
+dependencies = ["jxcl-instructions", "jxcl-operands", "jxcl-registers", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "boundary", "error-path"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-isa-versioning"
+category = "isa"
+purpose = "ISA/binary-format version negotiation so old binaries fail closed against an incompatible newer decoder rather than silently misdecoding."
+owns = "IsaVersion, its embedding in the binary container header, and the compatibility check."
+public_api = ["IsaVersion", "IsaVersion::is_compatible_with"]
+dependencies = ["jxcl-constants"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-isa-metadata"
+category = "isa"
+purpose = "Queryable descriptive metadata about the running ISA build (opcode count, register count, build flags) used by `jxcl inspect` and the debugger."
+owns = "IsaMetadata::describe()."
+public_api = ["IsaMetadata", "describe"]
+dependencies = ["jxcl-constants", "jxcl-opcodes"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-isa-schema"
+category = "isa"
+purpose = "A serde-serializable schema of the ISA generated from jxcl-opcodes/jxcl-constants/jxcl-registers/jxcl-flags, plus a mechanical cross-check against the numbers documented in docs/ISA_SPEC.md."
+owns = "IsaSchema and the spec-vs-code conformance check that ISA_SPEC.md's stated widths/opcode-count match the generated schema."
+public_api = ["IsaSchema", "IsaSchema::generate", "IsaSchema::check_against_spec"]
+dependencies = ["jxcl-opcodes", "jxcl-constants", "jxcl-registers", "jxcl-flags"]
+external_dependencies = ["serde"]
+tests = ["unit", "conformance"]
+source = "new"
+status = "planned"
+
+# ================================ EXECUTION (10) ================================
+
+[[crate]]
+name = "jxcl-alu"
+category = "execution"
+purpose = "Arithmetic/logic unit semantics: add/sub/mul/div/shift/bitwise, with flag updates."
+owns = "All arithmetic semantics -- no other crate performs ALU-equivalent computation independently."
+public_api = ["Alu", "Alu::execute"]
+dependencies = ["jxcl-types", "jxcl-flags", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "property", "boundary"]
+source = "extraction:jxcl/src/alu.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-control"
+category = "execution"
+purpose = "Branch/jump condition evaluation against the flags register."
+owns = "Condition-code evaluation (branch-taken decisions)."
+public_api = ["evaluate_condition"]
+dependencies = ["jxcl-types", "jxcl-flags", "jxcl-registers"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:jxcl/src/control.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-machine"
+category = "execution"
+purpose = "Architectural state: the register file, flags, and program counter as one cohesive Machine struct."
+owns = "The Machine struct -- the single authoritative representation of architectural state."
+public_api = ["Machine"]
+dependencies = ["jxcl-registers", "jxcl-flags", "jxcl-types"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:jxcl/src/machine.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-execution"
+category = "execution"
+purpose = "The fetch/decode/execute loop: owns instruction execution, wiring together decoding, dispatch, the ALU, memory, and exceptions."
+owns = "step(&mut Machine) -- the only place an instruction is actually executed."
+public_api = ["step", "run"]
+dependencies = ["jxcl-machine", "jxcl-alu", "jxcl-control", "jxcl-decoding", "jxcl-memory", "jxcl-dispatch", "jxcl-exceptions", "jxcl-load-store", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "property", "golden"]
+source = "extraction:jxcl/src/execution.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-dispatch"
+category = "execution"
+purpose = "Table-driven opcode-to-handler dispatch, extracted from the fetch/decode/execute loop's match statement so dispatch can be tested and extended independently of execution semantics."
+owns = "The dispatch table (Opcode -> handler fn pointer)."
+public_api = ["DispatchTable", "DispatchTable::lookup"]
+dependencies = ["jxcl-instructions", "jxcl-opcodes"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-pipeline"
+category = "execution"
+purpose = "A staged fetch/decode/execute/writeback pipeline-stage model used to report realistic per-instruction cycle costs, distinct from the (non-pipelined) reference execution semantics."
+owns = "PipelineStage and the stage-advance state machine."
+public_api = ["PipelineStage", "Pipeline"]
+dependencies = ["jxcl-instructions", "jxcl-cycle-model"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-branch"
+category = "execution"
+purpose = "Branch-target address computation (relative/absolute addressing) split out of condition evaluation."
+owns = "compute_branch_target."
+public_api = ["compute_branch_target"]
+dependencies = ["jxcl-types", "jxcl-operands"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-exceptions"
+category = "execution"
+purpose = "The machine's exception model: illegal opcode, misaligned access, division by zero, and the trap-handling hook."
+owns = "The Exception enum and the trap dispatch contract."
+public_api = ["Exception", "TrapHandler"]
+dependencies = ["jxcl-types", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "error-path"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-interrupts"
+category = "execution"
+purpose = "A deterministic external-interrupt injection mechanism (priority queue + mask flag) for embedding jxcl in a simulator or RPC host."
+owns = "InterruptController: queue/mask/deliver."
+public_api = ["InterruptController"]
+dependencies = ["jxcl-flags", "jxcl-exceptions"]
+external_dependencies = []
+tests = ["unit", "determinism"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-cycle-model"
+category = "execution"
+purpose = "A per-opcode cycle-cost table and accumulator giving a deterministic total-cycle count for a run."
+owns = "CYCLE_COST_TABLE and CycleCounter."
+public_api = ["CycleCounter", "cycle_cost"]
+dependencies = ["jxcl-opcodes"]
+external_dependencies = []
+tests = ["unit", "determinism"]
+source = "new"
+status = "planned"
+
+# ================================= MEMORY (8) =================================
+
+[[crate]]
+name = "jxcl-memory"
+category = "memory"
+purpose = "Raw byte-addressable memory storage and bounds-checked byte-level access."
+owns = "The Memory struct -- the only place raw bytes are stored."
+public_api = ["Memory"]
+dependencies = ["jxcl-types", "jxcl-errors", "jxcl-endian"]
+external_dependencies = []
+tests = ["unit", "property", "boundary"]
+source = "extraction:jxcl/src/memory.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-address-space"
+category = "memory"
+purpose = "Named memory regions (code/data/stack) with permission flags layered over raw storage."
+owns = "AddressSpace and Region (base, len, permissions)."
+public_api = ["AddressSpace", "Region", "Permission"]
+dependencies = ["jxcl-memory", "jxcl-types"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-page-table"
+category = "memory"
+purpose = "A single-level virtual-to-physical page table with map/unmap/translate and page-fault on unmapped access."
+owns = "PageTable."
+public_api = ["PageTable"]
+dependencies = ["jxcl-address-space", "jxcl-exceptions"]
+external_dependencies = []
+tests = ["unit", "error-path"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-memory-map"
+category = "memory"
+purpose = "The concrete default memory layout (where code/stack/heap/MMIO live) consumed by the loader and machine setup."
+owns = "MemoryMap, the default layout constant."
+public_api = ["MemoryMap", "DEFAULT_MEMORY_MAP"]
+dependencies = ["jxcl-address-space", "jxcl-constants"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-load-store"
+category = "memory"
+purpose = "Typed, sign-extension-aware load/store helpers (u8/u16/u32/u64 and signed variants) between raw memory and the execution engine."
+owns = "load_u8/16/32/64, store_u8/16/32/64 and their signed counterparts."
+public_api = ["load_u8", "load_u16", "load_u32", "load_u64", "store_u8", "store_u16", "store_u32", "store_u64"]
+dependencies = ["jxcl-memory", "jxcl-endian", "jxcl-exceptions"]
+external_dependencies = []
+tests = ["unit", "property"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-cache-model"
+category = "memory"
+purpose = "A direct-mapped/set-associative cache simulation layered over memory, for profiling hit/miss behavior."
+owns = "CacheModel and its hit/miss accounting."
+public_api = ["CacheModel"]
+dependencies = ["jxcl-memory", "jxcl-address-space"]
+external_dependencies = []
+tests = ["unit", "determinism"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-stack"
+category = "memory"
+purpose = "Typed stack-pointer push/pop with overflow/underflow checking for call/return semantics."
+owns = "Stack::push/pop and its bounds checks."
+public_api = ["Stack"]
+dependencies = ["jxcl-load-store", "jxcl-exceptions", "jxcl-registers"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-heap"
+category = "memory"
+purpose = "A simple bump/free-list allocator operating within an address space, for programs needing dynamic memory."
+owns = "Heap::alloc/free."
+public_api = ["Heap"]
+dependencies = ["jxcl-address-space", "jxcl-load-store", "jxcl-exceptions"]
+external_dependencies = []
+tests = ["unit", "error-path"]
+source = "new"
+status = "planned"
+
+# ============================= BINARY/TOOLCHAIN (12) =============================
+
+[[crate]]
+name = "jxcl-binary"
+category = "toolchain"
+purpose = "The final linked-executable container format: header, version, code/data sections."
+owns = "The binary container's byte layout."
+public_api = ["BinaryContainer"]
+dependencies = ["jxcl-bytes", "jxcl-endian", "jxcl-errors", "jxcl-isa-versioning"]
+external_dependencies = []
+tests = ["unit", "boundary", "golden"]
+source = "extraction:jxcl/src/binary.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-object"
+category = "toolchain"
+purpose = "A relocatable object-file format (sections + symbol table + relocation table) distinct from the final linked binary container."
+owns = "ObjectFile serialization/deserialization."
+public_api = ["ObjectFile"]
+dependencies = ["jxcl-bytes", "jxcl-symbols", "jxcl-relocations", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-loader"
+category = "toolchain"
+purpose = "Loads a linked binary container into a memory image laid out per jxcl-memory-map, ready to run."
+owns = "load(BinaryContainer) -> (Memory, entry_point)."
+public_api = ["load"]
+dependencies = ["jxcl-binary", "jxcl-memory-map", "jxcl-memory", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-linker"
+category = "toolchain"
+purpose = "Resolves symbols and applies relocations across one or more object files into a single linked binary container."
+owns = "link(&[ObjectFile]) -> BinaryContainer."
+public_api = ["link"]
+dependencies = ["jxcl-object", "jxcl-symbols", "jxcl-relocations", "jxcl-binary", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "integration", "error-path"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-assembler"
+category = "toolchain"
+purpose = "The two-pass assembler: source text to an object file (plus a convenience path assembling and linking a single file straight to a binary, preserving the original single-step CLI workflow)."
+owns = "assemble(source) -> ObjectFile."
+public_api = ["assemble", "assemble_to_binary"]
+dependencies = ["jxcl-lexer", "jxcl-parser", "jxcl-object", "jxcl-symbols", "jxcl-relocations", "jxcl-encoding", "jxcl-instructions", "jxcl-linker", "jxcl-debug-info"]
+external_dependencies = []
+tests = ["unit", "integration", "golden"]
+source = "extraction:jxcl/src/assembler/mod.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-disassembler"
+category = "toolchain"
+purpose = "Disassembles a binary/object file back to readable assembly text, symbolizing addresses when debug info is present."
+owns = "disassemble(bytes) -> String."
+public_api = ["disassemble"]
+dependencies = ["jxcl-decoding", "jxcl-instructions", "jxcl-symbols", "jxcl-debug-info"]
+external_dependencies = []
+tests = ["unit", "golden"]
+source = "extraction:jxcl/src/disassembler.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-parser"
+category = "toolchain"
+purpose = "Parses a token stream into an assembly AST (instructions, labels, directives)."
+owns = "The assembly AST and its parser."
+public_api = ["parse", "AstNode"]
+dependencies = ["jxcl-lexer", "jxcl-instructions", "jxcl-operands", "jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "error-path"]
+source = "extraction:jxcl/src/assembler/parser.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-lexer"
+category = "toolchain"
+purpose = "Tokenizes assembly source text."
+owns = "The Token type and lexer."
+public_api = ["lex", "Token"]
+dependencies = ["jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "extraction:jxcl/src/assembler/lexer.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-symbols"
+category = "toolchain"
+purpose = "The symbol table type (name -> address/section) shared by the assembler, object format, linker, and disassembler."
+owns = "SymbolTable."
+public_api = ["SymbolTable", "Symbol"]
+dependencies = ["jxcl-types"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-relocations"
+category = "toolchain"
+purpose = "Relocation entry types and the patch-in-place logic that fixes up an encoded instruction once a symbol's final address is known."
+owns = "Relocation and apply_relocation."
+public_api = ["Relocation", "apply_relocation"]
+dependencies = ["jxcl-symbols", "jxcl-encoding", "jxcl-bitops"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-debug-info"
+category = "toolchain"
+purpose = "A simple address-to-source-line debug info format emitted by the assembler and consumed by the disassembler/debugger."
+owns = "LineTable."
+public_api = ["LineTable"]
+dependencies = ["jxcl-symbols", "jxcl-bytes"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-cli"
+category = "toolchain"
+purpose = "The `jxcl` command-line interface: asm/disasm/run/inspect/validate subcommands."
+owns = "The CLI argument parsing and subcommand dispatch (main.rs's logic)."
+public_api = ["main"]
+dependencies = ["jxcl-assembler", "jxcl-disassembler", "jxcl-loader", "jxcl-simulator", "jxcl-debugger", "jxcl-isa-metadata", "jxcl-instruction-validation", "jxcl-config", "jxcl-logging"]
+external_dependencies = []
+tests = ["integration"]
+source = "extraction:jxcl/src/main.rs"
+status = "planned"
+
+# ============================ DEBUG/SIMULATION (8) ============================
+
+[[crate]]
+name = "jxcl-debugger"
+category = "debug"
+purpose = "Interactive/trace-mode debugger: step, breakpoint, and inspect a running machine."
+owns = "The Debugger driver."
+public_api = ["Debugger"]
+dependencies = ["jxcl-machine", "jxcl-execution", "jxcl-trace"]
+external_dependencies = []
+tests = ["unit", "integration"]
+source = "extraction:jxcl/src/debugger.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-trace"
+category = "debug"
+purpose = "The per-step execution trace record format and its writer/reader, reused by the profiler and replay."
+owns = "TraceStep and TraceLog."
+public_api = ["TraceStep", "TraceLog"]
+dependencies = ["jxcl-machine", "jxcl-instructions"]
+external_dependencies = []
+tests = ["unit", "serialization"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-profiler"
+category = "debug"
+purpose = "Aggregates a trace, the cycle model, and the cache model into run statistics (instruction count, cycles, cache hit rate)."
+owns = "ProfileReport."
+public_api = ["ProfileReport", "profile_run"]
+dependencies = ["jxcl-trace", "jxcl-cycle-model", "jxcl-cache-model"]
+external_dependencies = []
+tests = ["unit", "determinism"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-replay"
+category = "debug"
+purpose = "Deterministically replays a recorded trace to reconstruct machine state at any step, without re-running the original inputs."
+owns = "Replay::seek_to_step."
+public_api = ["Replay"]
+dependencies = ["jxcl-trace", "jxcl-machine", "jxcl-determinism"]
+external_dependencies = []
+tests = ["unit", "determinism"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-simulator"
+category = "debug"
+purpose = "An embeddable top-level simulation API (load + run in one call) for using jxcl as a library from other Rust programs/services."
+owns = "Simulator::new/run."
+public_api = ["Simulator", "RunResult"]
+dependencies = ["jxcl-loader", "jxcl-machine", "jxcl-execution", "jxcl-memory-map"]
+external_dependencies = []
+tests = ["unit", "integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-determinism"
+category = "debug"
+purpose = "Machine state snapshot/restore and the determinism property-test harness."
+owns = "Snapshot and the Snapshot/Restore trait."
+public_api = ["Snapshot", "SnapshotRestore"]
+dependencies = ["jxcl-machine", "jxcl-memory"]
+external_dependencies = []
+tests = ["unit", "property", "determinism"]
+source = "extraction:jxcl/tests/property_tests.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-golden"
+category = "debug"
+purpose = "The golden-vector format, loader, and canonical vector files used as the ISA conformance baseline."
+owns = "GoldenVector and tests/vectors/."
+public_api = ["GoldenVector", "load_vectors", "run_vector"]
+dependencies = ["jxcl-simulator", "jxcl-assembler"]
+external_dependencies = ["serde"]
+tests = ["golden", "conformance"]
+source = "extraction:jxcl/tests/golden_vectors.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-fuzz"
+category = "debug"
+purpose = "A structured fuzz harness for the decoder (and other parser/decoder boundaries) against malformed input."
+owns = "The fuzz target(s)."
+public_api = ["fuzz_decode_target"]
+dependencies = ["jxcl-decoding", "jxcl-instructions"]
+external_dependencies = []
+tests = ["fuzz"]
+source = "extraction:jxcl/tests/fuzz_decoder.rs"
+status = "planned"
+
+# ============================== HARDWARE/RTL (8) ==============================
+# NOTE: no Verilog simulator or synthesis tool (iverilog/verilator/yosys) is
+# available in this environment (see docs/BASELINE.md). This subsystem is
+# real HDL-AST construction + text-backend codegen + a toy structural
+# synthesis pass + mechanical cross-checks against the ISA source of truth,
+# NOT functional hardware simulation. See docs/HARDWARE_LIMITATIONS.md.
+
+[[crate]]
+name = "jxcl-hardware"
+category = "hardware"
+purpose = "Top-level facade integrating the HDL AST, both text backends, and the toy synthesis pass behind one emit API."
+owns = "emit_verilog/emit_vhdl/emit_netlist entry points for the jxcl core datapath."
+public_api = ["emit_verilog", "emit_vhdl", "emit_netlist"]
+dependencies = ["jxcl-rtl", "jxcl-verilog", "jxcl-vhdl", "jxcl-netlist", "jxcl-synthesis"]
+external_dependencies = []
+tests = ["integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-rtl"
+category = "hardware"
+purpose = "The RTL description of jxcl's core datapath (opcode decoder, ALU, register file) generated as a jxcl-hdl AST directly from jxcl-opcodes/jxcl-constants/jxcl-alu -- the mechanically-verifiable software/hardware bridge required by docs/RTL_CONTRACT.md."
+owns = "build_decoder_module/build_alu_module/build_register_file_module."
+public_api = ["build_decoder_module", "build_alu_module", "build_register_file_module"]
+dependencies = ["jxcl-hdl", "jxcl-opcodes", "jxcl-constants", "jxcl-alu"]
+external_dependencies = []
+tests = ["unit", "conformance"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-verilog"
+category = "hardware"
+purpose = "Renders a jxcl-hdl AST to synthesizable Verilog-2001 text."
+owns = "The Verilog text backend."
+public_api = ["render_verilog"]
+dependencies = ["jxcl-hdl"]
+external_dependencies = []
+tests = ["unit", "golden"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-vhdl"
+category = "hardware"
+purpose = "Renders the same jxcl-hdl AST to VHDL text, proving the AST is backend-agnostic."
+owns = "The VHDL text backend."
+public_api = ["render_vhdl"]
+dependencies = ["jxcl-hdl"]
+external_dependencies = []
+tests = ["unit", "golden"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-hdl"
+category = "hardware"
+purpose = "A backend-agnostic hardware-description intermediate representation: modules, ports, signals, always-blocks, case-statements."
+owns = "The HDL AST types."
+public_api = ["Module", "Port", "Signal", "Statement"]
+dependencies = ["jxcl-types"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-netlist"
+category = "hardware"
+purpose = "A structural gate-level netlist intermediate representation (primitive gates + wires)."
+owns = "The Netlist/Gate/Wire types."
+public_api = ["Netlist", "Gate", "Wire"]
+dependencies = ["jxcl-hdl"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-synthesis"
+category = "hardware"
+purpose = "A toy (explicitly documented, non-production) structural synthesis pass lowering a subset of the HDL AST into primitive-gate netlist form."
+owns = "synthesize(Module) -> Netlist."
+public_api = ["synthesize"]
+dependencies = ["jxcl-hdl", "jxcl-netlist"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-hardware-test"
+category = "hardware"
+purpose = "Golden-file regression tests for generated Verilog/VHDL/netlist, plus the mechanical width/opcode-count cross-check against the ISA schema."
+owns = "The hardware golden files and the ISA-vs-RTL conformance check."
+public_api = ["(test-only crate)"]
+dependencies = ["jxcl-hardware", "jxcl-isa-schema"]
+external_dependencies = []
+tests = ["golden", "conformance"]
+source = "new"
+status = "planned"
+
+# =============================== CRYPTOGRAPHY (10) ===============================
+
+[[crate]]
+name = "pq-crypto"
+category = "crypto"
+purpose = "Backward-compatible facade preserving the original crate's public API over the newly split kem/kdf/aead/envelope/keyring/rotation crates."
+owns = "Nothing new -- re-exports seal/open/KeyPair/Envelope/KeyRing/KeyStatus/Error under their original paths."
+public_api = ["(re-exports of the pre-expansion public API, unchanged)"]
+dependencies = ["pq-kem", "pq-kdf", "pq-aead", "pq-envelope", "pq-keyring", "pq-rotation"]
+external_dependencies = []
+tests = ["integration"]
+source = "facade"
+status = "planned"
+
+[[crate]]
+name = "pq-keyring"
+category = "crypto"
+purpose = "The KeyRing data structure: an indexed set of key-pair entries."
+owns = "KeyRing's storage and lookup (insert/get/iterate) -- not rotation policy, see pq-rotation."
+public_api = ["KeyRing"]
+dependencies = ["pq-envelope"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:pq-crypto/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-envelope"
+category = "crypto"
+purpose = "The sealed-value wire format: key version, KEM ciphertext, nonce, AEAD ciphertext."
+owns = "Envelope and its to_bytes/from_bytes wire format -- the only place the envelope byte layout is defined."
+public_api = ["Envelope", "seal", "open"]
+dependencies = ["pq-kem", "pq-kdf", "pq-aead"]
+external_dependencies = []
+tests = ["unit", "boundary", "known-answer"]
+source = "extraction:pq-crypto/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-kem"
+category = "crypto"
+purpose = "ML-KEM-768 (NIST FIPS 203) key generation and encapsulation/decapsulation."
+owns = "KeyPair and the raw KEM step."
+public_api = ["KeyPair", "EncapsulationKey", "DecapsulationKey"]
+dependencies = []
+external_dependencies = ["ml-kem"]
+tests = ["unit", "known-answer"]
+source = "extraction:pq-crypto/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-kdf"
+category = "crypto"
+purpose = "HKDF-SHA256 expansion of a KEM shared secret into an AES-256 key, with fixed domain separation."
+owns = "derive_aes_key."
+public_api = ["derive_aes_key"]
+dependencies = []
+external_dependencies = ["hkdf", "sha2"]
+tests = ["unit", "known-answer"]
+source = "extraction:pq-crypto/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-aead"
+category = "crypto"
+purpose = "AES-256-GCM authenticated encryption/decryption of the plaintext under the derived key."
+owns = "aead_encrypt/aead_decrypt."
+public_api = ["aead_encrypt", "aead_decrypt"]
+dependencies = []
+external_dependencies = ["aes-gcm"]
+tests = ["unit", "tamper", "wrong-key"]
+source = "extraction:pq-crypto/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-rotation"
+category = "crypto"
+purpose = "Key-rotation policy: the Active/DecryptOnly/Retired lifecycle and the set_active/retire transition rules, kept separate from the KeyRing data structure itself."
+owns = "KeyStatus and the rotation state-transition rules."
+public_api = ["KeyStatus", "set_active", "retire"]
+dependencies = ["pq-keyring"]
+external_dependencies = []
+tests = ["unit", "rotation"]
+source = "extraction:pq-crypto/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-attestation"
+category = "crypto"
+purpose = "Combines sealing a value (pq-envelope) with a verifiable attestation (pq-proof-types) that it was sealed under a specific, named key version, in one call."
+owns = "seal_with_attestation / open_with_attestation."
+public_api = ["seal_with_attestation", "open_with_attestation"]
+dependencies = ["pq-envelope", "pq-proof-types"]
+external_dependencies = []
+tests = ["unit", "integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-signature"
+category = "crypto"
+purpose = "ML-DSA (NIST FIPS 204 / Dilithium) signing and verification -- a second, complementary post-quantum primitive (authenticity, alongside pq-kem's confidentiality)."
+owns = "SigningKey/VerifyingKey and sign/verify."
+public_api = ["SigningKey", "VerifyingKey", "sign", "verify"]
+dependencies = []
+external_dependencies = ["ml-dsa"]
+tests = ["unit", "known-answer", "tamper", "wrong-key"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-policy"
+category = "crypto"
+purpose = "Consolidates scattered policy decisions (TLS-required-in-production, minimum seed/key length) into one crate with a real Policy trait, replacing duplicated ad hoc checks in photo-cache-service and pq-crypto."
+owns = "The Policy trait and the concrete TlsRequiredInProduction/MinimumSeedLength policies."
+public_api = ["Policy", "TlsRequiredInProduction", "MinimumSeedLength"]
+dependencies = ["jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+# ================================ STORAGE/DATA (7) ================================
+
+[[crate]]
+name = "pq-cache"
+category = "storage"
+purpose = "A Redis-backed cache whose entries are sealed with pq-crypto before they reach Redis (existing public API preserved; now also implements pq-storage::SealedStore)."
+owns = "The Redis-specific connection/get/set_with_ttl implementation."
+public_api = ["EncryptedCache", "SealedStore for EncryptedCache"]
+dependencies = ["pq-storage", "pq-envelope", "pq-keyring"]
+external_dependencies = ["redis"]
+tests = ["unit", "integration"]
+source = "extraction:pq-cache/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-sql-vault"
+category = "storage"
+purpose = "A SQL Server-backed store for sealed values (existing public API preserved; now implements pq-storage::SealedStore and applies its schema via pq-migration)."
+owns = "The SQL Server-specific connection/get/set_with_ttl implementation and stored-procedure calls."
+public_api = ["SqlVault", "SealedStore for SqlVault"]
+dependencies = ["pq-storage", "pq-envelope", "pq-keyring", "pq-migration"]
+external_dependencies = ["tiberius"]
+tests = ["unit", "integration (ignored, no live SQL Server)"]
+source = "extraction:pq-sql-vault/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-storage"
+category = "storage"
+purpose = "The SealedStore trait both pq-cache and pq-sql-vault implement, letting callers be storage-agnostic."
+owns = "The SealedStore trait."
+public_api = ["SealedStore"]
+dependencies = ["pq-envelope"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-object-store"
+category = "storage"
+purpose = "Chunked/streamed large-blob storage built on top of any SealedStore, splitting values above a size threshold into sealed chunks with a manifest."
+owns = "put_object/get_object and the chunk-manifest format."
+public_api = ["put_object", "get_object"]
+dependencies = ["pq-storage", "pq-envelope"]
+external_dependencies = []
+tests = ["unit", "integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-journal"
+category = "storage"
+purpose = "An append-only, length-prefixed write-ahead log file format with replay, for durability."
+owns = "Journal::append/replay."
+public_api = ["Journal"]
+dependencies = ["jxcl-bytes"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-ledger"
+category = "storage"
+purpose = "A tamper-evident, hash-chained audit ledger recording proof attestations in order, built on pq-journal."
+owns = "Ledger::record/verify_chain."
+public_api = ["Ledger"]
+dependencies = ["pq-journal", "pq-proof-types"]
+external_dependencies = []
+tests = ["unit", "tamper"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-migration"
+category = "storage"
+purpose = "Applies pq-sql-vault's sql/*.sql migration files in order against a live connection and tracks which have been applied."
+owns = "run_migrations."
+public_api = ["run_migrations", "Migration"]
+dependencies = []
+external_dependencies = ["tiberius"]
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+# ============================ ZERO-KNOWLEDGE/PROOF (5) ============================
+
+[[crate]]
+name = "pq-error-proof"
+category = "proof"
+purpose = "The concrete Groth16/arkworks proof-of-commitment-opening implementation, registered into pq-proof-registry as a ProofScheme (existing public API preserved)."
+owns = "The Groth16 circuit and its Params/Attestation types."
+public_api = ["Params", "Attestation", "attest", "verify"]
+dependencies = ["pq-proof-types"]
+external_dependencies = ["ark-bls12-381", "ark-ed-on-bls12-381", "ark-groth16", "ark-r1cs-std", "ark-relations", "ark-serialize", "ark-snark", "ark-std", "sha2"]
+tests = ["unit", "tamper", "cross-setup", "serialization", "unlinkability"]
+source = "extraction:pq-error-proof/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "pq-proof-types"
+category = "proof"
+purpose = "Backend-independent proof types: the ProofScheme trait and shared Attestation/Error types, so callers never depend on a concrete proof backend directly."
+owns = "The ProofScheme trait."
+public_api = ["ProofScheme", "AttestationBytes", "ProofError"]
+dependencies = []
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-proof-verifier"
+category = "proof"
+purpose = "A verifier facade that looks up the right scheme via pq-proof-registry and verifies, so callers never touch arkworks types directly."
+owns = "verify_attestation(scheme_id, ...)."
+public_api = ["verify_attestation"]
+dependencies = ["pq-proof-types", "pq-proof-registry"]
+external_dependencies = []
+tests = ["unit", "integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-proof-registry"
+category = "proof"
+purpose = "A registry mapping scheme-id strings to boxed ProofScheme implementations, supporting future proof schemes beyond Groth16-Pedersen."
+owns = "ProofRegistry::register/get."
+public_api = ["ProofRegistry"]
+dependencies = ["pq-proof-types"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "pq-proof-bench"
+category = "proof"
+purpose = "Criterion benchmarks measuring attest()/verify() throughput for registered proof schemes."
+owns = "The benchmark harness (dev-only, not a library dependency of anything)."
+public_api = ["(bench-only crate)"]
+dependencies = ["pq-proof-registry", "pq-error-proof"]
+external_dependencies = ["criterion"]
+tests = ["benchmark"]
+source = "new"
+status = "planned"
+
+# ============================== NETWORK/SERVICE (7) ==============================
+
+[[crate]]
+name = "jxcl-network"
+category = "network"
+purpose = "Low-level network utilities: connection-string credential redaction, address/port parsing."
+owns = "redact_url_credentials and address-parsing helpers."
+public_api = ["redact_url_credentials"]
+dependencies = ["jxcl-errors"]
+external_dependencies = []
+tests = ["unit"]
+source = "extraction:photo-cache-service/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-protocol"
+category = "network"
+purpose = "A serde-serializable request/response protocol for remote jxcl-machine control: assemble, run, return trace/final state."
+owns = "the Request/Response wire types."
+public_api = ["Request", "Response"]
+dependencies = ["jxcl-simulator", "jxcl-trace"]
+external_dependencies = ["serde"]
+tests = ["unit", "serialization"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-rpc"
+category = "network"
+purpose = "A minimal RPC server/client implementing jxcl-protocol over line-delimited JSON on TCP."
+owns = "RpcServer/RpcClient."
+public_api = ["RpcServer", "RpcClient"]
+dependencies = ["jxcl-protocol", "jxcl-network"]
+external_dependencies = ["tokio"]
+tests = ["unit", "integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-http"
+category = "network"
+purpose = "Shared HTTP client/server helpers (timeout wrapper, error-to-status mapping) extracted from photo-cache-service's duplicated per-binary logic."
+owns = "with_timeout and AppError-to-http-status mapping."
+public_api = ["with_timeout", "error_to_status"]
+dependencies = ["jxcl-errors"]
+external_dependencies = ["axum", "reqwest"]
+tests = ["unit"]
+source = "extraction:photo-cache-service/src/lib.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-service"
+category = "network"
+purpose = "Generic service scaffolding (graceful shutdown, health-check endpoint pattern, startup logging) extracted from photo-cache-service's two binaries' shared boilerplate."
+owns = "serve_with_graceful_shutdown and the healthz handler pattern."
+public_api = ["serve_with_graceful_shutdown", "healthz_handler"]
+dependencies = ["jxcl-http", "jxcl-logging", "jxcl-config"]
+external_dependencies = []
+tests = ["unit", "integration"]
+source = "extraction:photo-cache-service/src/bin/*.rs"
+status = "planned"
+
+[[crate]]
+name = "jxcl-runtime"
+category = "network"
+purpose = "Tokio runtime configuration/startup helpers (worker-thread count from env, panic-hook wiring)."
+owns = "build_runtime."
+public_api = ["build_runtime"]
+dependencies = ["jxcl-config"]
+external_dependencies = ["tokio"]
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "photo-cache-service"
+category = "network"
+purpose = "The two axum binaries (server, server-cached) mirroring the original Express demo, rebuilt on jxcl-service/jxcl-http/jxcl-network/pq-storage/pq-policy (existing public behavior preserved)."
+owns = "The GET /photos and GET /healthz handlers and the two binaries."
+public_api = ["(binaries: server, server-cached)"]
+dependencies = ["jxcl-service", "jxcl-http", "jxcl-network", "pq-cache", "pq-policy", "pq-crypto"]
+external_dependencies = ["axum", "reqwest", "tokio"]
+tests = ["unit", "integration (live Redis)"]
+source = "extraction:photo-cache-service/src/*"
+status = "planned"
+
+# ===================== SECURITY/OBSERVABILITY/INTEGRATION (5) =====================
+
+[[crate]]
+name = "jxcl-security"
+category = "security"
+purpose = "Cross-cutting secret-redaction utilities, generalizing the two independent redaction implementations found in photo-cache-service (Redis URL) and pq-sql-vault (ADO connection string) into one shared, tested implementation."
+owns = "redact_secret_bearing_string and the shared redaction convention."
+public_api = ["redact_secret_bearing_string"]
+dependencies = ["jxcl-errors"]
+external_dependencies = []
+tests = ["unit", "boundary"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-audit"
+category = "security"
+purpose = "A structured audit-event schema and emission helper, distinct from jxcl-logging's generic initialization."
+owns = "AuditEvent and emit_audit_event."
+public_api = ["AuditEvent", "emit_audit_event"]
+dependencies = ["jxcl-logging"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-observability"
+category = "security"
+purpose = "Metrics/span conventions (a RequestSpan helper, standard metric names) built atop jxcl-logging, consumed by jxcl-service."
+owns = "RequestSpan and the metric-naming convention."
+public_api = ["RequestSpan"]
+dependencies = ["jxcl-logging"]
+external_dependencies = []
+tests = ["unit"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-integration"
+category = "security"
+purpose = "An integration-test-only crate exercising the full stack end-to-end: assemble, run in jxcl-simulator, seal/store in pq-cache, attest with pq-error-proof."
+owns = "The canonical whole-workspace integration tests."
+public_api = ["(test-only crate)"]
+dependencies = ["jxcl-assembler", "jxcl-simulator", "pq-cache", "pq-error-proof"]
+external_dependencies = []
+tests = ["integration"]
+source = "new"
+status = "planned"
+
+[[crate]]
+name = "jxcl-conformance"
+category = "security"
+purpose = "The mechanical spec-vs-code conformance suite: checks docs/ISA_SPEC.md and docs/RTL_CONTRACT.md's stated facts against jxcl-isa-schema and jxcl-hardware's generated RTL."
+owns = "The final mechanical verification layer tying software ISA and hardware RTL to their documentation."
+public_api = ["(test-only crate)"]
+dependencies = ["jxcl-isa-schema", "jxcl-hardware", "jxcl-golden"]
+external_dependencies = []
+tests = ["conformance"]
+source = "new"
+status = "planned"

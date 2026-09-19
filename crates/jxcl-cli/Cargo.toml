@@ -1,0 +1,17 @@
+[package]
+name = "jxcl-cli"
+version = "0.1.0"
+edition = "2021"
+description = "The `jxcl` command-line interface: asm/disasm/run/inspect/validate subcommands."
+license = "MIT"
+
+[dependencies]
+jxcl-assembler = { path = "../jxcl-assembler" }
+jxcl-disassembler = { path = "../jxcl-disassembler" }
+jxcl-loader = { path = "../jxcl-loader" }
+jxcl-simulator = { path = "../jxcl-simulator" }
+jxcl-debugger = { path = "../jxcl-debugger" }
+jxcl-isa-metadata = { path = "../jxcl-isa-metadata" }
+jxcl-instruction-validation = { path = "../jxcl-instruction-validation" }
+jxcl-config = { path = "../jxcl-config" }
+jxcl-logging = { path = "../jxcl-logging" }

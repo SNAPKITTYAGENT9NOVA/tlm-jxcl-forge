@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-cache-model"
+version = "0.1.0"
+edition = "2021"
+description = "A direct-mapped/set-associative cache simulation layered over memory, for profiling hit/miss behavior."
+license = "MIT"
+
+[dependencies]
+jxcl-memory = { path = "../jxcl-memory" }
+jxcl-address-space = { path = "../jxcl-address-space" }

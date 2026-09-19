@@ -1,0 +1,13 @@
+[package]
+name = "jxcl-encoding"
+version = "0.1.0"
+edition = "2021"
+description = "Encodes an Instruction to its binary wire format."
+license = "MIT"
+
+[dependencies]
+jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-bitops = { path = "../jxcl-bitops" }
+jxcl-endian = { path = "../jxcl-endian" }
+jxcl-bytes = { path = "../jxcl-bytes" }
+jxcl-errors = { path = "../jxcl-errors" }

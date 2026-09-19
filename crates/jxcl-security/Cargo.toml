@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-security"
+version = "0.1.0"
+edition = "2021"
+description = "Cross-cutting secret-redaction utilities, generalizing the two independent redaction implementations found in photo-cache-service (Redis URL) and pq-sql-vault (ADO connection string) into one shared, tested implementation."
+license = "MIT"
+
+[dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

@@ -1,0 +1,13 @@
+[package]
+name = "jxcl-linker"
+version = "0.1.0"
+edition = "2021"
+description = "Resolves symbols and applies relocations across one or more object files into a single linked binary container."
+license = "MIT"
+
+[dependencies]
+jxcl-object = { path = "../jxcl-object" }
+jxcl-symbols = { path = "../jxcl-symbols" }
+jxcl-relocations = { path = "../jxcl-relocations" }
+jxcl-binary = { path = "../jxcl-binary" }
+jxcl-errors = { path = "../jxcl-errors" }

@@ -1,0 +1,11 @@
+[package]
+name = "pq-proof-types"
+version = "0.1.0"
+edition = "2021"
+description = "Backend-independent proof types: the ProofScheme trait and shared Attestation/Error types, so callers never depend on a concrete proof backend directly."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

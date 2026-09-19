@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-page-table"
+version = "0.1.0"
+edition = "2021"
+description = "A single-level virtual-to-physical page table with map/unmap/translate and page-fault on unmapped access."
+license = "MIT"
+
+[dependencies]
+jxcl-address-space = { path = "../jxcl-address-space" }
+jxcl-exceptions = { path = "../jxcl-exceptions" }

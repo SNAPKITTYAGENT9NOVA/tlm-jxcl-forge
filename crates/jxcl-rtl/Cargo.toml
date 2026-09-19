@@ -1,0 +1,12 @@
+[package]
+name = "jxcl-rtl"
+version = "0.1.0"
+edition = "2021"
+description = "The RTL description of jxcl's core datapath (opcode decoder, ALU, register file) generated as a jxcl-hdl AST directly from jxcl-opcodes/jxcl-constants/jxcl-alu -- the mechanically-verifiable software/hardware bridge required by docs/RTL_CONTRACT.md."
+license = "MIT"
+
+[dependencies]
+jxcl-hdl = { path = "../jxcl-hdl" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }
+jxcl-constants = { path = "../jxcl-constants" }
+jxcl-alu = { path = "../jxcl-alu" }

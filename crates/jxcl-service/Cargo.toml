@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-service"
+version = "0.1.0"
+edition = "2021"
+description = "Generic service scaffolding (graceful shutdown, health-check endpoint pattern, startup logging) extracted from photo-cache-service's two binaries' shared boilerplate."
+license = "MIT"
+
+[dependencies]
+jxcl-http = { path = "../jxcl-http" }
+jxcl-logging = { path = "../jxcl-logging" }
+jxcl-config = { path = "../jxcl-config" }

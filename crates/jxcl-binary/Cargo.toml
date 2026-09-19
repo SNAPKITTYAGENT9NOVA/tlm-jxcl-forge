@@ -1,0 +1,12 @@
+[package]
+name = "jxcl-binary"
+version = "0.1.0"
+edition = "2021"
+description = "The final linked-executable container format: header, version, code/data sections."
+license = "MIT"
+
+[dependencies]
+jxcl-bytes = { path = "../jxcl-bytes" }
+jxcl-endian = { path = "../jxcl-endian" }
+jxcl-errors = { path = "../jxcl-errors" }
+jxcl-isa-versioning = { path = "../jxcl-isa-versioning" }

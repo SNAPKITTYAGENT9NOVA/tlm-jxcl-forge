@@ -1,0 +1,10 @@
+[package]
+name = "pq-object-store"
+version = "0.1.0"
+edition = "2021"
+description = "Chunked/streamed large-blob storage built on top of any SealedStore, splitting values above a size threshold into sealed chunks with a manifest."
+license = "MIT"
+
+[dependencies]
+pq-storage = { path = "../pq-storage" }
+pq-envelope = { path = "../pq-envelope" }

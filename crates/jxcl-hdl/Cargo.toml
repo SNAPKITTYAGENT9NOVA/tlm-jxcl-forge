@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-hdl"
+version = "0.1.0"
+edition = "2021"
+description = "A backend-agnostic hardware-description intermediate representation: modules, ports, signals, always-blocks, case-statements."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }

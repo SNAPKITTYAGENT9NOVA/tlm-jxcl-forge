@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-http"
+version = "0.1.0"
+edition = "2021"
+description = "Shared HTTP client/server helpers (timeout wrapper, error-to-status mapping) extracted from photo-cache-service's duplicated per-binary logic."
+license = "MIT"
+
+[dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

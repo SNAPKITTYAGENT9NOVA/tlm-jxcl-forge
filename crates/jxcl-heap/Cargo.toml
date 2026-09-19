@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-heap"
+version = "0.1.0"
+edition = "2021"
+description = "A simple bump/free-list allocator operating within an address space, for programs needing dynamic memory."
+license = "MIT"
+
+[dependencies]
+jxcl-address-space = { path = "../jxcl-address-space" }
+jxcl-load-store = { path = "../jxcl-load-store" }
+jxcl-exceptions = { path = "../jxcl-exceptions" }

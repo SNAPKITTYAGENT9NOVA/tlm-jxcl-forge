@@ -1,0 +1,9 @@
+[package]
+name = "pq-rotation"
+version = "0.1.0"
+edition = "2021"
+description = "Key-rotation policy: the Active/DecryptOnly/Retired lifecycle and the set_active/retire transition rules, kept separate from the KeyRing data structure itself."
+license = "MIT"
+
+[dependencies]
+pq-keyring = { path = "../pq-keyring" }

@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-isa-metadata"
+version = "0.1.0"
+edition = "2021"
+description = "Queryable descriptive metadata about the running ISA build (opcode count, register count, build flags) used by `jxcl inspect` and the debugger."
+license = "MIT"
+
+[dependencies]
+jxcl-constants = { path = "../jxcl-constants" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }

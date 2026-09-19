@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-logging"
+version = "0.1.0"
+edition = "2021"
+description = "Shared tracing/logging initialization used by the CLI and the network services."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

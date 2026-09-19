@@ -1,0 +1,9 @@
+[package]
+name = "jxcl-netlist"
+version = "0.1.0"
+edition = "2021"
+description = "A structural gate-level netlist intermediate representation (primitive gates + wires)."
+license = "MIT"
+
+[dependencies]
+jxcl-hdl = { path = "../jxcl-hdl" }

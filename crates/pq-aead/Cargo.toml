@@ -1,0 +1,11 @@
+[package]
+name = "pq-aead"
+version = "0.1.0"
+edition = "2021"
+description = "AES-256-GCM authenticated encryption/decryption of the plaintext under the derived key."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

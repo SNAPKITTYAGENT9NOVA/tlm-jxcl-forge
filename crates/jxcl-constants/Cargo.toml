@@ -1,0 +1,11 @@
+[package]
+name = "jxcl-constants"
+version = "0.1.0"
+edition = "2021"
+description = "Architecture-wide constants: word width, register count, memory size, opcode width."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

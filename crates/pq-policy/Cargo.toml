@@ -1,0 +1,9 @@
+[package]
+name = "pq-policy"
+version = "0.1.0"
+edition = "2021"
+description = "Consolidates scattered policy decisions (TLS-required-in-production, minimum seed/key length) into one crate with a real Policy trait, replacing duplicated ad hoc checks in photo-cache-service and pq-crypto."
+license = "MIT"
+
+[dependencies]
+jxcl-errors = { path = "../jxcl-errors" }

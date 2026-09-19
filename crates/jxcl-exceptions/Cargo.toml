@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-exceptions"
+version = "0.1.0"
+edition = "2021"
+description = "The machine's exception model: illegal opcode, misaligned access, division by zero, and the trap-handling hook."
+license = "MIT"
+
+[dependencies]
+jxcl-types = { path = "../jxcl-types" }
+jxcl-errors = { path = "../jxcl-errors" }

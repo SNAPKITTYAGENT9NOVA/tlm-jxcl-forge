@@ -1,0 +1,10 @@
+[package]
+name = "pq-ledger"
+version = "0.1.0"
+edition = "2021"
+description = "A tamper-evident, hash-chained audit ledger recording proof attestations in order, built on pq-journal."
+license = "MIT"
+
+[dependencies]
+pq-journal = { path = "../pq-journal" }
+pq-proof-types = { path = "../pq-proof-types" }

@@ -1,0 +1,12 @@
+[package]
+name = "jxcl-parser"
+version = "0.1.0"
+edition = "2021"
+description = "Parses a token stream into an assembly AST (instructions, labels, directives)."
+license = "MIT"
+
+[dependencies]
+jxcl-lexer = { path = "../jxcl-lexer" }
+jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-operands = { path = "../jxcl-operands" }
+jxcl-errors = { path = "../jxcl-errors" }

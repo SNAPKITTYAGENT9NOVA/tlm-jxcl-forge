@@ -1,0 +1,10 @@
+[package]
+name = "jxcl-bytes"
+version = "0.1.0"
+edition = "2021"
+description = "A bounds-checked byte-buffer cursor used by the encoder, decoder, binary container, and object format."
+license = "MIT"
+
+[dependencies]
+jxcl-errors = { path = "../jxcl-errors" }
+jxcl-endian = { path = "../jxcl-endian" }

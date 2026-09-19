@@ -1,0 +1,11 @@
+[package]
+name = "pq-kem"
+version = "0.1.0"
+edition = "2021"
+description = "ML-KEM-768 (NIST FIPS 203) key generation and encapsulation/decapsulation."
+license = "MIT"
+
+[dependencies]
+# (none yet -- external dependencies for this crate's
+# real implementation are added when that batch lands,
+# per docs/crates.toml's external_dependencies field)

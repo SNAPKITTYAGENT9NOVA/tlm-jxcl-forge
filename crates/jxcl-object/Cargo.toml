@@ -1,0 +1,12 @@
+[package]
+name = "jxcl-object"
+version = "0.1.0"
+edition = "2021"
+description = "A relocatable object-file format (sections + symbol table + relocation table) distinct from the final linked binary container."
+license = "MIT"
+
+[dependencies]
+jxcl-bytes = { path = "../jxcl-bytes" }
+jxcl-symbols = { path = "../jxcl-symbols" }
+jxcl-relocations = { path = "../jxcl-relocations" }
+jxcl-errors = { path = "../jxcl-errors" }

@@ -1,0 +1,10 @@
+[package]
+name = "pq-proof-bench"
+version = "0.1.0"
+edition = "2021"
+description = "Criterion benchmarks measuring attest()/verify() throughput for registered proof schemes."
+license = "MIT"
+
+[dependencies]
+pq-proof-registry = { path = "../pq-proof-registry" }
+pq-error-proof = { path = "../pq-error-proof" }

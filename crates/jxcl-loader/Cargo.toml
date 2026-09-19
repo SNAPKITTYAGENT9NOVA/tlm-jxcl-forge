@@ -1,0 +1,12 @@
+[package]
+name = "jxcl-loader"
+version = "0.1.0"
+edition = "2021"
+description = "Loads a linked binary container into a memory image laid out per jxcl-memory-map, ready to run."
+license = "MIT"
+
+[dependencies]
+jxcl-binary = { path = "../jxcl-binary" }
+jxcl-memory-map = { path = "../jxcl-memory-map" }
+jxcl-memory = { path = "../jxcl-memory" }
+jxcl-errors = { path = "../jxcl-errors" }
