@@ -83,8 +83,25 @@ pub struct TermId(u32);
 /// bearing on term equality, substitution, or type-checking (which is
 /// exactly the point of the locally-nameless/de-Bruijn representation:
 /// `fn(x) x` and `fn(y) y` are one term, not two).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+///
+/// `PartialEq`/`Eq`/`Hash` are implemented by hand (rather than
+/// derived) specifically so they *ignore* the carried [`Symbol`]:
+/// deriving them would make `Term::Lam`/`Term::Pi`/`Term::Let` values
+/// that differ only in a binder's name hint compare unequal and hash
+/// differently, defeating hash-consing for exactly the case (alpha
+/// variants) it exists to collapse.
+#[derive(Debug, Clone, Copy)]
 pub struct Binder(pub Symbol);
+
+impl PartialEq for Binder {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+impl Eq for Binder {}
+impl std::hash::Hash for Binder {
+    fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {}
+}
 
 /// The term language. See this module's doc comment for the
 /// representation choices.
@@ -550,5 +567,25 @@ mod tests {
         let app1 = arena.app(f, arg);
         let app2 = arena.app(f, arg);
         assert_eq!(app1, app2);
+    }
+
+    #[test]
+    fn alpha_variants_that_differ_only_in_binder_name_hash_cons_together() {
+        // fn(x) => x and fn(y) => y must be ONE interned term, not two:
+        // the binder's Symbol is a pretty-printing hint only (see
+        // Binder's doc comment) and must not affect Term equality/hash.
+        let (mut arena, mut interner) = setup();
+        let ty0 = arena.sort(Sort::Type(0));
+        let body = arena.bound_var(0);
+        let x = Binder(interner.intern("x"));
+        let y = Binder(interner.intern("y"));
+        let lam_x = arena.lam(x, ty0, body);
+        let lam_y = arena.lam(y, ty0, body);
+        assert_eq!(lam_x, lam_y);
+        assert_eq!(
+            arena.len(),
+            3,
+            "Sort(Type 0), BoundVar(0), and ONE Lam entry -- not two separate Lam entries"
+        );
     }
 }

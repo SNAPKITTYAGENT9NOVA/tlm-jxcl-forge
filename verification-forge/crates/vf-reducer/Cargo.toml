@@ -6,3 +6,4 @@ description = "Beta/zeta/delta/iota reduction and definitional equality, with fu
 license = "MIT"
 
 [dependencies]
+vf-core = { path = "../vf-core" }

@@ -54,6 +54,18 @@ impl Interner {
     pub fn is_empty(&self) -> bool {
         self.strings.is_empty()
     }
+
+    /// Intern a symbol guaranteed to be distinct from every symbol
+    /// interned so far *and* from anything `vf-lexer` can ever produce
+    /// from source text (a lexed identifier never starts with `$`,
+    /// since the lexer only starts one on an ASCII letter or `_`).
+    /// `vf-typecheck`/`vf-kernel` use this to open a binder's body
+    /// under a genuinely fresh local variable without risking capture
+    /// of a user-written name.
+    pub fn fresh(&mut self) -> Symbol {
+        let candidate = format!("$fresh{}", self.strings.len());
+        self.intern(&candidate)
+    }
 }
 
 #[cfg(test)]
@@ -97,5 +109,26 @@ mod tests {
             interner.intern(&format!("sym_{i}"));
         }
         assert_eq!(interner.len(), 100);
+    }
+
+    #[test]
+    fn fresh_symbols_are_pairwise_distinct() {
+        let mut interner = Interner::new();
+        let a = interner.fresh();
+        let b = interner.fresh();
+        let c = interner.fresh();
+        assert_ne!(a, b);
+        assert_ne!(b, c);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn fresh_symbol_cannot_collide_with_a_lexed_identifier() {
+        // No token the lexer produces from source text starts with `$`,
+        // so a fresh symbol's name (which always does) can never alias
+        // a user-written identifier interned separately.
+        let mut interner = Interner::new();
+        let fresh = interner.fresh();
+        assert!(interner.resolve(fresh).starts_with('$'));
     }
 }
