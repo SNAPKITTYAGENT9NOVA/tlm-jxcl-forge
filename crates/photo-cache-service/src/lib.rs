@@ -86,17 +86,21 @@ impl std::error::Error for AppError {}
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        // The detailed error (which for `Cache`/`Upstream` can include
+        // internal details like hostnames from a `redis`/`reqwest` error)
+        // goes to the server's own logs only. Callers get a fixed,
+        // generic message per status code -- mirroring `healthz`'s
+        // "redis unavailable" pattern -- so an unauthenticated caller
+        // can't use transient infra failures for reconnaissance.
         tracing::error!(error = %self, "request failed");
-        let status = match &self {
-            AppError::Upstream(_) | AppError::UpstreamStatus(_) => StatusCode::BAD_GATEWAY,
-            AppError::Cache(_) => StatusCode::SERVICE_UNAVAILABLE,
-            AppError::Serialization(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        let (status, message) = match &self {
+            AppError::Upstream(_) | AppError::UpstreamStatus(_) => {
+                (StatusCode::BAD_GATEWAY, "upstream request failed")
+            }
+            AppError::Cache(_) => (StatusCode::SERVICE_UNAVAILABLE, "cache unavailable"),
+            AppError::Serialization(_) => (StatusCode::INTERNAL_SERVER_ERROR, "internal error"),
         };
-        (
-            status,
-            Json(serde_json::json!({ "error": self.to_string() })),
-        )
-            .into_response()
+        (status, Json(serde_json::json!({ "error": message }))).into_response()
     }
 }
 

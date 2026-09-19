@@ -114,6 +114,34 @@ the reproduction command.
   `redis` crate supports it, this repo just doesn't assume a specific
   deployment's TLS setup.
 
+## Security review
+
+A security-focused review pass (input validation, crypto/secrets
+management, injection, data exposure) was run against the `pq-crypto`,
+`pq-cache`, and `photo-cache-service` diff. Findings and how they were
+handled:
+
+- Confirmed no static nonce/key reuse in the AES-GCM envelope (every
+  `seal()` does a fresh KEM encapsulation, so the derived AES key is
+  different every time even before the random nonce is considered).
+- Confirmed `Envelope::from_bytes` bounds-checks every length prefix
+  against the actual buffer before allocating or slicing, so
+  attacker-controlled bytes read back from Redis can't cause an
+  out-of-bounds panic or an oversized allocation.
+- Confirmed no secret (the `PQ_KEM_SEED` value, the Redis password) is
+  ever logged, including on error paths.
+- **Fixed**: `AppError`'s HTTP response bodies were forwarding the raw
+  `Display` of internal errors (e.g. a `redis` crate connection error,
+  potentially naming internal hosts) straight to an unauthenticated
+  caller of `/photos` during a transient Redis/upstream outage. Now
+  returns a fixed, generic message per status code (mirroring the
+  `healthz` endpoint's existing "redis unavailable" pattern); the
+  detailed error still goes to the server's own `tracing::error!` log.
+
+`cargo audit` (RustSec advisory database, 1251 advisories) was run
+against the full workspace lockfile (230 dependencies): no known
+vulnerabilities found.
+
 ## CI
 
 `.github/workflows/ci.yml` runs, on every push and pull request, across
