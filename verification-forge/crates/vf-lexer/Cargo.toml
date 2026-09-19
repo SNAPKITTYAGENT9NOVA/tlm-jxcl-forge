@@ -1,0 +1,8 @@
+[package]
+name = "vf-lexer"
+version = "0.1.0"
+edition = "2021"
+description = "Tokenizer for the .vf theorem language surface syntax."
+license = "MIT"
+
+[dependencies]

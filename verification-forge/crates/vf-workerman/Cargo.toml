@@ -1,0 +1,15 @@
+[package]
+name = "vf-workerman"
+version = "0.1.0"
+edition = "2021"
+description = "Workerman's Calculus: a user-defined formal calculus (not an established discipline) built on vf-calculus."
+license = "MIT"
+
+[dependencies]
+vf-core = { path = "../vf-core" }
+vf-axioms = { path = "../vf-axioms" }
+vf-calculus = { path = "../vf-calculus" }
+vf-reducer = { path = "../vf-reducer" }
+
+[dev-dependencies]
+vf-kernel = { path = "../vf-kernel" }

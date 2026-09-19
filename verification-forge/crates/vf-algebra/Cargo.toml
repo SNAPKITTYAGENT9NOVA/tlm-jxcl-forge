@@ -1,0 +1,9 @@
+[package]
+name = "vf-algebra"
+version = "0.1.0"
+edition = "2021"
+description = "Generic algebraic-structure/law framework (structures, operations, declarable laws as kernel-checked propositions)."
+license = "MIT"
+
+[dependencies]
+vf-core = { path = "../vf-core" }

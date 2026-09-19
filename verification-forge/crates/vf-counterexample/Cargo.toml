@@ -1,0 +1,8 @@
+[package]
+name = "vf-counterexample"
+version = "0.1.0"
+edition = "2021"
+description = "Counterexample representation and formatting for failed verification."
+license = "MIT"
+
+[dependencies]

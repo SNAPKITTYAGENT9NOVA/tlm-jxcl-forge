@@ -1,0 +1,11 @@
+[package]
+name = "vf-axioms"
+version = "0.1.0"
+edition = "2021"
+description = "The explicit axiom registry and axiom policies (NO_AXIOMS / EXPLICIT_AXIOMS_ONLY / etc)."
+license = "MIT"
+
+[dependencies]
+vf-core = { path = "../vf-core" }
+vf-kernel = { path = "../vf-kernel" }
+vf-reducer = { path = "../vf-reducer" }

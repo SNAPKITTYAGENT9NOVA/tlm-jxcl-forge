@@ -1,0 +1,8 @@
+[package]
+name = "vf-kani"
+version = "0.1.0"
+edition = "2021"
+description = "Kani backend: shells out to real cargo-kani as an untrusted oracle, never claims KERNEL_VERIFIED from a bounded result."
+license = "MIT"
+
+[dependencies]

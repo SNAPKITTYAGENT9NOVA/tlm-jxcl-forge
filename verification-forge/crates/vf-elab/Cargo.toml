@@ -1,0 +1,8 @@
+[package]
+name = "vf-elab"
+version = "0.1.0"
+edition = "2021"
+description = "Elaborates vf-ast into vf-core terms. Untrusted: vf-kernel independently re-checks its output."
+license = "MIT"
+
+[dependencies]

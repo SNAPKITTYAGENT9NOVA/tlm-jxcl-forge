@@ -1,0 +1,13 @@
+[package]
+name = "vf-proof"
+version = "0.1.0"
+edition = "2021"
+description = "Proof-term and theorem representation with explicit axiom/definition dependency closures."
+license = "MIT"
+
+[dependencies]
+vf-core = { path = "../vf-core" }
+vf-axioms = { path = "../vf-axioms" }
+
+[dev-dependencies]
+vf-reducer = { path = "../vf-reducer" }

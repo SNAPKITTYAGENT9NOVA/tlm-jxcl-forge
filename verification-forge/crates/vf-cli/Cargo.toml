@@ -1,0 +1,8 @@
+[package]
+name = "vf-cli"
+version = "0.1.0"
+edition = "2021"
+description = "The `vf` command-line tool tying every subcommand together."
+license = "MIT"
+
+[dependencies]

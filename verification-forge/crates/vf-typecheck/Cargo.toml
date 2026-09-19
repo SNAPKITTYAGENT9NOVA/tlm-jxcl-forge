@@ -1,0 +1,10 @@
+[package]
+name = "vf-typecheck"
+version = "0.1.0"
+edition = "2021"
+description = "Bidirectional type-checking used during elaboration (untrusted -- see vf-kernel for the trusted checker)."
+license = "MIT"
+
+[dependencies]
+vf-core = { path = "../vf-core" }
+vf-reducer = { path = "../vf-reducer" }

@@ -1,0 +1,9 @@
+[package]
+name = "vf-ast"
+version = "0.1.0"
+edition = "2021"
+description = "Surface-syntax AST for the .vf theorem language (named binders; distinct from vf-core's locally-nameless internal Term representation)."
+license = "MIT"
+
+[dependencies]
+vf-lexer = { path = "../vf-lexer" }
