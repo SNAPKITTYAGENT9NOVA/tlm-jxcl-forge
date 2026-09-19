@@ -6,6 +6,7 @@ description = "Top-level facade integrating the HDL AST, both text backends, and
 license = "MIT"
 
 [dependencies]
+jxcl-hdl = { path = "../jxcl-hdl" }
 jxcl-rtl = { path = "../jxcl-rtl" }
 jxcl-verilog = { path = "../jxcl-verilog" }
 jxcl-vhdl = { path = "../jxcl-vhdl" }
