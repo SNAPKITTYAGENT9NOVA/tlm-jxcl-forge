@@ -25,6 +25,21 @@ pub trait KernelEnv {
     /// declaration). Distinct from [`KernelEnv::type_of_const`]
     /// returning `None`: a name can have a type but no definition.
     fn unfold(&self, name: Symbol) -> Option<TermId>;
+
+    /// If `name` is a registered recursor, its reduction shape (see
+    /// `vf_reducer::RecursorSpec`). Defaulted to `None` so an
+    /// environment with no inductive types (like [`EmptyEnv`]) needs
+    /// no changes; `vf-axioms`'s registry is the real override.
+    fn recursor(&self, _name: Symbol) -> Option<&vf_reducer::RecursorSpec> {
+        None
+    }
+
+    /// If `name` is a registered constructor, which recursor it
+    /// belongs to and its 0-based index among that recursor's
+    /// constructors. Also defaulted to `None`.
+    fn constructor_index(&self, _name: Symbol) -> Option<(Symbol, usize)> {
+        None
+    }
 }
 
 /// A [`KernelEnv`] with no declared constants. Useful for checking
@@ -49,5 +64,11 @@ pub(crate) struct AsDeltaContext<'a, E: KernelEnv>(pub &'a E);
 impl<E: KernelEnv> vf_reducer::DeltaContext for AsDeltaContext<'_, E> {
     fn unfold(&self, name: Symbol) -> Option<TermId> {
         self.0.unfold(name)
+    }
+    fn recursor(&self, name: Symbol) -> Option<&vf_reducer::RecursorSpec> {
+        self.0.recursor(name)
+    }
+    fn constructor_index(&self, name: Symbol) -> Option<(Symbol, usize)> {
+        self.0.constructor_index(name)
     }
 }

@@ -6,11 +6,34 @@ use crate::policy::AxiomPolicy;
 use std::collections::HashMap;
 use vf_core::{Interner, Symbol, TermArena, TermId};
 use vf_kernel::{Context, KernelEnv};
+use vf_reducer::RecursorSpec;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Entry {
-    Axiom { ty: TermId, justification: String },
-    Definition { ty: TermId, value: TermId },
+    Axiom {
+        ty: TermId,
+        justification: String,
+    },
+    Definition {
+        ty: TermId,
+        value: TermId,
+    },
+    /// A type former or constructor of a built-in inductive type
+    /// (`Nat`, `zero`, `succ`, ...): opaque and irreducible like an
+    /// axiom, but never counted as one -- it asserts nothing that
+    /// could be false, so it must never appear in
+    /// `vf-proof::dependency_closure`'s `axioms` set the way a real
+    /// (user-asserted) axiom does.
+    Builtin {
+        ty: TermId,
+    },
+    /// A recursor of a built-in inductive type (`Nat_rec`, ...): like
+    /// [`Entry::Builtin`], but also carries the reduction shape
+    /// `vf-reducer`'s iota reduction needs.
+    Recursor {
+        ty: TermId,
+        spec: RecursorSpec,
+    },
 }
 
 /// A registry of declarations, checked against a chosen
@@ -27,6 +50,11 @@ pub struct Registry {
     policy: AxiomPolicy,
     order: Vec<Symbol>,
     entries: HashMap<Symbol, Entry>,
+    /// Populated by `declare_recursor`: maps a constructor's symbol to
+    /// `(owning recursor, 0-based index among that recursor's
+    /// constructors)`, exactly what `KernelEnv::constructor_index`
+    /// (and, through it, `vf-reducer`'s iota reduction) needs.
+    constructor_lookup: HashMap<Symbol, (Symbol, usize)>,
 }
 
 impl Registry {
@@ -35,6 +63,7 @@ impl Registry {
             policy,
             order: Vec::new(),
             entries: HashMap::new(),
+            constructor_lookup: HashMap::new(),
         }
     }
 
@@ -135,20 +164,94 @@ impl Registry {
     ) -> Result<(), RegistryError> {
         self.declare_definition(arena, interner, name, statement, proof, fuel)
     }
+
+    /// Declare `name : ty` as a built-in type former or constructor
+    /// (e.g. `Nat`, `zero`, `succ`) -- kernel-trusted vocabulary, not a
+    /// user axiom. Opaque and irreducible like an axiom, but
+    /// [`Registry::is_axiom`] returns `false` for it and it never
+    /// appears in a `vf-proof` dependency closure's axiom set: it
+    /// asserts nothing that could be false, so calling it an
+    /// "assumption" would be as misleading as calling `Pi`-formation
+    /// one. `vf-axioms` itself never calls this for anything other
+    /// than the fixed prelude in [`crate::prelude`]; it is not a
+    /// general-purpose "trust me" escape hatch.
+    pub fn declare_builtin(
+        &mut self,
+        arena: &mut TermArena,
+        interner: &mut Interner,
+        name: Symbol,
+        ty: TermId,
+        fuel: &mut u64,
+    ) -> Result<(), RegistryError> {
+        if self.is_declared(name) {
+            return Err(RegistryError::DuplicateName(name));
+        }
+        vf_kernel::sort_of(arena, interner, self, &Context::new(), ty, fuel)?;
+        self.entries.insert(name, Entry::Builtin { ty });
+        self.order.push(name);
+        Ok(())
+    }
+
+    /// Declare `name : ty` as a built-in recursor (e.g. `Nat_rec`),
+    /// with `spec` describing its reduction shape to `vf-reducer`'s
+    /// iota reduction. Every constructor named in
+    /// `spec.constructor_names` must already be a declared
+    /// [`Entry::Builtin`] -- registering a recursor over
+    /// not-yet-declared or non-constructor names is rejected outright,
+    /// never silently accepted with a dangling reference.
+    pub fn declare_recursor(
+        &mut self,
+        arena: &mut TermArena,
+        interner: &mut Interner,
+        name: Symbol,
+        ty: TermId,
+        spec: RecursorSpec,
+        fuel: &mut u64,
+    ) -> Result<(), RegistryError> {
+        if self.is_declared(name) {
+            return Err(RegistryError::DuplicateName(name));
+        }
+        for &ctor in &spec.constructor_names {
+            if !matches!(self.entries.get(&ctor), Some(Entry::Builtin { .. })) {
+                return Err(RegistryError::UnknownConstructor(ctor));
+            }
+        }
+        vf_kernel::sort_of(arena, interner, self, &Context::new(), ty, fuel)?;
+        for (index, &ctor) in spec.constructor_names.iter().enumerate() {
+            self.constructor_lookup.insert(ctor, (name, index));
+        }
+        self.entries.insert(name, Entry::Recursor { ty, spec });
+        self.order.push(name);
+        Ok(())
+    }
 }
 
 impl KernelEnv for Registry {
     fn type_of_const(&self, name: Symbol) -> Option<TermId> {
         match self.entries.get(&name)? {
-            Entry::Axiom { ty, .. } | Entry::Definition { ty, .. } => Some(*ty),
+            Entry::Axiom { ty, .. }
+            | Entry::Definition { ty, .. }
+            | Entry::Builtin { ty }
+            | Entry::Recursor { ty, .. } => Some(*ty),
         }
     }
 
     fn unfold(&self, name: Symbol) -> Option<TermId> {
         match self.entries.get(&name)? {
             Entry::Definition { value, .. } => Some(*value),
-            Entry::Axiom { .. } => None,
+            Entry::Axiom { .. } | Entry::Builtin { .. } | Entry::Recursor { .. } => None,
         }
+    }
+
+    fn recursor(&self, name: Symbol) -> Option<&RecursorSpec> {
+        match self.entries.get(&name)? {
+            Entry::Recursor { spec, .. } => Some(spec),
+            _ => None,
+        }
+    }
+
+    fn constructor_index(&self, name: Symbol) -> Option<(Symbol, usize)> {
+        self.constructor_lookup.get(&name).copied()
     }
 }
 

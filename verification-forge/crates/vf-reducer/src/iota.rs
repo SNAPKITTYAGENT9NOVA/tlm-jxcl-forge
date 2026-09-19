@@ -20,15 +20,27 @@ use crate::{consume, whnf, DeltaContext, ReduceError};
 use vf_core::{Symbol, Term, TermArena, TermId};
 
 /// One constructor of a registered inductive type, as far as iota
-/// reduction needs to know: for each of the constructor's own
-/// explicit arguments (in order), whether that argument is itself a
-/// recursive occurrence of the inductive type being defined (e.g.
-/// `succ`'s `Nat` argument, `cons`'s `List A` tail) -- a recursive
-/// argument gets passed to the case function *and* has the recursor
-/// re-applied to it, a non-recursive one (e.g. `cons`'s head element)
-/// is passed through as-is.
+/// reduction needs to know.
+///
+/// A constructor's own application (as it actually appears in a
+/// term, e.g. `cons A x xs`) may lead with *uniform parameters*
+/// shared across the whole inductive family (`A`, fixed once at the
+/// top of the recursor's own signature and never re-abstracted over
+/// by an individual case function) before its real, per-case data
+/// arguments. `skip` is how many of those leading arguments to drop;
+/// `recursive_args` then describes only the remaining ones, in order,
+/// each saying whether that argument is itself a recursive occurrence
+/// of the inductive type being defined (e.g. `succ`'s `Nat` argument,
+/// `cons`'s `List A` tail) -- a recursive argument gets passed to the
+/// case function *and* has the recursor re-applied to it, a
+/// non-recursive one (e.g. `cons`'s head element) is passed through
+/// as-is. An *index* (e.g. `Vector`'s length, `Fin`'s bound), unlike a
+/// uniform parameter, is NOT skipped: it varies per case and the case
+/// function is typed to receive it individually, so it belongs in
+/// `recursive_args` (as a non-recursive entry) like any other datum.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConstructorSpec {
+    pub skip: u32,
     pub recursive_args: Vec<bool>,
 }
 
@@ -114,13 +126,14 @@ pub(crate) fn try_iota_reduce<C: DeltaContext>(
         return Ok(None);
     }
     let ctor_spec = &spec.constructors[ctor_index];
-    if ctor_args.len() != ctor_spec.recursive_args.len() {
+    let skip = ctor_spec.skip as usize;
+    if ctor_args.len() != skip + ctor_spec.recursive_args.len() {
         return Ok(None); // malformed constructor application; decline, don't guess
     }
 
     let mut result = call_args[spec.case_positions[ctor_index] as usize];
     for (i, &is_recursive) in ctor_spec.recursive_args.iter().enumerate() {
-        let arg = ctor_args[i];
+        let arg = ctor_args[skip + i];
         result = arena.app(result, arg);
         if is_recursive {
             let mut sub_call = head;
@@ -193,9 +206,11 @@ mod tests {
             constructor_names: vec![zero, succ],
             constructors: vec![
                 ConstructorSpec {
+                    skip: 0,
                     recursive_args: vec![],
                 }, // zero: no args
                 ConstructorSpec {
+                    skip: 0,
                     recursive_args: vec![true],
                 }, // succ: one recursive Nat arg
             ],
@@ -365,9 +380,11 @@ mod tests {
             constructor_names: vec![true_, false_],
             constructors: vec![
                 ConstructorSpec {
+                    skip: 0,
                     recursive_args: vec![],
                 },
                 ConstructorSpec {
+                    skip: 0,
                     recursive_args: vec![],
                 },
             ],

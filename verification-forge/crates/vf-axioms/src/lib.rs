@@ -18,8 +18,10 @@
 
 mod error;
 mod policy;
+mod prelude;
 mod registry;
 
 pub use error::RegistryError;
 pub use policy::AxiomPolicy;
+pub use prelude::{register_prelude, Prelude};
 pub use registry::Registry;
