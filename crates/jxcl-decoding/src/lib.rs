@@ -25,7 +25,9 @@
 
 use jxcl_bytes::ByteCursor;
 use jxcl_errors::{DecodeError, DecodeErrorKind};
-use jxcl_instructions::{instruction_shape_for_opcode, DecodedInstruction, Format, Operands, Register};
+use jxcl_instructions::{
+    instruction_shape_for_opcode, DecodedInstruction, Format, Operands, Register,
+};
 
 fn truncated(offset: u64, needed: usize, have: usize) -> DecodeError {
     DecodeError {
@@ -255,7 +257,10 @@ mod tests {
         ];
         let instrs = decode_all(&bytes).unwrap();
         assert_eq!(instrs.len(), 3);
-        assert_eq!(instrs[0], (0, Instruction::new(Mnemonic::Nop, Operands::None)));
+        assert_eq!(
+            instrs[0],
+            (0, Instruction::new(Mnemonic::Nop, Operands::None))
+        );
         assert_eq!(
             instrs[1],
             (
@@ -269,7 +274,10 @@ mod tests {
                 )
             )
         );
-        assert_eq!(instrs[2], (4, Instruction::new(Mnemonic::Halt, Operands::None)));
+        assert_eq!(
+            instrs[2],
+            (4, Instruction::new(Mnemonic::Halt, Operands::None))
+        );
     }
 
     #[test]
@@ -287,7 +295,13 @@ mod tests {
                     rs2: rd,
                 },
             ),
-            Instruction::new(Mnemonic::Movi, Operands::RImm64 { rd, imm: 0xDEAD_BEEF }),
+            Instruction::new(
+                Mnemonic::Movi,
+                Operands::RImm64 {
+                    rd,
+                    imm: 0xDEAD_BEEF,
+                },
+            ),
             Instruction::new(
                 Mnemonic::Load,
                 Operands::RMem {

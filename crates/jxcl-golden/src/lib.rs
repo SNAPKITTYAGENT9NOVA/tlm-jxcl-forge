@@ -213,9 +213,12 @@ pub fn parse_vector(text: &str) -> Result<GoldenVector, String> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        let (key, value) = line
-            .split_once(':')
-            .ok_or_else(|| format!("line {}: expected `key: value`, got {raw_line:?}", lineno + 1))?;
+        let (key, value) = line.split_once(':').ok_or_else(|| {
+            format!(
+                "line {}: expected `key: value`, got {raw_line:?}",
+                lineno + 1
+            )
+        })?;
         let value = value.trim();
         match key.trim() {
             "name" => name = Some(value.to_string()),
@@ -340,7 +343,10 @@ mod tests {
         let names: Vec<_> = vectors.iter().map(|v| v.name.as_str()).collect();
         let mut sorted = names.clone();
         sorted.sort();
-        assert_eq!(names, sorted, "load_vectors must return a deterministic order");
+        assert_eq!(
+            names, sorted,
+            "load_vectors must return a deterministic order"
+        );
     }
 
     #[test]

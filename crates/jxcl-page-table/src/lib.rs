@@ -76,8 +76,13 @@ impl PageTable {
     /// Both must be page-aligned. Overwrites any existing mapping for
     /// that virtual page, returning the previous physical page's base
     /// address (if any).
-    pub fn map(&mut self, vaddr: Address, paddr: Address) -> Result<Option<Address>, PageTableError> {
-        if !vaddr.get().is_multiple_of(self.page_size) || !paddr.get().is_multiple_of(self.page_size)
+    pub fn map(
+        &mut self,
+        vaddr: Address,
+        paddr: Address,
+    ) -> Result<Option<Address>, PageTableError> {
+        if !vaddr.get().is_multiple_of(self.page_size)
+            || !paddr.get().is_multiple_of(self.page_size)
         {
             return Err(PageTableError::Unaligned);
         }
@@ -162,7 +167,10 @@ mod tests {
         let mut pt = PageTable::new();
         pt.map(page(0), page(5)).unwrap();
         let vaddr = Address::new(0x10);
-        assert_eq!(pt.translate(vaddr).unwrap(), Address::new(5 * DEFAULT_PAGE_SIZE + 0x10));
+        assert_eq!(
+            pt.translate(vaddr).unwrap(),
+            Address::new(5 * DEFAULT_PAGE_SIZE + 0x10)
+        );
     }
 
     #[test]
