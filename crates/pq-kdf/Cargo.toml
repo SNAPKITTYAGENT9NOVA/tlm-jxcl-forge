@@ -6,6 +6,5 @@ description = "HKDF-SHA256 expansion of a KEM shared secret into an AES-256 key,
 license = "MIT"
 
 [dependencies]
-# (none yet -- external dependencies for this crate's
-# real implementation are added when that batch lands,
-# per docs/crates.toml's external_dependencies field)
+hkdf = "0.13"
+sha2 = "0.11"

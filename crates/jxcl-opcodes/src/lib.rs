@@ -1,19 +1,471 @@
-//! The single authoritative opcode registry: ids, mnemonics, operand-shape metadata.
+//! The single authoritative opcode registry: ids, mnemonics,
+//! operand-shape metadata. Extracted from `jxcl/src/isa/opcodes.rs`.
 //!
-//! Owns: The opcode table -- no other crate may define or duplicate opcode identifiers.
+//! The encoder, decoder, assembler, disassembler and execution engine all
+//! derive their behavior from this table; none of them hard-code opcode
+//! numbers or formats independently (spec §19: "Avoid duplicated opcode
+//! definitions across the assembler, decoder, and executor.").
 //!
-//! Status: scaffolded -- real implementation lands per
-//! `docs/CRATE_GENERATION_PLAN.md`'s batch schedule for the
-//! `isa` category. Planned public API: Opcode, OPCODE_TABLE, opcode_by_mnemonic.
+//! ## Deviation from `docs/crates.toml`
+//!
+//! The registry's `public_api` names this crate's items `Opcode`,
+//! `OPCODE_TABLE`, `opcode_by_mnemonic`. The real pre-expansion source
+//! names them `Mnemonic`, `all_defs()`/`ALL`, `lookup_mnemonic`/
+//! `lookup_opcode`, and every downstream extraction crate in this same
+//! batch (`jxcl-instructions`, `jxcl-encoding`, `jxcl-decoding`) is
+//! written against those real names. This crate keeps the real names as
+//! the primary API (so the extraction is a faithful move, not a rewrite)
+//! and additionally exposes `Opcode`/`OPCODE_TABLE`/`opcode_by_mnemonic`
+//! as thin aliases, so a caller reading only `docs/crates.toml` finds
+//! exactly what it promises too.
 #![forbid(unsafe_code)]
-#![allow(dead_code)]
+
+#[cfg(test)]
+use jxcl_constants::OPCODE_SPACE;
+use jxcl_types::Word;
+
+/// Every JXCL mnemonic, formally enumerated (spec §7).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Mnemonic {
+    // Data movement
+    Mov,
+    Movi,
+    Load,
+    Store,
+    Push,
+    Pop,
+    Lea,
+    // Integer arithmetic
+    Add,
+    Sub,
+    Adc,
+    Sbc,
+    Mul,
+    Mulh,
+    Div,
+    Rem,
+    Neg,
+    Inc,
+    Dec,
+    // Logical
+    And,
+    Or,
+    Xor,
+    Not,
+    Nand,
+    Nor,
+    Xor3,
+    // Shift / rotate
+    Shl,
+    Shr,
+    Sar,
+    Rol,
+    Ror,
+    // Comparison
+    Cmp,
+    Test,
+    // Control flow
+    Jmp,
+    Call,
+    Ret,
+    Jz,
+    Jnz,
+    Jc,
+    Jnc,
+    Jl,
+    Jle,
+    Jg,
+    Jge,
+    // System
+    Nop,
+    Halt,
+    Trap,
+    Sys,
+    // Memory / atomic
+    Cas,
+    Xchg,
+    Fence,
+}
+
+/// Alias matching `docs/crates.toml`'s `public_api` naming; see the
+/// module-level "Deviation" note.
+pub type Opcode = Mnemonic;
+
+impl Mnemonic {
+    /// Canonical uppercase assembly mnemonic text (spec §16, §17: the
+    /// disassembler's canonical output must round-trip through the
+    /// assembler byte-for-byte, so this text is authoritative).
+    pub const fn text(self) -> &'static str {
+        use Mnemonic::*;
+        match self {
+            Mov => "MOV",
+            Movi => "MOVI",
+            Load => "LOAD",
+            Store => "STORE",
+            Push => "PUSH",
+            Pop => "POP",
+            Lea => "LEA",
+            Add => "ADD",
+            Sub => "SUB",
+            Adc => "ADC",
+            Sbc => "SBC",
+            Mul => "MUL",
+            Mulh => "MULH",
+            Div => "DIV",
+            Rem => "REM",
+            Neg => "NEG",
+            Inc => "INC",
+            Dec => "DEC",
+            And => "AND",
+            Or => "OR",
+            Xor => "XOR",
+            Not => "NOT",
+            Nand => "NAND",
+            Nor => "NOR",
+            Xor3 => "XOR3",
+            Shl => "SHL",
+            Shr => "SHR",
+            Sar => "SAR",
+            Rol => "ROL",
+            Ror => "ROR",
+            Cmp => "CMP",
+            Test => "TEST",
+            Jmp => "JMP",
+            Call => "CALL",
+            Ret => "RET",
+            Jz => "JZ",
+            Jnz => "JNZ",
+            Jc => "JC",
+            Jnc => "JNC",
+            Jl => "JL",
+            Jle => "JLE",
+            Jg => "JG",
+            Jge => "JGE",
+            Nop => "NOP",
+            Halt => "HALT",
+            Trap => "TRAP",
+            Sys => "SYS",
+            Cas => "CAS",
+            Xchg => "XCHG",
+            Fence => "FENCE",
+        }
+    }
+
+    pub fn from_text(s: &str) -> Option<Mnemonic> {
+        ALL.iter().copied().find(|m| m.text() == s)
+    }
+}
+
+/// The wire format of an instruction, keyed by opcode in the registry.
+/// This determines the *encoded length* of the instruction independent
+/// of any operand value.
+///
+/// This type lives here (rather than in `jxcl-operands`, which owns the
+/// *decoded operand values*) because it is intrinsically part of one
+/// opcode's registry entry -- `jxcl-operands` depends on it the other
+/// direction would create a cycle in the dependency graph.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Format {
+    /// opcode only.
+    None,
+    /// opcode + rd.
+    R,
+    /// opcode + rd + rs.
+    RR,
+    /// opcode + rd + rs1 + rs2.
+    RRR,
+    /// opcode + rd + imm64 (little-endian).
+    RImm64,
+    /// opcode + rd + base + disp32 (little-endian, signed). Effective
+    /// address = R[base] + sign_extend(disp32).
+    RMem,
+    /// opcode + base + disp32 + rs. Effective address as above.
+    MemR,
+    /// opcode + rd + base + rs_new + disp32 (CAS's unique layout, spec §25).
+    Cas,
+    /// opcode + imm32 (little-endian, signed), PC-relative branch/call target.
+    BranchImm32,
+    /// opcode + imm16 (little-endian), SYS/TRAP identifier.
+    Imm16,
+}
+
+impl Format {
+    /// Total encoded instruction length in bytes, including the opcode byte.
+    #[allow(clippy::len_without_is_empty)]
+    pub const fn len(self) -> usize {
+        match self {
+            Format::None => 1,
+            Format::R => 2,
+            Format::RR => 3,
+            Format::RRR => 4,
+            Format::RImm64 => 1 + 1 + 8,
+            Format::RMem => 1 + 1 + 1 + 4,
+            Format::MemR => 1 + 1 + 4 + 1,
+            Format::Cas => 1 + 1 + 1 + 1 + 4,
+            Format::BranchImm32 => 1 + 4,
+            Format::Imm16 => 1 + 2,
+        }
+    }
+}
+
+/// Declares exactly which flags an instruction is architecturally
+/// permitted to modify (spec §6). Kept here (rather than in
+/// `jxcl-flags`) for the same reason as [`Format`]: it's a per-opcode
+/// registry field, and `jxcl-opcodes` cannot depend back on a crate that
+/// might one day want to depend on the opcode table.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct FlagEffect {
+    pub z: bool,
+    pub n: bool,
+    pub c: bool,
+    pub v: bool,
+}
+
+impl FlagEffect {
+    pub const NONE: FlagEffect = FlagEffect {
+        z: false,
+        n: false,
+        c: false,
+        v: false,
+    };
+    pub const ZN: FlagEffect = FlagEffect {
+        z: true,
+        n: true,
+        c: false,
+        v: false,
+    };
+    pub const ZNC: FlagEffect = FlagEffect {
+        z: true,
+        n: true,
+        c: true,
+        v: false,
+    };
+    pub const ZNV: FlagEffect = FlagEffect {
+        z: true,
+        n: true,
+        c: false,
+        v: true,
+    };
+    pub const ZNCV_FULL: FlagEffect = FlagEffect {
+        z: true,
+        n: true,
+        c: true,
+        v: true,
+    };
+}
+
+/// One authoritative instruction definition (spec §19: mnemonic, opcode,
+/// operand schema/format, flag effects, doc id).
+#[derive(Debug, Clone, Copy)]
+pub struct InstructionDef {
+    pub mnemonic: Mnemonic,
+    pub opcode: u8,
+    pub format: Format,
+    pub flags: FlagEffect,
+    /// Stable identifier used to cross-reference generated documentation
+    /// (spec §19 "documentation identifier", spec §43).
+    pub doc_id: &'static str,
+}
+
+impl InstructionDef {
+    /// The opcode value wrapped as a [`Word`], for callers that already
+    /// work in that foundation type (e.g. `jxcl-isa-metadata` computing
+    /// aggregate statistics over the table).
+    pub fn opcode_word(&self) -> Word {
+        Word::new(self.opcode as u64)
+    }
+}
+
+macro_rules! registry {
+    ( $( $mnemonic:ident = $opcode:expr, $format:ident, $flags:expr, $doc:expr ; )* ) => {
+        pub const ALL: &[Mnemonic] = &[ $( Mnemonic::$mnemonic ),* ];
+
+        const DEFS: &[InstructionDef] = &[
+            $(
+                InstructionDef {
+                    mnemonic: Mnemonic::$mnemonic,
+                    opcode: $opcode,
+                    format: Format::$format,
+                    flags: $flags,
+                    doc_id: $doc,
+                },
+            )*
+        ];
+    };
+}
+
+// The authoritative opcode table. Opcode numbers are frozen once assigned;
+// see docs/ISA_SPEC.md "Opcode Map" for the generated human-readable form.
+registry! {
+    // Data movement — 0x00..0x0F
+    Nop   = 0x00, None,   FlagEffect::NONE,  "sys.nop";
+    Mov   = 0x01, RR,     FlagEffect::NONE,  "data.mov";
+    Movi  = 0x02, RImm64, FlagEffect::NONE,  "data.movi";
+    Load  = 0x03, RMem,   FlagEffect::NONE,  "data.load";
+    Store = 0x04, MemR,   FlagEffect::NONE,  "data.store";
+    Push  = 0x05, R,      FlagEffect::NONE,  "data.push";
+    Pop   = 0x06, R,      FlagEffect::NONE,  "data.pop";
+    Lea   = 0x07, RMem,   FlagEffect::NONE,  "data.lea";
+
+    // Integer arithmetic — 0x10..0x1F
+    Add = 0x10, RR, FlagEffect::ZNCV_FULL, "alu.add";
+    Sub = 0x11, RR, FlagEffect::ZNCV_FULL, "alu.sub";
+    Adc = 0x12, RR, FlagEffect::ZNCV_FULL, "alu.adc";
+    Sbc = 0x13, RR, FlagEffect::ZNCV_FULL, "alu.sbc";
+    Mul   = 0x14, RR, FlagEffect::ZNCV_FULL, "alu.mul";
+    Mulh  = 0x15, RR, FlagEffect::ZN,       "alu.mulh";
+    Div   = 0x16, RR, FlagEffect::ZN,       "alu.div";
+    Rem   = 0x17, RR, FlagEffect::ZN,       "alu.rem";
+    Neg   = 0x18, R,  FlagEffect::ZNCV_FULL, "alu.neg";
+    Inc   = 0x19, R,  FlagEffect::ZNV,      "alu.inc";
+    Dec   = 0x1A, R,  FlagEffect::ZNV,      "alu.dec";
+
+    // Logical — 0x20..0x2F
+    And  = 0x20, RR,  FlagEffect::ZN, "logic.and";
+    Or   = 0x21, RR,  FlagEffect::ZN, "logic.or";
+    Xor  = 0x22, RR,  FlagEffect::ZN, "logic.xor";
+    Not  = 0x23, R,   FlagEffect::ZN, "logic.not";
+    Nand = 0x24, RR,  FlagEffect::ZN, "logic.nand";
+    Nor  = 0x25, RR,  FlagEffect::ZN, "logic.nor";
+    Xor3 = 0x26, RRR, FlagEffect::ZN, "logic.xor3";
+
+    // Shift / rotate — 0x30..0x3F
+    Shl = 0x30, RR, FlagEffect::ZNC, "shift.shl";
+    Shr = 0x31, RR, FlagEffect::ZNC, "shift.shr";
+    Sar = 0x32, RR, FlagEffect::ZNC, "shift.sar";
+    Rol = 0x33, RR, FlagEffect::ZNC, "shift.rol";
+    Ror = 0x34, RR, FlagEffect::ZNC, "shift.ror";
+
+    // Comparison — 0x40..0x4F
+    Cmp  = 0x40, RR, FlagEffect::ZNCV_FULL, "cmp.cmp";
+    Test = 0x41, RR, FlagEffect::ZN,        "cmp.test";
+
+    // Control flow — 0x50..0x5F
+    Jmp  = 0x50, BranchImm32, FlagEffect::NONE, "cf.jmp";
+    Call = 0x51, BranchImm32, FlagEffect::NONE, "cf.call";
+    Ret  = 0x52, None,        FlagEffect::NONE, "cf.ret";
+    Jz   = 0x53, BranchImm32, FlagEffect::NONE, "cf.jz";
+    Jnz  = 0x54, BranchImm32, FlagEffect::NONE, "cf.jnz";
+    Jc   = 0x55, BranchImm32, FlagEffect::NONE, "cf.jc";
+    Jnc  = 0x56, BranchImm32, FlagEffect::NONE, "cf.jnc";
+    Jl   = 0x57, BranchImm32, FlagEffect::NONE, "cf.jl";
+    Jle  = 0x58, BranchImm32, FlagEffect::NONE, "cf.jle";
+    Jg   = 0x59, BranchImm32, FlagEffect::NONE, "cf.jg";
+    Jge  = 0x5A, BranchImm32, FlagEffect::NONE, "cf.jge";
+
+    // System — 0x60..0x6F
+    Halt = 0x60, None,  FlagEffect::NONE, "sys.halt";
+    Trap = 0x61, Imm16, FlagEffect::NONE, "sys.trap";
+    Sys  = 0x62, Imm16, FlagEffect::NONE, "sys.sys";
+
+    // Memory / atomic — 0x70..0x7F
+    Cas   = 0x70, Cas,  FlagEffect::ZN, "atomic.cas";
+    Xchg  = 0x71, RMem, FlagEffect::NONE, "atomic.xchg";
+    Fence = 0x72, None, FlagEffect::NONE, "atomic.fence";
+}
+
+/// Look up an instruction definition by its decoded opcode byte.
+pub fn lookup_opcode(opcode: u8) -> Option<&'static InstructionDef> {
+    DEFS.iter().find(|d| d.opcode == opcode)
+}
+
+/// Look up an instruction definition by mnemonic.
+pub fn lookup_mnemonic(mnemonic: Mnemonic) -> &'static InstructionDef {
+    DEFS.iter()
+        .find(|d| d.mnemonic == mnemonic)
+        .expect("every Mnemonic variant has exactly one registry entry")
+}
+
+/// Alias matching `docs/crates.toml`'s `public_api` naming for
+/// [`lookup_mnemonic`]; see the module-level "Deviation" note.
+pub fn opcode_by_mnemonic(mnemonic: Mnemonic) -> &'static InstructionDef {
+    lookup_mnemonic(mnemonic)
+}
+
+/// Iterate the full registry, e.g. for documentation generation (spec §43)
+/// or exhaustive property tests (spec §32).
+pub fn all_defs() -> &'static [InstructionDef] {
+    DEFS
+}
+
+/// Alias matching `docs/crates.toml`'s `public_api` naming for
+/// [`all_defs`]; see the module-level "Deviation" note.
+pub const OPCODE_TABLE: &[InstructionDef] = DEFS;
+
+/// The number of opcodes actually assigned in the registry (as opposed
+/// to [`jxcl_constants::OPCODE_SPACE`], the total addressable space).
+pub fn assigned_opcode_count() -> usize {
+    DEFS.len()
+}
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
     #[test]
-    fn scaffold_placeholder() {
-        // Real tests land with this crate's implementation batch --
-        // see docs/crates.toml's `tests` field for what's planned:
-        // unit, golden.
+    fn every_mnemonic_has_exactly_one_entry() {
+        let mut seen = HashSet::new();
+        for m in ALL {
+            assert!(seen.insert(*m), "duplicate registry entry for {:?}", m);
+        }
+        assert_eq!(seen.len(), ALL.len());
+    }
+
+    #[test]
+    fn no_duplicate_opcodes() {
+        let mut seen = HashSet::new();
+        for d in DEFS {
+            assert!(seen.insert(d.opcode), "duplicate opcode {:#04x}", d.opcode);
+        }
+    }
+
+    #[test]
+    fn lookup_roundtrips() {
+        for d in DEFS {
+            let found = lookup_opcode(d.opcode).unwrap();
+            assert_eq!(found.mnemonic, d.mnemonic);
+            let found2 = lookup_mnemonic(d.mnemonic);
+            assert_eq!(found2.opcode, d.opcode);
+        }
+    }
+
+    #[test]
+    fn mnemonic_text_roundtrips() {
+        for m in ALL {
+            let text = m.text();
+            assert_eq!(Mnemonic::from_text(text), Some(*m));
+        }
+    }
+
+    #[test]
+    fn every_opcode_fits_in_the_opcode_space() {
+        for d in DEFS {
+            assert!((d.opcode as usize) < OPCODE_SPACE);
+        }
+    }
+
+    /// Golden test: the assigned opcode count must match the number
+    /// `docs/ISA_SPEC.md` §2 states ("256 possible opcodes; 50 are
+    /// assigned"). If this ever fails, either the registry grew/shrank
+    /// without updating the spec, or vice versa -- exactly the
+    /// divergence `jxcl-isa-schema`'s conformance test also guards
+    /// against at the whole-schema level.
+    #[test]
+    fn golden_assigned_opcode_count_matches_isa_spec() {
+        assert_eq!(assigned_opcode_count(), 50);
+    }
+
+    #[test]
+    fn aliases_match_the_real_api() {
+        assert_eq!(OPCODE_TABLE.len(), all_defs().len());
+        let def = opcode_by_mnemonic(Opcode::Halt);
+        assert_eq!(def.opcode, lookup_mnemonic(Mnemonic::Halt).opcode);
+    }
+
+    #[test]
+    fn opcode_word_matches_raw_opcode() {
+        let def = lookup_mnemonic(Mnemonic::Add);
+        assert_eq!(def.opcode_word(), Word::new(def.opcode as u64));
     }
 }

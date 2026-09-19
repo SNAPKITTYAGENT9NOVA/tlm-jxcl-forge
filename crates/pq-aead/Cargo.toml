@@ -6,6 +6,4 @@ description = "AES-256-GCM authenticated encryption/decryption of the plaintext 
 license = "MIT"
 
 [dependencies]
-# (none yet -- external dependencies for this crate's
-# real implementation are added when that batch lands,
-# per docs/crates.toml's external_dependencies field)
+aes-gcm = { version = "0.11", features = ["getrandom"] }

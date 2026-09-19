@@ -6,6 +6,7 @@ description = "Zero-knowledge proofs (Groth16 over BLS12-381/Jubjub, via arkwork
 license = "MIT"
 
 [dependencies]
+pq-proof-types = { path = "../pq-proof-types" }
 ark-bls12-381 = "0.6.0"
 ark-ec = "0.6.0"
 ark-ed-on-bls12-381 = { version = "0.6.0", features = ["r1cs"] }

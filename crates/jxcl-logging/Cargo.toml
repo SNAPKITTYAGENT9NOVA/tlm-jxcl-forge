@@ -6,6 +6,5 @@ description = "Shared tracing/logging initialization used by the CLI and the net
 license = "MIT"
 
 [dependencies]
-# (none yet -- external dependencies for this crate's
-# real implementation are added when that batch lands,
-# per docs/crates.toml's external_dependencies field)
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }

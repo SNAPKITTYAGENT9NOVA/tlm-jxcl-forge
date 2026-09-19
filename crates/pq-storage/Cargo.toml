@@ -7,3 +7,6 @@ license = "MIT"
 
 [dependencies]
 pq-envelope = { path = "../pq-envelope" }
+
+[dev-dependencies]
+tokio = { version = "1.53.1", features = ["rt", "macros"] }
