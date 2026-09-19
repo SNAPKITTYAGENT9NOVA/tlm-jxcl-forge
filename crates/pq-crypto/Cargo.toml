@@ -1,0 +1,13 @@
+[package]
+name = "pq-crypto"
+version = "0.1.0"
+edition = "2021"
+description = "Post-quantum envelope encryption: ML-KEM-768 (FIPS 203) + HKDF-SHA256 + AES-256-GCM"
+license = "MIT"
+
+[dependencies]
+kem = "0.3"
+ml-kem = { version = "0.3", features = ["getrandom"] }
+aes-gcm = { version = "0.11", features = ["getrandom"] }
+hkdf = "0.13"
+sha2 = "0.11"

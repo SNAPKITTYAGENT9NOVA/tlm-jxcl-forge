@@ -1,0 +1,16 @@
+[package]
+name = "jxcl"
+version = "0.1.0"
+edition = "2021"
+description = "TLM JXCL — a deterministic, raw hardware-oriented dense instruction-set architecture forge"
+license = "MIT"
+
+[lib]
+name = "jxcl"
+path = "src/lib.rs"
+
+[[bin]]
+name = "jxcl"
+path = "src/main.rs"
+
+[dependencies]
