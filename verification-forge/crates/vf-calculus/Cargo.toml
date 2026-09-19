@@ -6,3 +6,4 @@ description = "Symbolic calculus judgments (typing/evaluation/equivalence/deriva
 license = "MIT"
 
 [dependencies]
+vf-core = { path = "../vf-core" }

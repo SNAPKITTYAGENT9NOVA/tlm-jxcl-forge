@@ -80,11 +80,15 @@ fn app4(arena: &mut TermArena, f: TermId, a: TermId, b: TermId, c: TermId, d: Te
 #[derive(Debug, Clone, Copy)]
 pub struct Prelude {
     pub refl: Symbol,
+    pub ap: Symbol,
 
     pub nat: Symbol,
     pub zero: Symbol,
     pub succ: Symbol,
     pub nat_rec: Symbol,
+    /// Same computation, but eliminating into `Prop`; see `Bool_ind`'s
+    /// doc comment for why both exist.
+    pub nat_ind: Symbol,
 
     pub bool_: Symbol,
     pub true_: Symbol,
@@ -152,6 +156,35 @@ pub fn register_prelude(
     })?;
     registry.declare_builtin(arena, interner, refl, refl_ty, fuel)?;
 
+    // ---- ap (congruence: Eq is a congruence for function application) ----
+    // Without a full equality eliminator (the "J rule"), from which
+    // congruence/symmetry/transitivity would all be *derivable*, this
+    // kernel needs the specific fact it actually uses -- that
+    // `f x = f y` whenever `x = y` -- as its own primitive. Standard
+    // (`Coq`'s `f_equal`, `Lean`'s `congrArg`) and, like `refl` itself,
+    // opaque and never reduced: its soundness rests on the same
+    // metatheory `refl`'s does. Adding a general `Eq` eliminator is
+    // future work, not something this specific proof needs.
+    let ap = interner.intern("ap");
+    let ap_ty = dep_pi(arena, interner, "A", type0, |arena, interner, a| {
+        dep_pi(arena, interner, "B", type0, move |arena, interner, b| {
+            let a_to_b = arrow(arena, interner, "_", a, b);
+            dep_pi(arena, interner, "f", a_to_b, move |arena, interner, f| {
+                dep_pi(arena, interner, "x", a, move |arena, interner, x| {
+                    dep_pi(arena, interner, "y", a, move |arena, interner, y| {
+                        let eq_xy = arena.eq(a, x, y);
+                        dep_pi(arena, interner, "_", eq_xy, move |arena, _interner, _h| {
+                            let fx = arena.app(f, x);
+                            let fy = arena.app(f, y);
+                            Ok(arena.eq(b, fx, fy))
+                        })
+                    })
+                })
+            })
+        })
+    })?;
+    registry.declare_builtin(arena, interner, ap, ap_ty, fuel)?;
+
     // ---- Nat ----
     let nat = interner.intern("Nat");
     registry.declare_builtin(arena, interner, nat, type0, fuel)?;
@@ -207,7 +240,53 @@ pub fn register_prelude(
             },
         ],
     };
-    registry.declare_recursor(arena, interner, nat_rec, nat_rec_ty, nat_rec_spec, fuel)?;
+    registry.declare_recursor(
+        arena,
+        interner,
+        nat_rec,
+        nat_rec_ty,
+        nat_rec_spec.clone(),
+        fuel,
+    )?;
+
+    // ---- Nat_ind: the same eliminator, but into Prop instead of Type 0 ----
+    // See `Bool_ind`'s doc comment below for why this kernel needs a
+    // separate eliminator per target sort rather than one
+    // universe-polymorphic recursor.
+    let nat_ind = interner.intern("Nat_ind");
+    let prop = arena.sort(Sort::Prop);
+    let nat_ind_motive_ty = arrow(arena, interner, "_", nat_c, prop);
+    let nat_ind_ty = dep_pi(
+        arena,
+        interner,
+        "P",
+        nat_ind_motive_ty,
+        |arena, interner, p| {
+            let p_zero = arena.app(p, zero_c);
+            dep_pi(arena, interner, "pz", p_zero, |arena, interner, _pz| {
+                let step_ty = dep_pi(arena, interner, "n", nat_c, |arena, interner, n| {
+                    let p_n = arena.app(p, n);
+                    let succ_n = arena.app(succ_c, n);
+                    let p_succ_n = arena.app(p, succ_n);
+                    dep_pi(arena, interner, "ih", p_n, move |_arena, _interner, _ih| {
+                        Ok(p_succ_n)
+                    })
+                })?;
+                dep_pi(
+                    arena,
+                    interner,
+                    "ps",
+                    step_ty,
+                    move |arena, interner, _ps| {
+                        dep_pi(arena, interner, "n", nat_c, move |arena, _interner, n| {
+                            Ok(arena.app(p, n))
+                        })
+                    },
+                )
+            })
+        },
+    )?;
+    registry.declare_recursor(arena, interner, nat_ind, nat_ind_ty, nat_rec_spec, fuel)?;
 
     // ---- Bool ----
     let bool_ = interner.intern("Bool");
@@ -824,10 +903,12 @@ pub fn register_prelude(
 
     Ok(Prelude {
         refl,
+        ap,
         nat,
         zero,
         succ,
         nat_rec,
+        nat_ind,
         bool_,
         true_,
         false_,
@@ -886,10 +967,12 @@ mod tests {
         let p = register_prelude(&mut registry, &mut arena, &mut interner, &mut fuel).unwrap();
         for name in [
             p.refl,
+            p.ap,
             p.nat,
             p.zero,
             p.succ,
             p.nat_rec,
+            p.nat_ind,
             p.bool_,
             p.true_,
             p.false_,
