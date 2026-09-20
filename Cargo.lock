@@ -2335,6 +2335,8 @@ version = "0.1.0"
 dependencies = [
  "jxcl-simulator",
  "jxcl-trace",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
