@@ -2,8 +2,10 @@
 name = "jxcl-observability"
 version = "0.1.0"
 edition = "2021"
-description = "Metrics/span conventions (a RequestSpan helper, standard metric names) built atop jxcl-logging, consumed by jxcl-service."
+description = "Metrics and instrumentation for JXCL machines with observable metrics and gauges."
 license = "AGPL-3.0-only OR LicenseRef-Commercial"
+authors = ["SEIT NGO <contact@seit.ngo>"]
 
 [dependencies]
-jxcl-logging = { path = "../jxcl-logging" }
+
+[dev-dependencies]

@@ -2250,9 +2250,6 @@ dependencies = [
 [[package]]
 name = "jxcl-observability"
 version = "0.1.0"
-dependencies = [
- "jxcl-logging",
-]
 
 [[package]]
 name = "jxcl-opcodes"
