@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-171%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-197%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2021%2F21%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2024%2F24%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%204%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%205%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -104,7 +104,28 @@ crate that doesn't exist yet. See
 than one, and why `cloud-provisioner`/`cloud-control-plane` are
 untouched by this phase.
 
-**171 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 5, storage primitives
+
+Compute (Phase 4) needed something to execute, a pool to run it in,
+and something to boot it from; storage needs an entirely different
+set of concepts, built with the same discipline:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-checksum`](./crates/cloud-checksum) | `Checksum`: a from-scratch CRC-32/ISO-HDLC content-integrity checksum, streaming or one-shot — anchored to the algorithm's own published check value, not just internal self-consistency | 8 |
+| [`cloud-redundancy`](./crates/cloud-redundancy) | `RedundancyScheme`: replication or erasure coding, shard counts, reconstruction threshold, max tolerable loss | 9 |
+| [`cloud-attachment`](./crates/cloud-attachment) | `AttachmentState`: the attach/detach state machine for a volume-like resource — a third state machine alongside `Lifecycle` and `RuntimeState`, with **no terminal state** (every state has a path back to `Detached`) | 9 |
+
+`cloud-checksum` has zero dependencies, like every crate in this
+workspace — CRC-32/ISO-HDLC is implemented directly rather than
+pulled in from crates.io. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for why
+that matters here specifically, why `AttachmentState` is a genuinely
+different state machine from `Lifecycle`/`RuntimeState` rather than a
+rename, and why no storage-capacity or storage-service crate exists
+yet.
+
+**197 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -130,6 +151,13 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
 - **Image deregistration is not implemented** — whether an in-use
   image can be safely removed depends on resource-to-image references
   `cloud-image` alone cannot see.
+- **No `cloud-storage-capacity`, object/blob-storage, or `cloud-volume`
+  crate exists yet** — same reasoning as `cloud-compute` above: no
+  composition, or the primitive it would need, exists until a real
+  storage-provisioning phase needs it.
+- **No erasure-coding encoder/decoder** — `cloud-redundancy` models
+  the arithmetic a real erasure code guarantees, not the encoding
+  itself.
 - **The full IAM surface** (credentials, sessions, federation, JSON
   policy documents) is Phase 13 — `cloud-identity` only has enough of a
   `Principal` for `cloud-policy` to evaluate against.
