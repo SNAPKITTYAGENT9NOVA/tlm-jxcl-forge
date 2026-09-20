@@ -10,3 +10,4 @@ jxcl-instructions = { path = "../jxcl-instructions" }
 jxcl-operands = { path = "../jxcl-operands" }
 jxcl-registers = { path = "../jxcl-registers" }
 jxcl-errors = { path = "../jxcl-errors" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }

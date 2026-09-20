@@ -2014,7 +2014,10 @@ name = "jxcl-fuzz"
 version = "0.1.0"
 dependencies = [
  "jxcl-decoding",
+ "jxcl-determinism",
+ "jxcl-errors",
  "jxcl-instructions",
+ "jxcl-simulator",
 ]
 
 [[package]]
@@ -2082,6 +2085,7 @@ version = "0.1.0"
 dependencies = [
  "jxcl-errors",
  "jxcl-instructions",
+ "jxcl-opcodes",
  "jxcl-operands",
  "jxcl-registers",
 ]
@@ -2129,6 +2133,8 @@ dependencies = [
  "jxcl-flags",
  "jxcl-opcodes",
  "jxcl-registers",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3054,6 +3060,7 @@ name = "pq-signature"
 version = "0.1.0"
 dependencies = [
  "ml-dsa",
+ "sha2 0.10.9",
 ]
 
 [[package]]
