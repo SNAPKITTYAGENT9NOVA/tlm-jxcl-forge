@@ -744,6 +744,88 @@ service layer, only looked up, called, and stored back.
   content integrity would need the snapshot to contain real bytes,
   which this phase's model doesn't have.
 
+## Phase 11: `cloud-messaging`, the fourth and last composed service
+
+The fourth and final service category (Phases 5-7) gets composed,
+completing the set `cloud-compute`, `cloud-storage`, and
+`cloud-database` began. Every service category a primitive phase left
+deferred is now real.
+
+| Crate | Owns |
+|---|---|
+| [`cloud-messaging`](./crates/cloud-messaging) | `MessagingService`: `create_queue`/`create_topic`/`subscribe`/`publish`/`enqueue`/`receive`/`delete_message`/`delete_queue`/`delete_topic`, composing eleven existing crates |
+
+### Two resource kinds, not one
+
+`cloud-compute`, `cloud-storage`, and `cloud-database` each had exactly
+one top-level resource (an instance, a volume, a database).
+`cloud-messaging` has two: a queue, which holds messages directly, and
+a topic, which holds none of its own -- only a fan-out list of
+subscriber queues via `cloud-fanout::FanoutRegistry`. This is precisely
+the composition `cloud-fanout`'s own Phase 7 doc comment named as
+deferred: "actually fanning a published message out to each subscriber
+... is a concern for whatever future service composes all three
+\[`cloud-delivery`, `cloud-visibility`, `cloud-fanout`\]." `publish`
+is that composition: it fans a message out to every subscriber queue,
+inserting a fresh `cloud_visibility::MessageLease` into each one, so
+`receive` inherits real at-least-once mechanics (in-flight messages
+can't be redelivered until their visibility timeout elapses, and a
+message received too many times is dead-lettered) whether the message
+arrived by direct `enqueue` or by fan-out from a topic.
+
+### `subscribe`'s gate: a new operation, an established gate shape
+
+`cloud-storage::delete_volume` (Phase 9) refused based on *another
+primitive's* current state (a volume's own `AttachmentState`).
+`cloud-messaging::subscribe` reuses that exact shape on a different
+operation: it refuses to link a queue to a topic unless the queue's own
+`cloud_delivery::DeliverySemantics` satisfies the topic's required
+semantics (`DeliverySemantics::satisfies`, Phase 7) -- an `AtMostOnce`
+queue cannot subscribe to a topic that requires `ExactlyOnce`. The
+cross-primitive check that Phase 9 first applied at delete time now
+applies at subscribe time instead.
+
+### `delete_queue`/`delete_topic`'s gate: the `cloud-database` shape, twice
+
+`cloud-database::delete_database` (Phase 10) refused based on the
+service's *own* recorded state (a non-empty snapshot list) rather than
+another primitive's state machine. Both of `cloud-messaging`'s delete
+operations reuse that shape: `delete_queue` refuses while its inbox is
+non-empty, and `delete_topic` refuses while it still has subscribers --
+two independent applications of the same "look past your own
+`Lifecycle` at your own recorded state before deleting" discipline,
+one per resource kind.
+
+### `publish` validates every subscriber before delivering to any
+
+A duplicate message id colliding with one subscriber's existing inbox
+entry, discovered partway through a fan-out, must not leave some
+subscribers holding the message and others without it. `publish` checks
+every subscriber has room for the new id in a first pass, and only
+inserts into any of them in a second pass once every check has
+succeeded -- the same validate-before-apply discipline every pipeline
+in this workspace follows, applied here to a fan-out instead of a
+single resource's creation.
+
+### What Phase 11 deliberately does not include
+
+- **No message body.** A message is just a `ResourceId`, exactly as a
+  `cloud-database` snapshot (Phase 10) was just an id and a creation
+  time -- there is no payload to store, checksum, or serialize.
+- **No ordering guarantee.** `BTreeMap`'s key order is used for
+  determinism in tests and listings, not as a delivery-order promise;
+  nothing in this phase models FIFO queues.
+- **No per-account message-count quota.** Exactly as `cloud-database`
+  did not quota snapshots (only `"databases"` itself), this phase
+  quotas `"queues"` and `"topics"` at creation time but not the
+  messages flowing through them.
+- **Every service category originally identified back in Phases 4-7 is
+  now composed.** A future phase's "what's still deferred" is no
+  longer a service category; it is whatever composing these four
+  services *together* (e.g. a compute instance's logs delivered
+  through a queue) would require, which is deliberately out of scope
+  here.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

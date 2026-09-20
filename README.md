@@ -84,7 +84,7 @@ flowchart TB
         vfe --> vfk
     end
 
-    subgraph CF["cloud-forge/Cargo.toml (33 crates)"]
+    subgraph CF["cloud-forge/Cargo.toml (34 crates)"]
         direction LR
         cfk["Primitive kernel<br/>cloud-resource, cloud-policy, …"]
         cfc["cloud-core facade"]
@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 33 | A from-first-principles cloud-resource substrate (Phase 10 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 34 | A from-first-principles cloud-resource substrate (Phase 11 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -385,7 +385,7 @@ still pending).
 
 ## `cloud-forge`: a from-first-principles cloud substrate
 
-A completely separate, 33-crate Cargo workspace attempting the
+A completely separate, 34-crate Cargo workspace attempting the
 substrate underneath an AWS-shaped cloud platform: resource identity,
 lifecycle, ownership, tagging, policy, events, quota, a provisioning
 pipeline and control plane (Phase 2), canonical resolvable resource
@@ -400,19 +400,22 @@ behind at-least-once delivery, pub/sub topic fanout), `cloud-compute`
 (Phase 8 — the first of those four service categories actually
 composed into a real "launch an instance" service), `cloud-storage`
 (Phase 9 — the second, composing a real "create a volume" service),
-and now (Phase 10) `cloud-database` — the third, composing a real
-"create a database, migrate its schema, snapshot and expire it"
+`cloud-database` (Phase 10 — the third, composing a real "create a
+database, migrate its schema, snapshot and expire it" service), and now
+(Phase 11) `cloud-messaging` — the fourth and last, composing a real
+"create queues and topics, subscribe, publish, and fan a message out"
 service. Its one governing rule: **do not create one crate per AWS
 service; build the primitives once, then compose services from those
 primitives.** No crate in this workspace is named after an AWS
 product, and none will be until it is a composition of already-real
-primitive crates — `cloud-compute`, `cloud-storage`, and
-`cloud-database` are exactly such compositions, named for the service
-category each provides rather than any specific vendor's product.
+primitive crates — `cloud-compute`, `cloud-storage`, `cloud-database`,
+and `cloud-messaging` are exactly such compositions, named for the
+service category each provides rather than any specific vendor's
+product.
 
 ```mermaid
 flowchart LR
-    subgraph cf["cloud-forge (33 crates)"]
+    subgraph cf["cloud-forge (34 crates)"]
         direction TB
         types["cloud-types / cloud-errors<br/>(validated ids, Arn, shared errors)"]
         model["cloud-resource / cloud-lifecycle / cloud-tags<br/>(the Resource&lt;T&gt; wrapper)"]
@@ -430,6 +433,7 @@ flowchart LR
         computeSvc["cloud-compute<br/>(launch/transition_runtime/terminate)"]
         storageSvc["cloud-storage<br/>(create_volume/transition_attachment/delete_volume)"]
         databaseSvc["cloud-database<br/>(create_database/apply_migration/<br/>create_snapshot/expire_snapshots/delete_database)"]
+        messagingSvc["cloud-messaging<br/>(create_queue/create_topic/subscribe/publish/<br/>enqueue/receive/delete_queue/delete_topic)"]
         types --> model --> core
         access --> core
         ops --> core
@@ -439,25 +443,28 @@ flowchart LR
         compute --> computeSvc
         storage --> storageSvc
         database --> databaseSvc
+        messaging --> messagingSvc
     end
 ```
 
-This is **Phase 10 of a much larger, explicitly staged roadmap** — the
-third service-composition phase, following `cloud-compute`'s and
-`cloud-storage`'s own shape rather than inventing a new one. 283 tests
-pass, clippy and fmt are clean, and `cloud-provisioner`'s own rollback
-tests prove the pipeline's atomicity claim directly: if `PLAN` or
-`APPLY` fails after `VALIDATE` already reserved quota, that
-reservation is released before the error returns. `cloud-database`
-gives `cloud-retention` (Phase 6) its first stateful caller anywhere
-in this workspace: Phase 6 only computed which snapshots a policy
-would allow deleting, given a list; `create_snapshot`/`expire_snapshots`
-are the first things that actually keep such a list and act on the
-answer — resolving `cloud-storage`'s own Phase 9 deferral note about
-where a snapshot concept belongs. `delete_database` refuses while any
-snapshot remains, a cross-cutting gate like `cloud-storage::delete_volume`'s,
-but reading this service's own recorded state rather than a different
-primitive's state machine.
+This is **Phase 11 of a much larger, explicitly staged roadmap** — the
+fourth and last service-composition phase, following `cloud-compute`'s,
+`cloud-storage`'s, and `cloud-database`'s own shape rather than
+inventing a new one. 307 tests pass, clippy and fmt are clean, and
+`cloud-provisioner`'s own rollback tests prove the pipeline's atomicity
+claim directly: if `PLAN` or `APPLY` fails after `VALIDATE` already
+reserved quota, that reservation is released before the error returns.
+`cloud-messaging` is the first composed service with two top-level
+resource kinds (a queue and a topic, rather than one) — `publish` fans a
+message out to every subscriber queue via `cloud-fanout::FanoutRegistry`,
+handing each one a real `cloud-visibility::MessageLease`, exactly the
+composition `cloud-fanout`'s own Phase 7 doc comment named as deferred.
+`subscribe` refuses a queue whose `cloud-delivery::DeliverySemantics`
+don't satisfy its topic's requirement — the same cross-primitive gate
+shape `cloud-storage::delete_volume` (Phase 9) used, applied to a new
+operation — and `delete_queue`/`delete_topic` each refuse based on their
+own recorded state, the same own-state gate shape
+`cloud-database::delete_database` (Phase 10) used, applied twice.
 
 **See [`cloud-forge/README.md`](./cloud-forge/README.md) and
 [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)
