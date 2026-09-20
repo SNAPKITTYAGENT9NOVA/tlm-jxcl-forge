@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-315%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-345%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2035%2F35%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2038%2F38%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%2012%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%2013%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -12,10 +12,13 @@ compose from, built for real before any service-shaped crate existed —
 and, as of Phase 11, all four (`cloud-compute`, Phase 8; `cloud-storage`,
 Phase 9; `cloud-database`, Phase 10; `cloud-messaging`, Phase 11)
 actually composed from them, with Phase 12 (`cloud-orchestration`)
-composing two of those services *together* for the first time. This is
-a **separate Cargo workspace** from the rest of this repository's
-100-crate `jxcl`/`pq-*` stack and from `verification-forge` — nothing
-here depends on either, and neither depends on this.
+composing two of those services *together* for the first time, and
+Phase 13 building out the IAM surface (`cloud-credentials`,
+`cloud-session`, `cloud-policy-document`) `cloud-identity` deferred all
+the way back in Phase 1. This is a **separate Cargo workspace** from
+the rest of this repository's 100-crate `jxcl`/`pq-*` stack and from
+`verification-forge` — nothing here depends on either, and neither
+depends on this.
 
 > **The non-negotiable rule:** do not create one crate per AWS service.
 > Build the primitives once, then compose services from those
@@ -302,7 +305,42 @@ terminated. See [`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md)
 for the full reasoning, including why this phase, unlike every earlier
 pipeline in this workspace, has no rollback path to write.
 
-**315 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 13, the IAM surface
+
+`cloud-identity`'s own Phase 1 doc comment named this explicitly:
+"credentials, sessions, federation, policy documents ... is Phase 13
+in the roadmap." Phase 13 builds that surface as three new primitive
+crates — the same shape Phases 4-7 each used, primitives without a
+service yet:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-credentials`](./crates/cloud-credentials) | `CredentialStore`: at most two `Active` credentials per principal, the real IAM rule AWS itself enforces | 9 |
+| [`cloud-session`](./crates/cloud-session) | `SessionStore`: assumed-role and federated sessions, valid only while un-revoked and unexpired | 9 |
+| [`cloud-policy-document`](./crates/cloud-policy-document) | `to_json`/`from_json`: a `cloud-policy::Policy` serialized to and parsed from JSON via a hand-rolled, schema-restricted parser | 11 |
+
+`cloud-credentials` models a credential's lifecycle — id, principal,
+`Active`/`Inactive` — with no real secret material at all, since secure
+secret generation needs randomness this zero-dependency workspace
+doesn't pull in; its one real business rule is AWS's own: a principal
+may hold at most two `Active` credentials at once, and reactivating a
+credential re-checks that same cap. `cloud-session`'s `Session::is_valid`
+checks two independent invalidity paths — expiry and explicit revocation
+— the same two-axis shape `cloud-visibility::MessageLease` (Phase 7)
+already established; `SessionSource` covers both "sessions" and
+"federation" from `cloud-identity`'s deferral in one type, since a
+federated identity's session is still just a session with a different
+origin. `cloud-policy-document` hand-rolls a JSON parser restricted to
+exactly its fixed schema (strings, arrays, objects — no numbers,
+booleans, or `null`), the same zero-dependency posture `cloud-checksum`
+(Phase 5) upheld with hand-rolled CRC-32; `cloud-policy` itself gained
+one small `statements()` accessor to make this possible, the same
+precedent `cloud-scheduler` set gaining `place_least_loaded_with_capacity`
+in Phase 4. See [`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md)
+for the full reasoning, including why there's no `cloud-federation`
+crate and no IAM service yet.
+
+**345 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -366,9 +404,25 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   What remains deferred is composing these services *together* (e.g. a
   compute instance's logs delivered through a queue), which is
   deliberately out of scope for any single phase so far.
-- **The full IAM surface** (credentials, sessions, federation, JSON
-  policy documents) is Phase 13 — `cloud-identity` only has enough of a
-  `Principal` for `cloud-policy` to evaluate against.
+- **No IAM service composing `cloud-credentials`/`cloud-session`/
+  `cloud-policy-document` yet.** Phase 13 is primitives only, the same
+  shape Phases 4-7 each used; a service that creates them together with
+  quota, events, and an `Arn`-resolvable identity is a future phase's
+  concern.
+- **No real cryptographic secret material in `cloud-credentials`** — no
+  secret bytes, signing, or verification; secure secret generation
+  needs randomness this zero-dependency workspace doesn't pull in.
+- **No `cloud-federation` crate** — federation is one `SessionSource`
+  variant in `cloud-session`, not a fourth crate, since a federated
+  identity's session is still just a session with a different origin.
+- **`cloud-policy-document` doesn't support AWS's bare-string-or-array
+  polymorphism** for `Principal`/`Action`/`Resource` — one shape per
+  field (always an array, or the literal `"*"` for `Principal`) is all
+  this phase needs.
+- **No resource-based policies** — a policy document attached to a
+  specific resource rather than a principal remains the Phase 13 (IAM)
+  concept `cloud-resource`'s own Phase 1 doc comment named as not
+  pulled forward into `Resource<T>`.
 - **No AWS-named crate exists anywhere in this workspace.** `services/`
   cannot start honestly until the primitives it would compose (compute,
   storage, network — later phases) are themselves real.
@@ -424,6 +478,14 @@ Two tests are the best reads for how these primitives fit together:
   then proves `attach_volume` refuses to touch a `StorageService`
   volume's `AttachmentState` at all on account of the *other* service's
   state, leaving it exactly `Detached`.
+- `cloud-policy-document`'s
+  [`multiple_statements_with_a_one_of_principal_round_trip`](./crates/cloud-policy-document/src/lib.rs)
+  — builds a real `cloud-policy::Policy` with an `Allow`-all statement
+  and a `Deny` scoped to specific principals, serializes it through the
+  hand-rolled `to_json`, parses it back with `from_json`, and asserts
+  full equality with the original — proving the parser and serializer
+  agree on every field this schema has, not just the fields easiest to
+  test.
 
 ## Building and testing
 

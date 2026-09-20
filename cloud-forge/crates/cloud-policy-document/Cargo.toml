@@ -1,0 +1,14 @@
+[package]
+name = "cloud-policy-document"
+version = "0.1.0"
+edition = "2021"
+description = "Serializes a cloud-policy::Policy to a JSON-shaped document and parses it back, via a hand-rolled minimal parser restricted to exactly this fixed schema (strings, arrays, objects; no numbers/bools/null) -- the third piece of Phase 13's IAM surface, and zero external dependencies, consistent with the rest of this workspace."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-policy = { path = "../cloud-policy" }
+
+[dev-dependencies]
+cloud-types = { path = "../cloud-types" }

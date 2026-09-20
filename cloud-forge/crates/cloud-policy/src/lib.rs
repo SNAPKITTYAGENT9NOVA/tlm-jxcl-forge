@@ -99,6 +99,19 @@ impl Policy {
         self
     }
 
+    /// This policy's statements, in the order they were added.
+    ///
+    /// Added for Phase 13's `cloud-policy-document`, which needs to
+    /// serialize a `Policy` to JSON -- exactly the same reason
+    /// `cloud-scheduler` (Phase 2) gained `place_least_loaded_with_capacity`
+    /// in Phase 4 rather than that logic living somewhere else: a later
+    /// phase's composition need is satisfied by adding a narrow,
+    /// backward-compatible accessor to the crate that already owns the
+    /// data, not by duplicating it.
+    pub fn statements(&self) -> &[Statement] {
+        &self.statements
+    }
+
     /// Evaluates every statement against `(principal, action,
     /// resource)`. Any matching `Deny` wins immediately; otherwise the
     /// result is `Allow` only if at least one statement matched with
@@ -269,6 +282,17 @@ mod tests {
             }
             other => panic!("expected PolicyDenied, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn statements_returns_them_in_the_order_they_were_added() {
+        let mut policy = Policy::new();
+        policy.add_statement(allow_all(&["a"], &["*"]));
+        policy.add_statement(deny_all(&["b"], &["*"]));
+        let statements = policy.statements();
+        assert_eq!(statements.len(), 2);
+        assert_eq!(statements[0].effect, Effect::Allow);
+        assert_eq!(statements[1].effect, Effect::Deny);
     }
 
     #[test]
