@@ -1,0 +1,10 @@
+[package]
+name = "cloud-fanout"
+version = "0.1.0"
+edition = "2021"
+description = "FanoutRegistry: the topic-to-subscriber pub/sub topology every messaging-shaped resource needs, rejecting a duplicate subscription and listing a topic's subscribers deterministically."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }

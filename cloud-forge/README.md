@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-219%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-241%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2027%2F27%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2030%2F30%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%206%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%207%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -144,7 +144,29 @@ questions. See
 and for why no `cloud-database`, query engine, or storage engine
 exists yet.
 
-**219 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 7, messaging primitives
+
+Compute, storage, and database (Phases 4-6) each needed their own
+disjoint set of concepts; messaging-shaped resources need a fourth —
+the last of the four service categories this README names before
+AWS-shaped service composition begins:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-delivery`](./crates/cloud-delivery) | `DeliverySemantics` (`AtMostOnce`/`AtLeastOnce`/`ExactlyOnce`): a genuine **partial order** (two independent axes — loss, duplication), not a total one like `cloud-consistency` | 6 |
+| [`cloud-visibility`](./crates/cloud-visibility) | `MessageLease`: the visibility-timeout mechanism that actually implements at-least-once delivery, plus a dead-letter threshold on receive count | 8 |
+| [`cloud-fanout`](./crates/cloud-fanout) | `FanoutRegistry`: the topic-to-subscriber pub/sub topology | 8 |
+
+`AtMostOnce` and `AtLeastOnce` are **incomparable** — neither
+satisfies the other, since each permits something the other forbids —
+which is why `cloud-delivery` checks both axes explicitly instead of
+deriving `Ord` the way `cloud-consistency` (Phase 6) correctly does
+for its own, genuinely total, order. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
+full reasoning, and for why no `cloud-queue`/`cloud-topic` or FIFO
+ordering primitive exists yet.
+
+**241 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -186,6 +208,15 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
 - **`cloud-migration` does not run migrations** — only the
   version-ordering invariant; executing a migration's actual contents
   belongs to whatever future service calls the ledger.
+- **No `cloud-queue`/`cloud-topic` (or similarly named) crate.** Same
+  reasoning as `cloud-compute`/storage/database above — no composition
+  until it's real.
+- **`cloud-fanout` does not deliver anything** — only the
+  topic-to-subscriber mapping; fanning a message out (and tracking
+  each subscriber's own `MessageLease`) belongs to a future service.
+- **No message ordering (FIFO) primitive** — ordering interacts with
+  partitioning and fanout in ways that need a concrete queue/topic
+  shape to be meaningful.
 - **The full IAM surface** (credentials, sessions, federation, JSON
   policy documents) is Phase 13 — `cloud-identity` only has enough of a
   `Principal` for `cloud-policy` to evaluate against.
