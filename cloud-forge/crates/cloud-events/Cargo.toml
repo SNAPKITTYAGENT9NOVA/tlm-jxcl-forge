@@ -1,0 +1,9 @@
+[package]
+name = "cloud-events"
+version = "0.1.0"
+edition = "2021"
+description = "An event envelope and an in-memory, append-only, strictly-ordered event log -- the substrate a future audit trail (CLOUD-I005) is built on."
+license = "MIT"
+
+[dependencies]
+cloud-types = { path = "../cloud-types" }

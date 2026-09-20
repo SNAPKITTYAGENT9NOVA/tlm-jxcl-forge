@@ -1,0 +1,9 @@
+[package]
+name = "cloud-quota"
+version = "0.1.0"
+edition = "2021"
+description = "A quota/usage tracker implementing CLOUD-I009: quota violations cannot commit -- a rejected reservation leaves usage completely unchanged."
+license = "MIT"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
