@@ -2,9 +2,12 @@
 name = "jxcl-fuzz"
 version = "0.1.0"
 edition = "2021"
-description = "A structured fuzz harness for the decoder (and other parser/decoder boundaries) against malformed input."
+description = "Fuzzing infrastructure for the ISA: mutation-based and coverage-driven feedback for instruction codec testing."
 license = "MIT"
 
 [dependencies]
 jxcl-decoding = { path = "../jxcl-decoding" }
 jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-errors = { path = "../jxcl-errors" }
+jxcl-simulator = { path = "../jxcl-simulator" }
+jxcl-determinism = { path = "../jxcl-determinism" }
