@@ -12,6 +12,7 @@
 //! sync with reality.
 #![forbid(unsafe_code)]
 
+use cloud_capacity::{Capacity, CapacityTracker};
 use cloud_errors::CloudError;
 use cloud_region::RegionRegistry;
 use cloud_types::{AzId, RegionId};
@@ -43,6 +44,48 @@ pub fn place_least_loaded(
         })?
         .clone();
 
+    *usage.entry(winner.clone()).or_insert(0) += 1;
+    Ok(winner)
+}
+
+/// Like [`place_least_loaded`], but only considers availability zones
+/// in `region` with enough spare [`Capacity`] for `required`, and
+/// reserves that capacity in `capacity` on the winning AZ alongside
+/// incrementing its load in `usage`.
+///
+/// Fails with [`CloudError::QuotaExceeded`] if no AZ in `region`
+/// currently has enough room, without touching `usage` or `capacity`
+/// for any candidate -- the same all-or-nothing discipline
+/// [`cloud_capacity::CapacityTracker::try_reserve`] itself keeps.
+pub fn place_least_loaded_with_capacity(
+    registry: &RegionRegistry,
+    capacity: &mut CapacityTracker,
+    region: &RegionId,
+    usage: &mut BTreeMap<AzId, u64>,
+    required: Capacity,
+) -> Result<AzId, CloudError> {
+    let info = registry.get(region).ok_or_else(|| CloudError::NotFound {
+        what: "region",
+        id: region.to_string(),
+    })?;
+
+    let winner = info
+        .azs()
+        .iter()
+        .filter(|az| {
+            capacity.available(az).is_some_and(|avail| {
+                avail.vcpu >= required.vcpu && avail.memory_mib >= required.memory_mib
+            })
+        })
+        .min_by_key(|az| (usage.get(*az).copied().unwrap_or(0), (*az).clone()))
+        .cloned()
+        .ok_or_else(|| CloudError::QuotaExceeded {
+            resource: format!("{region} capacity"),
+            limit: 0,
+            requested: required.vcpu.max(required.memory_mib),
+        })?;
+
+    capacity.try_reserve(&winner, required)?;
     *usage.entry(winner.clone()).or_insert(0) += 1;
     Ok(winner)
 }
@@ -122,6 +165,116 @@ mod tests {
         let mut usage = BTreeMap::new();
         let err =
             place_least_loaded(&reg, &RegionId::new("us-west-1").unwrap(), &mut usage).unwrap_err();
+        assert!(matches!(err, CloudError::NotFound { .. }));
+    }
+
+    fn az(s: &str) -> AzId {
+        AzId::new(s).unwrap()
+    }
+
+    #[test]
+    fn capacity_aware_placement_picks_the_least_loaded_az_with_room() {
+        let reg = registry_with("us-west-1", 2);
+        let mut cap = CapacityTracker::new();
+        cap.register_az(az("us-west-1a"), Capacity::new(16, 65536))
+            .unwrap();
+        cap.register_az(az("us-west-1b"), Capacity::new(16, 65536))
+            .unwrap();
+        let mut usage = BTreeMap::new();
+        usage.insert(az("us-west-1a"), 5);
+
+        let winner = place_least_loaded_with_capacity(
+            &reg,
+            &mut cap,
+            &RegionId::new("us-west-1").unwrap(),
+            &mut usage,
+            Capacity::new(2, 4096),
+        )
+        .unwrap();
+        assert_eq!(winner, az("us-west-1b"));
+        assert_eq!(cap.used(&az("us-west-1b")), Capacity::new(2, 4096));
+    }
+
+    #[test]
+    fn capacity_aware_placement_skips_an_az_without_enough_vcpu() {
+        let reg = registry_with("us-west-1", 2);
+        let mut cap = CapacityTracker::new();
+        // The least-loaded AZ has room, but not enough vCPU.
+        cap.register_az(az("us-west-1a"), Capacity::new(1, 65536))
+            .unwrap();
+        cap.register_az(az("us-west-1b"), Capacity::new(16, 65536))
+            .unwrap();
+        let mut usage = BTreeMap::new();
+
+        let winner = place_least_loaded_with_capacity(
+            &reg,
+            &mut cap,
+            &RegionId::new("us-west-1").unwrap(),
+            &mut usage,
+            Capacity::new(4, 1024),
+        )
+        .unwrap();
+        assert_eq!(winner, az("us-west-1b"));
+    }
+
+    #[test]
+    fn capacity_aware_placement_skips_an_az_without_enough_memory() {
+        let reg = registry_with("us-west-1", 2);
+        let mut cap = CapacityTracker::new();
+        cap.register_az(az("us-west-1a"), Capacity::new(16, 1024))
+            .unwrap();
+        cap.register_az(az("us-west-1b"), Capacity::new(16, 65536))
+            .unwrap();
+        let mut usage = BTreeMap::new();
+
+        let winner = place_least_loaded_with_capacity(
+            &reg,
+            &mut cap,
+            &RegionId::new("us-west-1").unwrap(),
+            &mut usage,
+            Capacity::new(4, 8192),
+        )
+        .unwrap();
+        assert_eq!(winner, az("us-west-1b"));
+    }
+
+    #[test]
+    fn capacity_aware_placement_fails_when_no_az_has_room_and_touches_nothing() {
+        let reg = registry_with("us-west-1", 2);
+        let mut cap = CapacityTracker::new();
+        cap.register_az(az("us-west-1a"), Capacity::new(2, 2048))
+            .unwrap();
+        cap.register_az(az("us-west-1b"), Capacity::new(2, 2048))
+            .unwrap();
+        let mut usage = BTreeMap::new();
+
+        let err = place_least_loaded_with_capacity(
+            &reg,
+            &mut cap,
+            &RegionId::new("us-west-1").unwrap(),
+            &mut usage,
+            Capacity::new(4, 4096),
+        )
+        .unwrap_err();
+        assert!(matches!(err, CloudError::QuotaExceeded { .. }));
+        assert!(usage.is_empty());
+        assert_eq!(cap.used(&az("us-west-1a")), Capacity::default());
+        assert_eq!(cap.used(&az("us-west-1b")), Capacity::default());
+    }
+
+    #[test]
+    fn capacity_aware_placement_errors_on_an_unregistered_region() {
+        let reg = RegionRegistry::new();
+        let mut cap = CapacityTracker::new();
+        let mut usage = BTreeMap::new();
+        let err = place_least_loaded_with_capacity(
+            &reg,
+            &mut cap,
+            &RegionId::new("us-west-1").unwrap(),
+            &mut usage,
+            Capacity::new(1, 1),
+        )
+        .unwrap_err();
         assert!(matches!(err, CloudError::NotFound { .. }));
     }
 }

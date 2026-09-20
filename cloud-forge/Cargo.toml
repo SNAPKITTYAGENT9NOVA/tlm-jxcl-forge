@@ -19,6 +19,9 @@ members = [
     "crates/cloud-provisioner",
     "crates/cloud-control-plane",
     "crates/cloud-resource-registry",
+    "crates/cloud-capacity",
+    "crates/cloud-image",
+    "crates/cloud-runtime",
 ]
 
 [profile.release]
