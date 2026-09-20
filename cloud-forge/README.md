@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-197%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-219%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2024%2F24%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2027%2F27%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%205%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%206%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -125,7 +125,26 @@ different state machine from `Lifecycle`/`RuntimeState` rather than a
 rename, and why no storage-capacity or storage-service crate exists
 yet.
 
-**197 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 6, database primitives
+
+Compute needed execution state, capacity, and images (Phase 4);
+storage needed integrity, durability, and attachment state (Phase 5);
+database-shaped resources need a third, disjoint set of concepts:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-consistency`](./crates/cloud-consistency) | `ConsistencyLevel` (`Eventual`/`BoundedStaleness`/`Strong`): a total order (via `#[derive(Ord)]`, not a hand-rolled comparison) plus `satisfies()` against a caller's minimum requirement | 7 |
+| [`cloud-migration`](./crates/cloud-migration) | `MigrationLedger`: enforces that schema migrations apply strictly sequentially and without gaps, starting at version 1 | 7 |
+| [`cloud-retention`](./crates/cloud-retention) | `RetentionPolicy`: which backups/snapshots are eligible for deletion by age, with a floor that protects the most recent N regardless of age | 8 |
+
+`cloud-migration` and `cloud-retention` deliberately don't depend on
+each other — schema shape over time and data lifetime are unrelated
+questions. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for why,
+and for why no `cloud-database`, query engine, or storage engine
+exists yet.
+
+**219 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -158,6 +177,15 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
 - **No erasure-coding encoder/decoder** — `cloud-redundancy` models
   the arithmetic a real erasure code guarantees, not the encoding
   itself.
+- **No `cloud-database` (or similarly named) crate, and no
+  `cloud-table`/`cloud-index`/`cloud-query` crates.** Same reasoning as
+  `cloud-compute`/storage above — no composition until it's real.
+- **No query language, execution engine, or storage engine** — this
+  phase answers what guarantee a database offers and what data may be
+  discarded, not how data is stored or queried.
+- **`cloud-migration` does not run migrations** — only the
+  version-ordering invariant; executing a migration's actual contents
+  belongs to whatever future service calls the ledger.
 - **The full IAM surface** (credentials, sessions, federation, JSON
   policy documents) is Phase 13 — `cloud-identity` only has enough of a
   `Principal` for `cloud-policy` to evaluate against.

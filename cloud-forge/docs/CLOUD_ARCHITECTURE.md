@@ -427,6 +427,65 @@ not just asserted from the transition table's shape.
   a substantial cryptographic/mathematical undertaking out of scope
   for a placement/durability-accounting primitive.
 
+## Phase 6: database primitives
+
+Compute (Phase 4) needed execution state, capacity, and images.
+Storage (Phase 5) needed integrity, durability, and attachment state.
+Database-shaped resources need a third, disjoint set of concepts --
+none of the prior nine crates from those two phases apply here:
+
+| Crate | Owns |
+|---|---|
+| [`cloud-consistency`](./crates/cloud-consistency) | `ConsistencyLevel` (`Eventual`/`BoundedStaleness`/`Strong`): a total order plus `satisfies()` against a caller's minimum requirement |
+| [`cloud-migration`](./crates/cloud-migration) | `MigrationLedger`: enforces that schema migrations apply strictly sequentially and without gaps |
+| [`cloud-retention`](./crates/cloud-retention) | `RetentionPolicy`: which backups/snapshots are eligible for deletion, by age, with a floor protecting the most recent N regardless of age |
+
+### Why the ordering is derived, not hand-rolled
+
+`ConsistencyLevel`'s three variants are declared weakest-to-strongest
+specifically so `#[derive(PartialOrd, Ord)]` produces the correct
+total order for free -- `Eventual < BoundedStaleness < Strong` falls
+out of the derive macro's own documented rule (variants compare by
+declaration position) rather than a hand-written `match` that could
+silently drift out of sync with the enum if a variant were ever
+reordered. `satisfies()` is then just `self >= required`: the derive
+does the real work, the method exists only to name the operation.
+
+### Why `cloud-migration` and `cloud-retention` don't touch each other
+
+Both crates could plausibly want to know about each other -- a
+retention policy might seem like it should care whether a migration
+happened -- but they answer genuinely unrelated questions:
+`MigrationLedger` is about schema shape over time (has version `N`'s
+change been applied), `RetentionPolicy` is about data lifetime (is
+this snapshot's age past a threshold, and is it protected by the
+floor). Coupling them would mean forcing every caller of one to drag
+in a concept the other owns. `RetentionPolicy` depends on `cloud-types`
+(for `ResourceId` and `Timestamp`) precisely because those are the
+workspace's own shared value types, not because it needs anything
+migration- or consistency-specific.
+
+### What Phase 6 deliberately does not include
+
+- **No `cloud-database` (or similarly named) crate, and no
+  `cloud-table`/`cloud-index`/`cloud-query` crates.** Composing
+  `cloud-consistency` + `cloud-migration` + `cloud-retention` (and
+  earlier phases' `cloud-provisioner`/`cloud-control-plane`) into an
+  actual database service is the same kind of composition Phases 4
+  and 5 deferred for compute and storage: it doesn't get built, or
+  named, until it's a real composition of already-real primitives.
+- **No query language, execution engine, or storage engine.** This
+  phase's crates answer "what guarantee is this database offering,"
+  "is the schema in a consistent state," and "what data may be
+  discarded" -- not "how is data stored or queried," which is a
+  vastly larger undertaking out of scope for a primitives phase.
+- **`cloud-migration` does not run migrations.** It has no concept of
+  SQL, DDL, or any specific transformation -- only the version-ordering
+  invariant. Actually executing a migration's contents is a concern of
+  whatever future service calls this ledger, exactly as `cloud-reconciler`
+  (Phase 2) computes a lifecycle transition path without executing
+  whatever makes a resource actually reach the next state.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

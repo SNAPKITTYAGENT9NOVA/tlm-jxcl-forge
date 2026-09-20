@@ -1,0 +1,9 @@
+[package]
+name = "cloud-consistency"
+version = "0.1.0"
+edition = "2021"
+description = "ConsistencyLevel: the read/write consistency guarantee a database-shaped resource offers (Eventual, BoundedStaleness, Strong), totally ordered, with a satisfies() check against a caller's minimum requirement."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
