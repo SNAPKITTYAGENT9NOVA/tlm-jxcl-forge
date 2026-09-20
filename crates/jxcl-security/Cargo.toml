@@ -2,8 +2,10 @@
 name = "jxcl-security"
 version = "0.1.0"
 edition = "2021"
-description = "Cross-cutting secret-redaction utilities, generalizing the two independent redaction implementations found in photo-cache-service (Redis URL) and pq-sql-vault (ADO connection string) into one shared, tested implementation."
+description = "Cryptographic operations and key management for JXCL machines, providing signing, verification, and key derivation functionality."
 license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
-jxcl-errors = { path = "../jxcl-errors" }
+sha2 = "0.10"
+hmac = "0.12"
+hex = "0.4"
