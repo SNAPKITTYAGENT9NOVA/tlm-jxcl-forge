@@ -2,12 +2,13 @@
 name = "cloud-orchestration"
 version = "0.1.0"
 edition = "2021"
-description = "Cross-service composition. attach_volume/detach_volume (Phase 12) validate a cloud-storage attachment target against a real cloud-compute instance. transition_runtime_and_notify/terminate_and_notify (Phase 15) enqueue a cloud-messaging notification atomically with a compute runtime transition, rolling back the notification if the transition fails -- resolving cloud-messaging's own Phase 11 closing note about a compute instance's events delivered through a queue. No new state machine, no new primitive -- only coordination between already-real services."
+description = "Cross-service composition. attach_volume/detach_volume (Phase 12) validate a cloud-storage attachment target against a real cloud-compute instance. transition_runtime_and_notify/terminate_and_notify (Phase 15) enqueue a cloud-messaging notification atomically with a compute runtime transition, rolling back the notification if the transition fails -- resolving cloud-messaging's own Phase 11 closing note about a compute instance's events delivered through a queue. apply_migration_and_notify/delete_database_and_notify (Phase 16) enqueue a cloud-messaging notification atomically with a database mutation, rolling back the notification if the mutation fails -- the second composition spanning two independent services. No new state machine, no new primitive -- only coordination between already-real services."
 license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 cloud-attachment = { path = "../cloud-attachment" }
 cloud-compute = { path = "../cloud-compute" }
+cloud-database = { path = "../cloud-database" }
 cloud-errors = { path = "../cloud-errors" }
 cloud-messaging = { path = "../cloud-messaging" }
 cloud-runtime = { path = "../cloud-runtime" }
@@ -17,8 +18,11 @@ cloud-types = { path = "../cloud-types" }
 [dev-dependencies]
 cloud-account = { path = "../cloud-account" }
 cloud-capacity = { path = "../cloud-capacity" }
+cloud-consistency = { path = "../cloud-consistency" }
 cloud-delivery = { path = "../cloud-delivery" }
 cloud-identity = { path = "../cloud-identity" }
 cloud-image = { path = "../cloud-image" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }
 cloud-policy = { path = "../cloud-policy" }
 cloud-redundancy = { path = "../cloud-redundancy" }
+cloud-retention = { path = "../cloud-retention" }

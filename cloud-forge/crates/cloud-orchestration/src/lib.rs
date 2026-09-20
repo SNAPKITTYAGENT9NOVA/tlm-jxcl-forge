@@ -56,10 +56,23 @@
 //! first, then attempt the mutation, then undo the reservation if the
 //! mutation didn't happen. This is the first rollback in this
 //! workspace that spans two independent services rather than one.
+//!
+//! ## Phase 16: a third composition, database operations with notifications
+//!
+//! [`apply_migration_and_notify`] and [`delete_database_and_notify`]
+//! compose `cloud-database` with `cloud-messaging`, following the same
+//! enqueue-first, rollback-on-failure pattern as Phase 15. Database
+//! operations like schema migration and deletion can fail or be
+//! non-reversible (unlike [`attach_volume`]'s always-valid second step),
+//! so both functions enqueue the notification message first, then attempt
+//! the database mutation, then delete the message if the mutation fails.
+//! This is the second composition in this crate spanning two independent
+//! services rather than one.
 #![forbid(unsafe_code)]
 
 use cloud_attachment::AttachmentState;
 use cloud_compute::ComputeService;
+use cloud_database::DatabaseService;
 use cloud_errors::CloudError;
 use cloud_messaging::MessagingService;
 use cloud_runtime::RuntimeState;
@@ -156,18 +169,69 @@ pub fn terminate_and_notify(
     }
 }
 
+/// Applies a schema migration to `database_id` and enqueues `message_id`
+/// onto `queue_id` to notify of it, with the same enqueue-first,
+/// roll-back-on-failure discipline as Phase 15's compositions.
+pub fn apply_migration_and_notify(
+    database: &mut DatabaseService,
+    messaging: &mut MessagingService,
+    database_id: &ResourceId,
+    version: u32,
+    queue_id: &ResourceId,
+    message_id: ResourceId,
+    now: Timestamp,
+) -> Result<u32, CloudError> {
+    messaging.enqueue(queue_id, message_id.clone(), now)?;
+    match database.apply_migration(database_id, version) {
+        Ok(v) => Ok(v),
+        Err(e) => {
+            messaging
+                .delete_message(queue_id, &message_id, now)
+                .expect("the message just enqueued above must still be present to delete");
+            Err(e)
+        }
+    }
+}
+
+/// Deletes `database_id` and enqueues `message_id` onto `queue_id` to
+/// notify of it, with the same enqueue-first, roll-back-on-failure
+/// discipline as [`apply_migration_and_notify`].
+pub fn delete_database_and_notify(
+    database: &mut DatabaseService,
+    messaging: &mut MessagingService,
+    database_id: &ResourceId,
+    queue_id: &ResourceId,
+    message_id: ResourceId,
+    now: Timestamp,
+) -> Result<(), CloudError> {
+    messaging.enqueue(queue_id, message_id.clone(), now)?;
+    match database.delete_database(database_id, now) {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            messaging
+                .delete_message(queue_id, &message_id, now)
+                .expect("the message just enqueued above must still be present to delete");
+            Err(e)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use cloud_account::Account;
     use cloud_capacity::Capacity;
     use cloud_compute::LaunchRequest;
+    use cloud_consistency::ConsistencyLevel;
+    use cloud_database::CreateDatabaseRequest;
     use cloud_delivery::DeliverySemantics;
     use cloud_identity::Principal;
     use cloud_image::Architecture;
+    use cloud_lifecycle::Lifecycle;
     use cloud_messaging::CreateQueueRequest;
     use cloud_policy::{Effect, Policy, PrincipalMatcher, Statement};
     use cloud_redundancy::RedundancyScheme;
+    use cloud_retention::RetentionPolicy;
     use cloud_storage::CreateVolumeRequest;
     use cloud_types::{AccountId, AzId, RegionId, Timestamp};
 
@@ -282,6 +346,33 @@ mod tests {
             })
             .unwrap();
         volume_id
+    }
+
+    fn setup_database() -> DatabaseService {
+        let mut svc = DatabaseService::new(allow_all_policy(), "core", "database");
+        svc.register_account(
+            Account::new(account_id(), "test", Timestamp::from_millis(0)).unwrap(),
+        )
+        .unwrap();
+        svc.register_region(region_id(), 1).unwrap();
+        svc.set_quota_limit("databases", 10);
+        svc
+    }
+
+    fn create_database(database: &mut DatabaseService, id: &str) -> ResourceId {
+        let database_id = ResourceId::new(id).unwrap();
+        database
+            .create_database(CreateDatabaseRequest {
+                id: database_id.clone(),
+                account: account_id(),
+                region: region_id(),
+                principal: principal(),
+                consistency: ConsistencyLevel::Eventual,
+                retention: RetentionPolicy::new(86400000, 1).unwrap(),
+                created_at: Timestamp::from_millis(1000),
+            })
+            .unwrap();
+        database_id
     }
 
     #[test]
@@ -563,5 +654,173 @@ mod tests {
             )
             .unwrap_err();
         assert!(matches!(recv_err, CloudError::NotFound { .. }));
+    }
+
+    #[test]
+    fn apply_migration_and_notify_enqueues_and_migrates_together() {
+        let mut database = setup_database();
+        let mut messaging = setup_messaging();
+        let db = create_database(&mut database, "db-1");
+        let queue = create_queue(&mut messaging, "q-1");
+
+        let version = apply_migration_and_notify(
+            &mut database,
+            &mut messaging,
+            &db,
+            1,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap();
+
+        assert_eq!(version, 1);
+        assert_eq!(database.current_schema_version(&db), Some(1));
+        let outcome = messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100),
+            )
+            .unwrap();
+        assert!(matches!(
+            outcome,
+            cloud_messaging::ReceiveOutcome::Delivered { .. }
+        ));
+    }
+
+    #[test]
+    fn apply_migration_and_notify_rolls_back_on_invalid_migration() {
+        let mut database = setup_database();
+        let mut messaging = setup_messaging();
+        let db = create_database(&mut database, "db-1");
+        let queue = create_queue(&mut messaging, "q-1");
+
+        // Version 2 requires version 1 first.
+        let err = apply_migration_and_notify(
+            &mut database,
+            &mut messaging,
+            &db,
+            2,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap_err();
+
+        assert!(matches!(err, CloudError::InvalidTransition { .. }));
+        // The message must be rolled back.
+        let recv_err = messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100),
+            )
+            .unwrap_err();
+        assert!(matches!(recv_err, CloudError::NotFound { .. }));
+        // Schema version unchanged.
+        assert_eq!(database.current_schema_version(&db), Some(0));
+    }
+
+    #[test]
+    fn delete_database_and_notify_enqueues_and_deletes_together() {
+        let mut database = setup_database();
+        let mut messaging = setup_messaging();
+        let db = create_database(&mut database, "db-1");
+        let queue = create_queue(&mut messaging, "q-1");
+
+        delete_database_and_notify(
+            &mut database,
+            &mut messaging,
+            &db,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap();
+
+        // The database exists but is now deleted.
+        let deleted_db = database.get(&db).unwrap();
+        assert_eq!(deleted_db.lifecycle(), Lifecycle::Deleted);
+        let outcome = messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100),
+            )
+            .unwrap();
+        assert!(matches!(
+            outcome,
+            cloud_messaging::ReceiveOutcome::Delivered { .. }
+        ));
+    }
+
+    #[test]
+    fn delete_database_and_notify_rolls_back_on_snapshots() {
+        let mut database = setup_database();
+        let mut messaging = setup_messaging();
+        let db = create_database(&mut database, "db-1");
+        let queue = create_queue(&mut messaging, "q-1");
+
+        // Create a snapshot to block deletion.
+        database
+            .create_snapshot(
+                &db,
+                ResourceId::new("snap-1").unwrap(),
+                Timestamp::from_millis(1500),
+            )
+            .unwrap();
+
+        let err = delete_database_and_notify(
+            &mut database,
+            &mut messaging,
+            &db,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap_err();
+
+        assert!(matches!(err, CloudError::Conflict { .. }));
+        // The message must be rolled back.
+        let recv_err = messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100),
+            )
+            .unwrap_err();
+        assert!(matches!(recv_err, CloudError::NotFound { .. }));
+        // Database still exists.
+        assert!(database.get(&db).is_some());
+    }
+
+    #[test]
+    fn delete_database_and_notify_rejects_duplicate_message_id_and_touches_nothing() {
+        let mut database = setup_database();
+        let mut messaging = setup_messaging();
+        let db = create_database(&mut database, "db-1");
+        let queue = create_queue(&mut messaging, "q-1");
+        messaging
+            .enqueue(
+                &queue,
+                ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(1500),
+            )
+            .unwrap();
+
+        let err = delete_database_and_notify(
+            &mut database,
+            &mut messaging,
+            &db,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap_err();
+
+        assert!(matches!(err, CloudError::Conflict { .. }));
+        // Database deletion must never have been attempted.
+        assert!(database.get(&db).is_some());
     }
 }

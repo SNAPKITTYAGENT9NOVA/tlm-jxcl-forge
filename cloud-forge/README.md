@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2039%2F39%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%2015%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%2016%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -384,7 +384,7 @@ compute instance's logs delivered through a queue)."
 
 | Crate | Owns | Tests |
 |---|---|---:|
-| [`cloud-orchestration`](./crates/cloud-orchestration) | Adds `transition_runtime_and_notify`/`terminate_and_notify` (`cloud-compute` + `cloud-messaging`) alongside Phase 12's `attach_volume`/`detach_volume` | 18 |
+| [`cloud-orchestration`](./crates/cloud-orchestration) | Adds `transition_runtime_and_notify`/`terminate_and_notify` (`cloud-compute` + `cloud-messaging`) alongside Phase 12's `attach_volume`/`detach_volume` | 13 |
 
 Both new functions enqueue a notification message into `cloud-messaging`
 *before* attempting the compute mutation, then delete that message if
@@ -399,7 +399,21 @@ steps within one. See
 full reasoning, including why this composition still has no message
 body, no notification on other operations, and no fan-out.
 
-**362 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 16, `cloud-orchestration`'s third composition
+
+Phase 15 composed `cloud-compute` with `cloud-messaging`. Phase 16
+adds a third composition in the same crate: `cloud-database` +
+`cloud-messaging`. [`apply_migration_and_notify`] and
+[`delete_database_and_notify`] follow the same enqueue-first,
+rollback-on-failure discipline as Phase 15, since database operations
+like schema migrations can fail (an invalid version jump) and are
+typically non-reversible (schema changes and deletions are one-way).
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-orchestration`](./crates/cloud-orchestration) | Adds `apply_migration_and_notify`/`delete_database_and_notify` alongside Phase 12's attach/detach and Phase 15's compute+messaging | 23 |
+
+**367 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -460,10 +474,11 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   launch/run/stop/terminate is modeled yet, and `control-api` remains
   deferred from Phase 2's own reasoning.
 - **All four originally-planned service categories are now composed,
-  and one cross-service composition (`cloud-compute` + `cloud-messaging`)
-  is real as of Phase 15.** `cloud-database`/`cloud-messaging` and
-  `cloud-database`/`cloud-compute` cross-service composition remain
-  open questions with no equivalent stated deferral yet.
+  one cross-service composition (`cloud-compute` + `cloud-messaging`)
+  was real as of Phase 15, and a second
+  (`cloud-database` + `cloud-messaging`) is real as of Phase 16.**
+  `cloud-database`/`cloud-compute` cross-service composition remains
+  an open question with no equivalent stated deferral yet.
 - **`cloud-orchestration`'s notifications carry no message body, fire
   on no operation besides a runtime transition or termination, and
   fan out to exactly one queue** — extending any of these needs a
