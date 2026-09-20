@@ -7,3 +7,7 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-config = { path = "../jxcl-config" }
+tokio = { version = "1", features = ["rt-multi-thread"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

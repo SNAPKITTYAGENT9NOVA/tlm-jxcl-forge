@@ -5,8 +5,15 @@ edition = "2021"
 description = "The `jxcl` command-line interface: asm/disasm/run/inspect/validate subcommands."
 license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
+[[bin]]
+name = "jxcl"
+path = "src/main.rs"
+
 [dependencies]
 jxcl-assembler = { path = "../jxcl-assembler" }
+jxcl-binary = { path = "../jxcl-binary" }
+jxcl-constants = { path = "../jxcl-constants" }
+jxcl-decoding = { path = "../jxcl-decoding" }
 jxcl-disassembler = { path = "../jxcl-disassembler" }
 jxcl-loader = { path = "../jxcl-loader" }
 jxcl-simulator = { path = "../jxcl-simulator" }
@@ -15,3 +22,6 @@ jxcl-isa-metadata = { path = "../jxcl-isa-metadata" }
 jxcl-instruction-validation = { path = "../jxcl-instruction-validation" }
 jxcl-config = { path = "../jxcl-config" }
 jxcl-logging = { path = "../jxcl-logging" }
+
+[dev-dependencies]
+tempfile = "3"

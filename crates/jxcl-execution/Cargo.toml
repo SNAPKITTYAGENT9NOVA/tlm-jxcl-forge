@@ -15,3 +15,9 @@ jxcl-dispatch = { path = "../jxcl-dispatch" }
 jxcl-exceptions = { path = "../jxcl-exceptions" }
 jxcl-load-store = { path = "../jxcl-load-store" }
 jxcl-errors = { path = "../jxcl-errors" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }
+jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-registers = { path = "../jxcl-registers" }
+jxcl-flags = { path = "../jxcl-flags" }
+jxcl-types = { path = "../jxcl-types" }
+jxcl-encoding = { path = "../jxcl-encoding" }

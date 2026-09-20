@@ -88,7 +88,7 @@ impl InterruptController {
         // For a simple VecDeque, we'll use a stable sort approach
         // Convert to a vector, sort, and rebuild
         let mut vec: Vec<_> = self.queue.iter().copied().collect();
-        vec.sort_by(|a, b| b.priority.cmp(&a.priority)); // Higher priority first
+        vec.sort_by_key(|a| std::cmp::Reverse(a.priority)); // Higher priority first
         self.queue = vec.into_iter().collect();
     }
 }

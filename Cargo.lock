@@ -1799,13 +1799,17 @@ dependencies = [
 name = "jxcl-assembler"
 version = "0.1.0"
 dependencies = [
+ "jxcl-binary",
  "jxcl-debug-info",
  "jxcl-encoding",
+ "jxcl-errors",
  "jxcl-instructions",
  "jxcl-lexer",
  "jxcl-linker",
  "jxcl-object",
+ "jxcl-opcodes",
  "jxcl-parser",
+ "jxcl-registers",
  "jxcl-relocations",
  "jxcl-symbols",
 ]
@@ -1862,14 +1866,18 @@ name = "jxcl-cli"
 version = "0.1.0"
 dependencies = [
  "jxcl-assembler",
+ "jxcl-binary",
  "jxcl-config",
+ "jxcl-constants",
  "jxcl-debugger",
+ "jxcl-decoding",
  "jxcl-disassembler",
  "jxcl-instruction-validation",
  "jxcl-isa-metadata",
  "jxcl-loader",
  "jxcl-logging",
  "jxcl-simulator",
+ "tempfile",
 ]
 
 [[package]]
@@ -1953,6 +1961,7 @@ version = "0.1.0"
 dependencies = [
  "jxcl-debug-info",
  "jxcl-decoding",
+ "jxcl-errors",
  "jxcl-instructions",
  "jxcl-symbols",
 ]
@@ -2003,11 +2012,17 @@ dependencies = [
  "jxcl-control",
  "jxcl-decoding",
  "jxcl-dispatch",
+ "jxcl-encoding",
  "jxcl-errors",
  "jxcl-exceptions",
+ "jxcl-flags",
+ "jxcl-instructions",
  "jxcl-load-store",
  "jxcl-machine",
  "jxcl-memory",
+ "jxcl-opcodes",
+ "jxcl-registers",
+ "jxcl-types",
 ]
 
 [[package]]
@@ -2084,7 +2099,10 @@ dependencies = [
 name = "jxcl-http"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "jxcl-errors",
+ "reqwest",
+ "tokio",
 ]
 
 [[package]]
@@ -2302,6 +2320,7 @@ version = "0.1.0"
 dependencies = [
  "jxcl-cycle-model",
  "jxcl-instructions",
+ "jxcl-registers",
 ]
 
 [[package]]
@@ -2319,6 +2338,8 @@ version = "0.1.0"
 dependencies = [
  "jxcl-simulator",
  "jxcl-trace",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2353,6 +2374,9 @@ version = "0.1.0"
 dependencies = [
  "jxcl-network",
  "jxcl-protocol",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -2370,6 +2394,7 @@ name = "jxcl-runtime"
 version = "0.1.0"
 dependencies = [
  "jxcl-config",
+ "tokio",
 ]
 
 [[package]]
@@ -2385,9 +2410,14 @@ dependencies = [
 name = "jxcl-service"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "jxcl-config",
  "jxcl-http",
  "jxcl-logging",
+ "reqwest",
+ "tokio",
+ "tokio-test",
+ "tracing",
 ]
 
 [[package]]
@@ -4041,6 +4071,28 @@ checksum = "b0c85f2c3ef0b1cd58b36682f4b17aaa995f0e5db534d85692b4903abce21f67"
 dependencies = [
  "rustls",
  "tokio",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3d06f0b082ba57c26b79407372e57cf2a1e28124f78e9479fe80322cf53420b"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-test"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f6d24790a10a7af737693a3e8f1d03faef7e6ca0cc99aae5066f533766de545"
+dependencies = [
+ "futures-core",
+ "tokio",
+ "tokio-stream",
 ]
 
 [[package]]

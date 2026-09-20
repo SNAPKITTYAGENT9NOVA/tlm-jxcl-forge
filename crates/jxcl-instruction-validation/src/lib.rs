@@ -53,13 +53,13 @@ pub fn validate_instruction(instr: &Instruction) -> Result<(), Error> {
             // Immediate can be any u64, no range constraint
             validate_immediate_u64(imm)?;
         }
-        Operands::RMem { disp: _, .. } => {
+        Operands::RMem { .. } => {
             // Base register already validated, displacement is i32 (always valid)
         }
-        Operands::MemR { disp: _, .. } => {
+        Operands::MemR { .. } => {
             // Base and rs already validated, displacement is i32 (always valid)
         }
-        Operands::Cas { disp: _, .. } => {
+        Operands::Cas { .. } => {
             // All registers already validated, displacement is i32 (always valid)
         }
     }
