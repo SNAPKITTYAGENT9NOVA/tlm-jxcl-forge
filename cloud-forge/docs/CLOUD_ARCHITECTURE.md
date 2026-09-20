@@ -826,6 +826,82 @@ single resource's creation.
   through a queue) would require, which is deliberately out of scope
   here.
 
+## Phase 12: `cloud-orchestration`, the first cross-service composition
+
+Phases 8-11 each composed primitives *within* one service category.
+Phase 12 is a different kind of composition: it composes two already-real
+**services** together, directly resolving a deferral `cloud-storage`
+(Phase 9) stated in its own words.
+
+| Crate | Owns |
+|---|---|
+| [`cloud-orchestration`](./crates/cloud-orchestration) | `attach_volume`/`detach_volume`: free functions coordinating `ComputeService` and `StorageService`, composing two existing services |
+
+### Resolving `cloud-storage`'s own deferral, verbatim
+
+Phase 9's doc comment said this explicitly: "`cloud-storage` doesn't
+validate attachment targets -- attaching a volume moves only its own
+`AttachmentState`; whether the id it's attached to names a real
+`cloud-compute` instance is an orchestration concern for whatever
+future layer calls both services." `cloud-orchestration` is that layer.
+`attach_volume` takes a `&ComputeService` and a `&mut StorageService`
+together, checks the instance exists and is not `Terminating`/
+`Terminated`, and only then drives the volume's attachment transitions.
+An unknown or terminated instance leaves the volume's `AttachmentState`
+completely untouched -- validate before mutate, the same discipline
+every pipeline in this workspace already follows, just applied across
+a service boundary instead of within one service's own stages.
+
+### Free functions, not a third stateful service
+
+Unlike `cloud-compute`/`cloud-storage`/`cloud-database`/`cloud-messaging`,
+`cloud-orchestration` owns no resource store, no quota, no policy, no
+event log -- it has nothing to persist between calls. Its two functions
+take `&ComputeService`/`&mut StorageService` directly and return,
+exactly the shape `cloud-provisioner` (Phase 2) already established for
+a pipeline with nothing of its own to hold onto. A caller keeps owning
+both services; `cloud-orchestration` only ever borrows them for the
+duration of one call.
+
+### Why there is no rollback to write
+
+Every earlier multi-stage pipeline in this workspace (`cloud-provisioner`,
+`cloud-compute::launch`, `cloud-database::create_database`, ...) needed
+rollback because a later stage could fail after an earlier stage had
+already reserved something real (quota, capacity, a name). `attach_volume`
+has no such stage: once the instance check passes, `Attaching -> Attached`
+is unconditionally valid in `cloud-attachment`'s own transition table
+(Phase 5) from the exact state `attach_volume` itself just placed the
+volume into. There is no failure mode between those two calls to roll
+back from, and the doc comment says so explicitly rather than leaving a
+reader to wonder why this phase, alone among the pipeline-shaped crates,
+has no rollback path.
+
+### Why `detach_volume` doesn't check `compute` at all
+
+Detaching is presumed always safe, regardless of the instance's state --
+including an instance that has since been terminated, or was deleted
+entirely. This mirrors real block-storage services, which support a
+force-detach specifically for the case where the thing a volume was
+attached to is already gone: the operation exists to free the volume,
+not to protect an instance that no longer needs protecting.
+
+### What Phase 12 deliberately does not include
+
+- **No orchestration for `cloud-database` or `cloud-messaging`.** This
+  phase resolves exactly the one deferral `cloud-storage` stated;
+  wiring a database or a queue to a compute instance is a different
+  cross-service question with no equivalent stated deferral yet.
+- **No compute-instance-to-queue log delivery**, the example Phase 11's
+  own closing note raised as one of many possible future
+  cross-service compositions. This phase picks the one with an
+  existing, explicit deferral behind it rather than inventing a new
+  composition with no prior art in this workspace to resolve.
+- **No new state machine.** `cloud-orchestration` reads
+  `cloud-runtime::RuntimeState` and drives `cloud-attachment::AttachmentState`
+  -- both already exist; this phase adds no new states and no new
+  transitions to either.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive
