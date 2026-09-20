@@ -2002,11 +2002,17 @@ dependencies = [
  "jxcl-control",
  "jxcl-decoding",
  "jxcl-dispatch",
+ "jxcl-encoding",
  "jxcl-errors",
  "jxcl-exceptions",
+ "jxcl-flags",
+ "jxcl-instructions",
  "jxcl-load-store",
  "jxcl-machine",
  "jxcl-memory",
+ "jxcl-opcodes",
+ "jxcl-registers",
+ "jxcl-types",
 ]
 
 [[package]]
