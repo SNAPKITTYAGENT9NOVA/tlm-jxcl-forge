@@ -53,22 +53,13 @@ pub fn validate_instruction(instr: &Instruction) -> Result<(), Error> {
             // Immediate can be any u64, no range constraint
             validate_immediate_u64(imm)?;
         }
-        Operands::RMem {
-            disp: _,
-            ..
-        } => {
+        Operands::RMem { disp: _, .. } => {
             // Base register already validated, displacement is i32 (always valid)
         }
-        Operands::MemR {
-            disp: _,
-            ..
-        } => {
+        Operands::MemR { disp: _, .. } => {
             // Base and rs already validated, displacement is i32 (always valid)
         }
-        Operands::Cas {
-            disp: _,
-            ..
-        } => {
+        Operands::Cas { disp: _, .. } => {
             // All registers already validated, displacement is i32 (always valid)
         }
     }
@@ -105,33 +96,45 @@ mod tests {
 
     #[test]
     fn validate_r_format_instruction_with_valid_register() {
-        let instr = Instruction::new(Mnemonic::Not, Operands::R {
-            rd: Register::new(5),
-        });
+        let instr = Instruction::new(
+            Mnemonic::Not,
+            Operands::R {
+                rd: Register::new(5),
+            },
+        );
         assert!(validate_instruction(&instr).is_ok());
     }
 
     #[test]
     fn validate_r_format_instruction_with_r0() {
-        let instr = Instruction::new(Mnemonic::Not, Operands::R {
-            rd: Register::new(0),
-        });
+        let instr = Instruction::new(
+            Mnemonic::Not,
+            Operands::R {
+                rd: Register::new(0),
+            },
+        );
         assert!(validate_instruction(&instr).is_ok());
     }
 
     #[test]
     fn validate_r_format_instruction_with_max_register() {
-        let instr = Instruction::new(Mnemonic::Not, Operands::R {
-            rd: Register::new(31),
-        });
+        let instr = Instruction::new(
+            Mnemonic::Not,
+            Operands::R {
+                rd: Register::new(31),
+            },
+        );
         assert!(validate_instruction(&instr).is_ok());
     }
 
     #[test]
     fn reject_r_format_instruction_with_out_of_range_register() {
-        let instr = Instruction::new(Mnemonic::Not, Operands::R {
-            rd: Register::new(32),
-        });
+        let instr = Instruction::new(
+            Mnemonic::Not,
+            Operands::R {
+                rd: Register::new(32),
+            },
+        );
         assert!(validate_instruction(&instr).is_err());
     }
 
@@ -409,41 +412,36 @@ mod tests {
 
     #[test]
     fn validate_branch_imm32() {
-        let instr = Instruction::new(Mnemonic::Jz, Operands::BranchImm32 {
-            disp: 512,
-        });
+        let instr = Instruction::new(Mnemonic::Jz, Operands::BranchImm32 { disp: 512 });
         assert!(validate_instruction(&instr).is_ok());
     }
 
     #[test]
     fn validate_branch_imm32_negative() {
-        let instr = Instruction::new(Mnemonic::Jnz, Operands::BranchImm32 {
-            disp: -512,
-        });
+        let instr = Instruction::new(Mnemonic::Jnz, Operands::BranchImm32 { disp: -512 });
         assert!(validate_instruction(&instr).is_ok());
     }
 
     #[test]
     fn validate_imm16_format() {
-        let instr = Instruction::new(Mnemonic::Sys, Operands::Imm16 {
-            imm: 0x1234,
-        });
+        let instr = Instruction::new(Mnemonic::Sys, Operands::Imm16 { imm: 0x1234 });
         assert!(validate_instruction(&instr).is_ok());
     }
 
     #[test]
     fn validate_imm16_max_value() {
-        let instr = Instruction::new(Mnemonic::Trap, Operands::Imm16 {
-            imm: u16::MAX,
-        });
+        let instr = Instruction::new(Mnemonic::Trap, Operands::Imm16 { imm: u16::MAX });
         assert!(validate_instruction(&instr).is_ok());
     }
 
     #[test]
     fn error_message_includes_context() {
-        let instr = Instruction::new(Mnemonic::Not, Operands::R {
-            rd: Register::new(32),
-        });
+        let instr = Instruction::new(
+            Mnemonic::Not,
+            Operands::R {
+                rd: Register::new(32),
+            },
+        );
         let result = validate_instruction(&instr);
         assert!(result.is_err());
         let err_msg = result.unwrap_err().to_string();
@@ -453,9 +451,12 @@ mod tests {
     #[test]
     fn all_gp_registers_are_valid() {
         for reg_idx in 0..32 {
-            let instr = Instruction::new(Mnemonic::Not, Operands::R {
-                rd: Register::new(reg_idx as u8),
-            });
+            let instr = Instruction::new(
+                Mnemonic::Not,
+                Operands::R {
+                    rd: Register::new(reg_idx as u8),
+                },
+            );
             assert!(
                 validate_instruction(&instr).is_ok(),
                 "register {} should be valid",
@@ -466,17 +467,23 @@ mod tests {
 
     #[test]
     fn boundary_register_32_is_invalid() {
-        let instr = Instruction::new(Mnemonic::Not, Operands::R {
-            rd: Register::new(32),
-        });
+        let instr = Instruction::new(
+            Mnemonic::Not,
+            Operands::R {
+                rd: Register::new(32),
+            },
+        );
         assert!(validate_instruction(&instr).is_err());
     }
 
     #[test]
     fn boundary_register_255_is_invalid() {
-        let instr = Instruction::new(Mnemonic::Not, Operands::R {
-            rd: Register::new(255),
-        });
+        let instr = Instruction::new(
+            Mnemonic::Not,
+            Operands::R {
+                rd: Register::new(255),
+            },
+        );
         assert!(validate_instruction(&instr).is_err());
     }
 }

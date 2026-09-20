@@ -145,7 +145,8 @@ impl<'a> Mutator<'a> {
     fn mutate_delete(&mut self, case: &TestCase) -> Vec<u8> {
         let mut buf = case.input.clone();
         if !buf.is_empty() {
-            let delete_count = ((self.rng.next_u64() % (buf.len() as u64)).max(1) as usize).min(buf.len());
+            let delete_count =
+                ((self.rng.next_u64() % (buf.len() as u64)).max(1) as usize).min(buf.len());
             let delete_pos = (self.rng.next_u64() as usize) % buf.len();
 
             for _ in 0..delete_count {

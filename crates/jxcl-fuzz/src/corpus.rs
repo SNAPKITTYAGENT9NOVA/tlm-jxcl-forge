@@ -125,7 +125,7 @@ impl Corpus {
 
     /// Get the total number of executions across all test cases.
     pub fn total_executions(&self) -> usize {
-        self.cases.iter().map(|c| c.execution_count()).count()
+        self.cases.iter().map(|c| c.execution_count()).sum()
     }
 
     /// Get the total number of bytes across all test cases.

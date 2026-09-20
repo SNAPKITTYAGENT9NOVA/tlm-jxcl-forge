@@ -53,8 +53,18 @@ mod tests {
 
     #[test]
     fn zero_flag_conditions() {
-        let flags_zero = Flags { z: true, n: false, c: false, v: false };
-        let flags_nonzero = Flags { z: false, n: false, c: false, v: false };
+        let flags_zero = Flags {
+            z: true,
+            n: false,
+            c: false,
+            v: false,
+        };
+        let flags_nonzero = Flags {
+            z: false,
+            n: false,
+            c: false,
+            v: false,
+        };
 
         assert!(evaluate_condition(Mnemonic::Jz, flags_zero));
         assert!(!evaluate_condition(Mnemonic::Jz, flags_nonzero));
@@ -64,8 +74,18 @@ mod tests {
 
     #[test]
     fn carry_flag_conditions() {
-        let flags_carry = Flags { z: false, n: false, c: true, v: false };
-        let flags_no_carry = Flags { z: false, n: false, c: false, v: false };
+        let flags_carry = Flags {
+            z: false,
+            n: false,
+            c: true,
+            v: false,
+        };
+        let flags_no_carry = Flags {
+            z: false,
+            n: false,
+            c: false,
+            v: false,
+        };
 
         assert!(evaluate_condition(Mnemonic::Jc, flags_carry));
         assert!(!evaluate_condition(Mnemonic::Jc, flags_no_carry));
@@ -76,17 +96,32 @@ mod tests {
     #[test]
     fn signed_less_than_uses_n_xor_v() {
         // N=1, V=0: signed less than (true)
-        let flags_lt = Flags { z: false, n: true, c: false, v: false };
+        let flags_lt = Flags {
+            z: false,
+            n: true,
+            c: false,
+            v: false,
+        };
         assert!(evaluate_condition(Mnemonic::Jl, flags_lt));
         assert!(!evaluate_condition(Mnemonic::Jge, flags_lt));
 
         // N=0, V=0: not signed less than (false)
-        let flags_ge = Flags { z: false, n: false, c: false, v: false };
+        let flags_ge = Flags {
+            z: false,
+            n: false,
+            c: false,
+            v: false,
+        };
         assert!(!evaluate_condition(Mnemonic::Jl, flags_ge));
         assert!(evaluate_condition(Mnemonic::Jge, flags_ge));
 
         // N=1, V=1: not signed less than (they're equal)
-        let flags_no_lt = Flags { z: false, n: true, c: false, v: true };
+        let flags_no_lt = Flags {
+            z: false,
+            n: true,
+            c: false,
+            v: true,
+        };
         assert!(!evaluate_condition(Mnemonic::Jl, flags_no_lt));
         assert!(evaluate_condition(Mnemonic::Jge, flags_no_lt));
     }
@@ -94,17 +129,32 @@ mod tests {
     #[test]
     fn greater_conditions() {
         // Z=0, N=0, V=0: greater (true)
-        let flags_gt = Flags { z: false, n: false, c: false, v: false };
+        let flags_gt = Flags {
+            z: false,
+            n: false,
+            c: false,
+            v: false,
+        };
         assert!(evaluate_condition(Mnemonic::Jg, flags_gt));
         assert!(!evaluate_condition(Mnemonic::Jle, flags_gt));
 
         // Z=1, N=0, V=0: not greater (equal)
-        let flags_eq = Flags { z: true, n: false, c: false, v: false };
+        let flags_eq = Flags {
+            z: true,
+            n: false,
+            c: false,
+            v: false,
+        };
         assert!(!evaluate_condition(Mnemonic::Jg, flags_eq));
         assert!(evaluate_condition(Mnemonic::Jle, flags_eq));
 
         // Z=0, N=1, V=0: not greater (less than)
-        let flags_lt = Flags { z: false, n: true, c: false, v: false };
+        let flags_lt = Flags {
+            z: false,
+            n: true,
+            c: false,
+            v: false,
+        };
         assert!(!evaluate_condition(Mnemonic::Jg, flags_lt));
         assert!(evaluate_condition(Mnemonic::Jle, flags_lt));
     }

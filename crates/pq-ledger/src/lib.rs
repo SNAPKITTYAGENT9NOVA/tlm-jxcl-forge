@@ -33,7 +33,7 @@
 use jxcl_bytes::{ByteCursor, ByteCursorMut};
 use pq_journal::{Journal, JournalEntry, JournalError};
 use pq_proof_types::AttestationBytes;
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use std::fmt;
 
 /// Error type for ledger operations.
@@ -184,23 +184,21 @@ impl Entry {
         let mut cursor = ByteCursorMut::new();
 
         // Serialize: previous_hash (32) + sequence (8) + timestamp (8) + attestation_len (4) + attestation
-        cursor.write_bytes(&self.previous_hash).map_err(|e| {
-            LedgerError::Io(format!("failed to write previous_hash: {}", e))
-        })?;
-        cursor.write_u64(self.sequence).map_err(|e| {
-            LedgerError::Io(format!("failed to write sequence: {}", e))
-        })?;
-        cursor.write_u64(self.timestamp).map_err(|e| {
-            LedgerError::Io(format!("failed to write timestamp: {}", e))
-        })?;
-        cursor.write_u32(self.attestation.as_slice().len() as u32).map_err(|e| {
-            LedgerError::Io(format!("failed to write attestation length: {}", e))
-        })?;
+        cursor
+            .write_bytes(&self.previous_hash)
+            .map_err(|e| LedgerError::Io(format!("failed to write previous_hash: {}", e)))?;
+        cursor
+            .write_u64(self.sequence)
+            .map_err(|e| LedgerError::Io(format!("failed to write sequence: {}", e)))?;
+        cursor
+            .write_u64(self.timestamp)
+            .map_err(|e| LedgerError::Io(format!("failed to write timestamp: {}", e)))?;
+        cursor
+            .write_u32(self.attestation.as_slice().len() as u32)
+            .map_err(|e| LedgerError::Io(format!("failed to write attestation length: {}", e)))?;
         cursor
             .write_bytes(self.attestation.as_slice())
-            .map_err(|e| {
-                LedgerError::Io(format!("failed to write attestation: {}", e))
-            })?;
+            .map_err(|e| LedgerError::Io(format!("failed to write attestation: {}", e)))?;
 
         Ok(cursor.into_vec())
     }
@@ -212,25 +210,23 @@ impl Entry {
         // Serialize the unsigned part
         cursor
             .write_bytes(&self.serialize_without_signature()?)
-            .map_err(|e| {
-                LedgerError::Io(format!("failed to write entry data: {}", e))
-            })?;
+            .map_err(|e| LedgerError::Io(format!("failed to write entry data: {}", e)))?;
 
         // Serialize signature presence and content
         if let Some(sig) = &self.signature {
-            cursor.write_u8(1).map_err(|e| {
-                LedgerError::Io(format!("failed to write signature flag: {}", e))
-            })?;
-            cursor.write_u32(sig.len() as u32).map_err(|e| {
-                LedgerError::Io(format!("failed to write signature length: {}", e))
-            })?;
-            cursor.write_bytes(sig).map_err(|e| {
-                LedgerError::Io(format!("failed to write signature: {}", e))
-            })?;
+            cursor
+                .write_u8(1)
+                .map_err(|e| LedgerError::Io(format!("failed to write signature flag: {}", e)))?;
+            cursor
+                .write_u32(sig.len() as u32)
+                .map_err(|e| LedgerError::Io(format!("failed to write signature length: {}", e)))?;
+            cursor
+                .write_bytes(sig)
+                .map_err(|e| LedgerError::Io(format!("failed to write signature: {}", e)))?;
         } else {
-            cursor.write_u8(0).map_err(|e| {
-                LedgerError::Io(format!("failed to write signature flag: {}", e))
-            })?;
+            cursor
+                .write_u8(0)
+                .map_err(|e| LedgerError::Io(format!("failed to write signature flag: {}", e)))?;
         }
 
         Ok(cursor.into_vec())
@@ -242,41 +238,43 @@ impl Entry {
 
         // Read previous hash
         let mut previous_hash = [0u8; 32];
-        let hash_bytes = cursor.read_bytes(32).map_err(|e| {
-            LedgerError::Io(format!("failed to read previous_hash: {}", e))
-        })?;
+        let hash_bytes = cursor
+            .read_bytes(32)
+            .map_err(|e| LedgerError::Io(format!("failed to read previous_hash: {}", e)))?;
         previous_hash.copy_from_slice(hash_bytes);
 
         // Read sequence
-        let sequence = cursor.read_u64().map_err(|e| {
-            LedgerError::Io(format!("failed to read sequence: {}", e))
-        })?;
+        let sequence = cursor
+            .read_u64()
+            .map_err(|e| LedgerError::Io(format!("failed to read sequence: {}", e)))?;
 
         // Read timestamp
-        let timestamp = cursor.read_u64().map_err(|e| {
-            LedgerError::Io(format!("failed to read timestamp: {}", e))
-        })?;
+        let timestamp = cursor
+            .read_u64()
+            .map_err(|e| LedgerError::Io(format!("failed to read timestamp: {}", e)))?;
 
         // Read attestation
-        let attestation_len = cursor.read_u32().map_err(|e| {
-            LedgerError::Io(format!("failed to read attestation length: {}", e))
-        })? as usize;
-        let attestation_bytes = cursor.read_bytes(attestation_len).map_err(|e| {
-            LedgerError::Io(format!("failed to read attestation: {}", e))
-        })?;
+        let attestation_len = cursor
+            .read_u32()
+            .map_err(|e| LedgerError::Io(format!("failed to read attestation length: {}", e)))?
+            as usize;
+        let attestation_bytes = cursor
+            .read_bytes(attestation_len)
+            .map_err(|e| LedgerError::Io(format!("failed to read attestation: {}", e)))?;
         let attestation = AttestationBytes::new(attestation_bytes.to_vec());
 
         // Read signature
-        let has_signature = cursor.read_u8().map_err(|e| {
-            LedgerError::Io(format!("failed to read signature flag: {}", e))
-        })?;
+        let has_signature = cursor
+            .read_u8()
+            .map_err(|e| LedgerError::Io(format!("failed to read signature flag: {}", e)))?;
         let signature = if has_signature != 0 {
-            let sig_len = cursor.read_u32().map_err(|e| {
-                LedgerError::Io(format!("failed to read signature length: {}", e))
-            })? as usize;
-            let sig_bytes = cursor.read_bytes(sig_len).map_err(|e| {
-                LedgerError::Io(format!("failed to read signature: {}", e))
-            })?;
+            let sig_len = cursor
+                .read_u32()
+                .map_err(|e| LedgerError::Io(format!("failed to read signature length: {}", e)))?
+                as usize;
+            let sig_bytes = cursor
+                .read_bytes(sig_len)
+                .map_err(|e| LedgerError::Io(format!("failed to read signature: {}", e)))?;
             Some(sig_bytes.to_vec())
         } else {
             None
@@ -357,9 +355,9 @@ impl Ledger {
         };
 
         if entry.previous_hash != expected_previous_hash {
-            return Err(LedgerError::VerificationFailed(format!(
-                "entry's previous_hash doesn't match expected hash"
-            )));
+            return Err(LedgerError::VerificationFailed(
+                "entry's previous_hash doesn't match expected hash".to_string(),
+            ));
         }
 
         // Compute and cache this entry's hash
@@ -394,7 +392,8 @@ impl Ledger {
                 })?
         };
 
-        let entry = Entry::with_signature(previous_hash, sequence, timestamp, attestation, signature);
+        let entry =
+            Entry::with_signature(previous_hash, sequence, timestamp, attestation, signature);
         self.append_entry(entry)
     }
 
@@ -524,8 +523,18 @@ mod tests {
 
     #[test]
     fn test_entry_hash_changes_with_data() {
-        let entry1 = Entry::new(genesis_hash(), 0, 1000, AttestationBytes::new(vec![1, 2, 3]));
-        let entry2 = Entry::new(genesis_hash(), 0, 1000, AttestationBytes::new(vec![1, 2, 4]));
+        let entry1 = Entry::new(
+            genesis_hash(),
+            0,
+            1000,
+            AttestationBytes::new(vec![1, 2, 3]),
+        );
+        let entry2 = Entry::new(
+            genesis_hash(),
+            0,
+            1000,
+            AttestationBytes::new(vec![1, 2, 4]),
+        );
 
         assert_ne!(entry1.hash(), entry2.hash());
     }
@@ -547,7 +556,8 @@ mod tests {
     fn test_entry_with_signature_serialization() {
         let attestation = AttestationBytes::new(vec![1, 2, 3]);
         let sig = vec![4, 5, 6];
-        let entry = Entry::with_signature(genesis_hash(), 0, 1000, attestation.clone(), sig.clone());
+        let entry =
+            Entry::with_signature(genesis_hash(), 0, 1000, attestation.clone(), sig.clone());
 
         let bytes = entry.to_bytes().unwrap();
         let deserialized = Entry::from_bytes(&bytes).unwrap();
@@ -664,7 +674,12 @@ mod tests {
     fn test_ledger_persistence() {
         let mut ledger = Ledger::new();
 
-        let e0 = Entry::new(genesis_hash(), 0, 1000, AttestationBytes::new(vec![1, 2, 3]));
+        let e0 = Entry::new(
+            genesis_hash(),
+            0,
+            1000,
+            AttestationBytes::new(vec![1, 2, 3]),
+        );
         ledger.append_entry(e0.clone()).unwrap();
 
         let e1 = Entry::new(e0.hash(), 1, 2000, AttestationBytes::new(vec![4, 5, 6]));
@@ -732,7 +747,7 @@ mod tests {
             let entry = Entry::new(
                 prev_hash,
                 i,
-                1000 + i as u64 * 100,
+                1000 + i * 100,
                 AttestationBytes::new(vec![i as u8]),
             );
             prev_hash = entry.hash();
@@ -756,7 +771,7 @@ mod tests {
             let entry = Entry::with_signature(
                 prev_hash,
                 i,
-                1000 + i as u64 * 100,
+                1000 + i * 100,
                 AttestationBytes::new(vec![i as u8]),
                 vec![200 + i as u8],
             );
