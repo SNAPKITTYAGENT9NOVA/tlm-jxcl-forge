@@ -1,0 +1,23 @@
+[package]
+name = "cloud-database"
+version = "0.1.0"
+edition = "2021"
+description = "DatabaseService: the third real composed service in this workspace, creating databases with a chosen consistency level, applying schema migrations, and taking/expiring snapshots by composing cloud-consistency, cloud-migration, cloud-retention, cloud-reconciler, and the Phase 1/2/3 resource model -- no new primitive, only composition."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-account = { path = "../cloud-account" }
+cloud-consistency = { path = "../cloud-consistency" }
+cloud-errors = { path = "../cloud-errors" }
+cloud-events = { path = "../cloud-events" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }
+cloud-migration = { path = "../cloud-migration" }
+cloud-policy = { path = "../cloud-policy" }
+cloud-quota = { path = "../cloud-quota" }
+cloud-reconciler = { path = "../cloud-reconciler" }
+cloud-region = { path = "../cloud-region" }
+cloud-resource = { path = "../cloud-resource" }
+cloud-resource-registry = { path = "../cloud-resource-registry" }
+cloud-retention = { path = "../cloud-retention" }
+cloud-types = { path = "../cloud-types" }
