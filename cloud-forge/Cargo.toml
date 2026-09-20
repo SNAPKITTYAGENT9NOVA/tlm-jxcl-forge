@@ -39,6 +39,7 @@ members = [
     "crates/cloud-credentials",
     "crates/cloud-session",
     "crates/cloud-policy-document",
+    "crates/cloud-iam",
 ]
 
 [profile.release]
