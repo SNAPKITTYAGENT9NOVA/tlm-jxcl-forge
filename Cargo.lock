@@ -1860,14 +1860,18 @@ name = "jxcl-cli"
 version = "0.1.0"
 dependencies = [
  "jxcl-assembler",
+ "jxcl-binary",
  "jxcl-config",
+ "jxcl-constants",
  "jxcl-debugger",
+ "jxcl-decoding",
  "jxcl-disassembler",
  "jxcl-instruction-validation",
  "jxcl-isa-metadata",
  "jxcl-loader",
  "jxcl-logging",
  "jxcl-simulator",
+ "tempfile",
 ]
 
 [[package]]
@@ -2310,6 +2314,7 @@ version = "0.1.0"
 dependencies = [
  "jxcl-cycle-model",
  "jxcl-instructions",
+ "jxcl-registers",
 ]
 
 [[package]]

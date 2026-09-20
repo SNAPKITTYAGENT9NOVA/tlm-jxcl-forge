@@ -8,3 +8,6 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 [dependencies]
 jxcl-instructions = { path = "../jxcl-instructions" }
 jxcl-cycle-model = { path = "../jxcl-cycle-model" }
+
+[dev-dependencies]
+jxcl-registers = { path = "../jxcl-registers" }
