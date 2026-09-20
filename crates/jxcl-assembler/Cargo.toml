@@ -6,12 +6,16 @@ description = "The two-pass assembler: source text to an object file (plus a con
 license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
-jxcl-lexer = { path = "../jxcl-lexer" }
-jxcl-parser = { path = "../jxcl-parser" }
-jxcl-object = { path = "../jxcl-object" }
-jxcl-symbols = { path = "../jxcl-symbols" }
-jxcl-relocations = { path = "../jxcl-relocations" }
-jxcl-encoding = { path = "../jxcl-encoding" }
-jxcl-instructions = { path = "../jxcl-instructions" }
-jxcl-linker = { path = "../jxcl-linker" }
+jxcl-binary = { path = "../jxcl-binary" }
 jxcl-debug-info = { path = "../jxcl-debug-info" }
+jxcl-encoding = { path = "../jxcl-encoding" }
+jxcl-errors = { path = "../jxcl-errors" }
+jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-lexer = { path = "../jxcl-lexer" }
+jxcl-linker = { path = "../jxcl-linker" }
+jxcl-object = { path = "../jxcl-object" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }
+jxcl-parser = { path = "../jxcl-parser" }
+jxcl-registers = { path = "../jxcl-registers" }
+jxcl-relocations = { path = "../jxcl-relocations" }
+jxcl-symbols = { path = "../jxcl-symbols" }
