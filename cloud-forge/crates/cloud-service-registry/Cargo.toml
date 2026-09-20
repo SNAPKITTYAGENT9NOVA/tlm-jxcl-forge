@@ -1,0 +1,10 @@
+[package]
+name = "cloud-service-registry"
+version = "0.1.0"
+edition = "2021"
+description = "A registry of named control-plane services and their health (Healthy/Unhealthy/Unknown)."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }

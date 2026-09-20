@@ -1,0 +1,11 @@
+[package]
+name = "cloud-scheduler"
+version = "0.1.0"
+edition = "2021"
+description = "Least-loaded-AZ placement: picks where a new resource goes within a region, given a RegionRegistry and a caller-supplied per-AZ usage count."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-region = { path = "../cloud-region" }
+cloud-types = { path = "../cloud-types" }

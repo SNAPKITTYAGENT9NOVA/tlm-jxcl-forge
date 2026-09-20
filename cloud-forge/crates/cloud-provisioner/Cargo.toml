@@ -1,0 +1,18 @@
+[package]
+name = "cloud-provisioner"
+version = "0.1.0"
+edition = "2021"
+description = "The AUTHORIZE -> VALIDATE -> PLAN -> APPLY -> VERIFY -> AUDIT resource-creation pipeline, composing cloud-policy, cloud-quota, cloud-scheduler, cloud-resource, and cloud-events, with rollback of every earlier stage's reservation if a later stage fails."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-policy = { path = "../cloud-policy" }
+cloud-quota = { path = "../cloud-quota" }
+cloud-region = { path = "../cloud-region" }
+cloud-scheduler = { path = "../cloud-scheduler" }
+cloud-resource = { path = "../cloud-resource" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }
+cloud-events = { path = "../cloud-events" }

@@ -1,0 +1,20 @@
+[package]
+name = "cloud-control-plane"
+version = "0.1.0"
+edition = "2021"
+description = "ControlPlane<T>: the orchestrating facade holding the account/region registries, policy, quota, events, and a resource store, exposing create (via cloud-provisioner)/get/list/delete."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-account = { path = "../cloud-account" }
+cloud-region = { path = "../cloud-region" }
+cloud-policy = { path = "../cloud-policy" }
+cloud-quota = { path = "../cloud-quota" }
+cloud-events = { path = "../cloud-events" }
+cloud-resource = { path = "../cloud-resource" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }
+cloud-provisioner = { path = "../cloud-provisioner" }
+cloud-reconciler = { path = "../cloud-reconciler" }
