@@ -22,6 +22,9 @@ members = [
     "crates/cloud-capacity",
     "crates/cloud-image",
     "crates/cloud-runtime",
+    "crates/cloud-checksum",
+    "crates/cloud-redundancy",
+    "crates/cloud-attachment",
 ]
 
 [profile.release]

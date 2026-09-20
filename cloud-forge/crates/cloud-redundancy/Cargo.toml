@@ -1,0 +1,9 @@
+[package]
+name = "cloud-redundancy"
+version = "0.1.0"
+edition = "2021"
+description = "RedundancyScheme: how many independent copies or erasure-coded shards data is split into, how many must survive to reconstruct it, and how many losses that tolerates."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }

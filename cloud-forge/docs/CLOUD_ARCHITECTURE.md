@@ -350,6 +350,83 @@ owns, not a compute-specific one.
   it would need to see resource-to-image references that don't exist
   in this workspace until compute resources themselves do.
 
+## Phase 5: storage primitives
+
+Compute (Phase 4) needed something to execute, a pool to run it in,
+and something to boot it from. Storage needs a different set of
+concepts entirely -- nothing about vCPUs or images applies -- but the
+same discipline: build what every storage-shaped resource (an object,
+a volume, a database's write-ahead log) would otherwise redefine for
+itself, and nothing that presupposes a specific service shape:
+
+| Crate | Owns |
+|---|---|
+| [`cloud-checksum`](./crates/cloud-checksum) | `Checksum`: a from-scratch CRC-32/ISO-HDLC content-integrity checksum, streaming or one-shot |
+| [`cloud-redundancy`](./crates/cloud-redundancy) | `RedundancyScheme`: replication or erasure coding, shard counts, reconstruction threshold, max tolerable loss |
+| [`cloud-attachment`](./crates/cloud-attachment) | `AttachmentState`: the attach/detach state machine for a volume-like resource |
+
+### Why `cloud-checksum` has zero dependencies and isn't a wrapper around a crates.io hash crate
+
+Every other crate in this workspace either has zero dependencies or
+depends only on other `cloud-forge` crates -- there has never been an
+external (crates.io) dependency anywhere in this workspace, and this
+phase doesn't start now. CRC-32/ISO-HDLC is implemented directly,
+bit-by-bit rather than via a precomputed table, favoring an
+obviously-correct implementation over a fast one. Its correctness is
+anchored to the algorithm's own published standard check value
+(`crc32(b"123456789") == 0xCBF4_3926`, the same value every real
+implementation -- zlib, gzip, PNG -- uses to confirm itself), not just
+internal self-consistency between `of()` and a hand-rolled
+alternative. This is a deliberate application of this workspace's
+anti-hallucination discipline to code, not just prose: a checksum
+algorithm invented for this crate, with no external value to check it
+against, would be exactly the kind of unverifiable claim this project
+avoids elsewhere.
+
+### Why redundancy and attachment are their own primitives
+
+`RedundancyScheme` models an arithmetic property (how many of N shards
+must survive to reconstruct the original), not an encoder -- this
+crate never touches actual bytes, which is why it composes with any
+future storage service regardless of whether that service replicates
+whole objects or erasure-codes them. `AttachmentState` is a third
+state machine alongside `cloud-lifecycle::Lifecycle` and
+`cloud-runtime::RuntimeState` (Phase 4), and is worth contrasting with
+both explicitly: `Lifecycle` tracks whether a resource *record*
+exists, `RuntimeState` tracks whether a *compute* resource is
+executing (meaningless for a volume), and `AttachmentState` tracks
+whether *this* volume is currently connected to something -- three
+questions that vary independently, not one overloaded enum wearing
+three names. Unlike the other two, `AttachmentState` has **no terminal
+state**: every state has a path back to `Detached`, because attachment
+cycles for the volume's whole life; ending that life is `Lifecycle`'s
+job, not this crate's. This is tested directly (`every_state_has_a_path_back_to_detached`),
+not just asserted from the transition table's shape.
+
+### What Phase 5 deliberately does not include
+
+- **No `cloud-storage-capacity` crate.** `cloud-capacity` (Phase 4)
+  tracks vCPU/memory, a two-dimensional quantity meaningful to
+  compute placement; a byte-capacity pool for storage nodes is a
+  real, different primitive, but building it now with no concrete
+  allocator or storage control-plane phase to feed would produce
+  exactly the kind of crate that exists only to be depended on later
+  without doing anything itself today -- the thing this workspace's
+  layering rule explicitly prohibits (see "Layering" above). It's
+  deferred until a storage provisioning phase actually needs it.
+- **No object/blob storage crate and no `cloud-volume` crate.**
+  Composing `cloud-checksum` + `cloud-redundancy` + `cloud-attachment`
+  (and `cloud-provisioner`/`cloud-control-plane`) into an actual
+  storage service is the same kind of composition Phase 4 deferred
+  for compute (`cloud-compute`): it doesn't get built, or named, until
+  it's a real composition of already-real primitives.
+- **No erasure-coding encoder/decoder.** `cloud-redundancy` models the
+  arithmetic a real erasure code (e.g. Reed-Solomon) guarantees --
+  `data_shards` of `data_shards + parity_shards` shards reconstruct
+  the original -- without implementing the encoding itself, which is
+  a substantial cryptographic/mathematical undertaking out of scope
+  for a placement/durability-accounting primitive.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive
