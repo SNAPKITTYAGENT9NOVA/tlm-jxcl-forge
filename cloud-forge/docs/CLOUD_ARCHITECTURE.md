@@ -1015,6 +1015,79 @@ the data, not by duplicating it or routing around it.
   documents remain principal-facing, the same shape `cloud-policy`
   already evaluates against.
 
+## Phase 14: `cloud-iam`, the fifth composed service
+
+Phase 13 built the IAM surface as three disjoint primitives, deliberately
+without a service, the same shape Phases 4-7 used before their own
+service phases arrived later. Phase 14 is that service: it composes
+`cloud-credentials`, `cloud-session`, and `cloud-policy-document`
+together with `cloud-policy` and `cloud-events`, following exactly the
+"compose already-real primitives, introduce none" discipline
+`cloud-compute`/`cloud-storage`/`cloud-database`/`cloud-messaging`
+(Phases 8-11) each established.
+
+| Crate | Owns |
+|---|---|
+| [`cloud-iam`](./crates/cloud-iam) | `IamService`: `create_credential`/`activate_credential`/`deactivate_credential`/`delete_credential`/`assume_role`/`federate`/`revoke_session`/`authorize`/`load_policy_document`/`export_policy_document`, composing five existing crates |
+
+### The one real business rule: policy gates session creation
+
+Every composed service so far has called `Policy::authorize` before
+mutating -- but always to gate *another* service's own resource
+operation (`launch`, `create_volume`, `create_database`, `create_queue`).
+`IamService::assume_role` and `IamService::federate` are the first
+operations in this workspace where `cloud-policy` (Phase 1) governs
+something *within the IAM surface itself*: a principal now needs
+permission to assume a role or federate in at all, checked before any
+session is created, so a denied attempt leaves `cloud-session`'s store
+completely untouched. The mechanism is unchanged from every earlier
+phase; what's new is that IAM's own operations are finally subject to
+the same authorization discipline as everyone else's.
+
+### `load_policy_document`/`export_policy_document`: the live policy, round-trippable
+
+`IamService` holds exactly one active `Policy`, and `load_policy_document`
+replaces it immediately -- every subsequent `authorize`/`assume_role`/
+`federate` call is governed by the newly loaded policy, not just parsed
+data sitting inertly. `export_policy_document` is the inverse, so a
+policy can be extracted, edited as JSON, and reloaded. A malformed
+document leaves the previous policy in place: `self.policy = ...from_json(json)?`
+only assigns once the parse has already succeeded, so a failed
+`load_policy_document` call is a pure no-op on the active policy,
+consistent with every other fallible mutation in this workspace leaving
+state untouched on error.
+
+### No accounts, regions, quota, or `Arn` -- deliberately
+
+Every prior composed service validated an `AccountId`/`RegionId` and
+reserved a `cloud-quota` unit before creating anything, and registered
+a resolvable `Arn` for what it created. `IamService` does none of
+these: real IAM systems (AWS's own included) are inherently global,
+not region-scoped, and neither a credential nor a session is
+provisioned infrastructure with a finite regional capacity or a
+canonical external name -- mirroring real IAM's own inconsistent
+resource model, where a role or user has an ARN but an access key or
+an STS session token does not. Omitting all four here is a deliberate
+design choice mirroring what IAM actually is, not an oversight or a
+gap to fill later.
+
+### What Phase 14 deliberately does not include
+
+- **No resource-based policy attachment.** `IamService` holds one
+  policy governing every principal; attaching a distinct policy to a
+  specific resource remains the Phase 13 (IAM) concept `cloud-resource`'s
+  own Phase 1 doc comment named as not pulled forward into `Resource<T>`.
+- **No credential-to-session linkage.** A `Credential` and a `Session`
+  are tracked independently; `IamService` does not model long-term
+  credentials being exchanged for a short-term session the way real
+  STS `GetSessionToken` does, since `cloud-credentials` has no secret
+  material for such an exchange to authenticate against in the first
+  place (Phase 13's own deferral).
+- **No policy versioning or multiple named policies.** `load_policy_document`
+  replaces the single active policy outright; there is no history of
+  prior policies, no policy identifiers, and no way to attach different
+  policies to different principals within one `IamService`.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

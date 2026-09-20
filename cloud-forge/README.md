@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-345%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-357%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2038%2F38%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2039%2F39%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%2013%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%2014%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -12,12 +12,14 @@ compose from, built for real before any service-shaped crate existed —
 and, as of Phase 11, all four (`cloud-compute`, Phase 8; `cloud-storage`,
 Phase 9; `cloud-database`, Phase 10; `cloud-messaging`, Phase 11)
 actually composed from them, with Phase 12 (`cloud-orchestration`)
-composing two of those services *together* for the first time, and
-Phase 13 building out the IAM surface (`cloud-credentials`,
-`cloud-session`, `cloud-policy-document`) `cloud-identity` deferred all
-the way back in Phase 1. This is a **separate Cargo workspace** from
-the rest of this repository's 100-crate `jxcl`/`pq-*` stack and from
-`verification-forge` — nothing here depends on either, and neither
+composing two of those services *together* for the first time, Phase 13
+building out the IAM surface (`cloud-credentials`, `cloud-session`,
+`cloud-policy-document`) `cloud-identity` deferred all the way back in
+Phase 1, and now Phase 14 (`cloud-iam`) composing those three IAM
+primitives into a fifth real service. This is a **separate Cargo
+workspace** from the rest of this repository's 100-crate `jxcl`/`pq-*`
+stack and from `verification-forge` — nothing here depends on either,
+and neither
 depends on this.
 
 > **The non-negotiable rule:** do not create one crate per AWS service.
@@ -340,7 +342,36 @@ in Phase 4. See [`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md)
 for the full reasoning, including why there's no `cloud-federation`
 crate and no IAM service yet.
 
-**345 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 14, `cloud-iam` — the fifth composed service
+
+Phase 13 built the IAM surface as three disjoint primitives without a
+service, the same shape Phases 4-7 used before their own service
+phases arrived later. Phase 14 is that service:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-iam`](./crates/cloud-iam) | `IamService`: `create_credential`/`assume_role`/`federate`/`revoke_session`/`authorize`/`load_policy_document`/`export_policy_document`, composing five existing crates — no new primitive | 12 |
+
+Every composed service so far has called `Policy::authorize` before
+mutating, but always to gate *another* service's resource operation.
+`assume_role`/`federate` are the first operations anywhere in this
+workspace where `cloud-policy` (Phase 1) governs something within the
+IAM surface itself: a principal now needs permission to assume a role
+or federate in at all, checked before any session is created, leaving
+`cloud-session`'s store untouched on denial. `load_policy_document`
+replaces the active policy immediately — every subsequent authorization
+decision uses it — and a malformed document is a pure no-op, since the
+assignment only happens after `cloud-policy-document::from_json`
+already succeeded. Unlike every prior composed service, `IamService`
+validates no account or region and reserves no quota, and registers no
+`Arn`: real IAM is inherently global, and neither a credential nor a
+session is region-scoped infrastructure with a canonical external name
+— mirroring real IAM's own inconsistent resource model (a role has an
+ARN; an access key does not), not a gap left to fill later. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
+full reasoning.
+
+**357 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -404,11 +435,14 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   What remains deferred is composing these services *together* (e.g. a
   compute instance's logs delivered through a queue), which is
   deliberately out of scope for any single phase so far.
-- **No IAM service composing `cloud-credentials`/`cloud-session`/
-  `cloud-policy-document` yet.** Phase 13 is primitives only, the same
-  shape Phases 4-7 each used; a service that creates them together with
-  quota, events, and an `Arn`-resolvable identity is a future phase's
-  concern.
+- **`cloud-iam` links no credential to any session.** A long-term
+  credential and a short-term session are tracked independently;
+  exchanging one for the other the way real STS `GetSessionToken` does
+  needs secret material `cloud-credentials` doesn't have (see below).
+- **No policy versioning or multiple named policies in `cloud-iam`.**
+  `load_policy_document` replaces the single active policy outright —
+  no history, no policy identifiers, no per-principal policy
+  attachment.
 - **No real cryptographic secret material in `cloud-credentials`** — no
   secret bytes, signing, or verification; secure secret generation
   needs randomness this zero-dependency workspace doesn't pull in.
@@ -486,6 +520,14 @@ Two tests are the best reads for how these primitives fit together:
   full equality with the original — proving the parser and serializer
   agree on every field this schema has, not just the fields easiest to
   test.
+- `cloud-iam`'s
+  [`exported_policy_document_round_trips_through_load`](./crates/cloud-iam/src/lib.rs)
+  — exports one service's active policy to JSON, loads it into a
+  *second*, independently-created `IamService` that started out
+  denying everything, and proves `assume_role` now succeeds there too —
+  showing `cloud-policy-document`'s round trip and `cloud-iam`'s
+  policy-gated session creation compose correctly together, not just
+  each in isolation.
 
 ## Building and testing
 

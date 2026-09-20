@@ -84,7 +84,7 @@ flowchart TB
         vfe --> vfk
     end
 
-    subgraph CF["cloud-forge/Cargo.toml (38 crates)"]
+    subgraph CF["cloud-forge/Cargo.toml (39 crates)"]
         direction LR
         cfk["Primitive kernel<br/>cloud-resource, cloud-policy, …"]
         cfc["cloud-core facade"]
@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 38 | A from-first-principles cloud-resource substrate (Phase 13 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 39 | A from-first-principles cloud-resource substrate (Phase 14 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -385,7 +385,7 @@ still pending).
 
 ## `cloud-forge`: a from-first-principles cloud substrate
 
-A completely separate, 38-crate Cargo workspace attempting the
+A completely separate, 39-crate Cargo workspace attempting the
 substrate underneath an AWS-shaped cloud platform: resource identity,
 lifecycle, ownership, tagging, policy, events, quota, a provisioning
 pipeline and control plane (Phase 2), canonical resolvable resource
@@ -405,11 +405,12 @@ database, migrate its schema, snapshot and expire it" service),
 `cloud-messaging` (Phase 11 — the fourth and last, composing a real
 "create queues and topics, subscribe, publish, and fan a message out"
 service), `cloud-orchestration` (Phase 12 — the first crate to compose two of
-those *services* together, rather than primitives within one), and now
-(Phase 13) the IAM surface `cloud-identity` deferred all the way back
-in Phase 1 — `cloud-credentials`, `cloud-session`, and
-`cloud-policy-document`. Its one governing rule: **do not create one
-crate per AWS
+those *services* together, rather than primitives within one), the IAM
+surface `cloud-identity` deferred all the way back in Phase 1 —
+`cloud-credentials`, `cloud-session`, and `cloud-policy-document`
+(Phase 13) — and now `cloud-iam` (Phase 14 — a fifth composed service,
+this one over those three IAM primitives). Its one governing rule: **do
+not create one crate per AWS
 service; build the primitives once, then compose services from those
 primitives.** No crate in this workspace is named after an AWS
 product, and none will be until it is a composition of already-real
@@ -420,7 +421,7 @@ product.
 
 ```mermaid
 flowchart LR
-    subgraph cf["cloud-forge (38 crates)"]
+    subgraph cf["cloud-forge (39 crates)"]
         direction TB
         types["cloud-types / cloud-errors<br/>(validated ids, Arn, shared errors)"]
         model["cloud-resource / cloud-lifecycle / cloud-tags<br/>(the Resource&lt;T&gt; wrapper)"]
@@ -441,6 +442,7 @@ flowchart LR
         messagingSvc["cloud-messaging<br/>(create_queue/create_topic/subscribe/publish/<br/>enqueue/receive/delete_queue/delete_topic)"]
         orchestration["cloud-orchestration<br/>(attach_volume/detach_volume)"]
         iam["cloud-credentials / cloud-session /<br/>cloud-policy-document<br/>(active-credential cap, session validity, policy JSON)"]
+        iamSvc["cloud-iam<br/>(assume_role/federate/authorize/<br/>load_policy_document)"]
         types --> model --> core
         access --> core
         ops --> core
@@ -454,32 +456,32 @@ flowchart LR
         computeSvc --> orchestration
         storageSvc --> orchestration
         access -.deferred to Phase 13.-> iam
+        iam --> iamSvc
     end
 ```
 
-This is **Phase 13 of a much larger, explicitly staged roadmap** —
-building out the IAM surface `cloud-identity`'s own Phase 1 doc comment
-named as deferred: "credentials, sessions, federation, policy
-documents ... is Phase 13." 345 tests pass, clippy and fmt are clean,
-and `cloud-provisioner`'s own rollback tests prove the pipeline's
-atomicity claim directly: if `PLAN` or `APPLY` fails after `VALIDATE`
-already reserved quota, that reservation is released before the error
-returns. `cloud-credentials` models a credential's lifecycle (not real
-secret material) and enforces AWS's own rule that a principal may hold
-at most two `Active` credentials at once. `cloud-session` covers both
-"sessions" and "federation" in one `Session` type, valid only while
-un-revoked *and* unexpired — the same two-independent-invalidity-path
-shape `cloud-visibility::MessageLease` (Phase 7) established.
-`cloud-policy-document` hand-rolls a JSON parser restricted to exactly
-a policy document's fixed schema, upholding this workspace's
-zero-external-dependency posture the same way `cloud-checksum`'s
-hand-rolled CRC-32 (Phase 5) does; `cloud-policy` itself gained one
-small `statements()` accessor to make this possible, the same
-precedent `cloud-scheduler` (Phase 2) set gaining
-`place_least_loaded_with_capacity` in Phase 4. Phase 13 builds
-primitives only, following primitives-before-a-service exactly as
-Phases 4-7 each did before compute/storage/database/messaging's own
-service phases arrived later.
+This is **Phase 14 of a much larger, explicitly staged roadmap** — the
+fifth composed service, this one over Phase 13's IAM surface
+(`cloud-credentials`/`cloud-session`/`cloud-policy-document`), following
+exactly the "compose already-real primitives" discipline
+`cloud-compute`/`cloud-storage`/`cloud-database`/`cloud-messaging`
+(Phases 8-11) each established. 357 tests pass, clippy and fmt are
+clean, and `cloud-provisioner`'s own rollback tests still prove the
+pipeline's atomicity claim directly: if `PLAN` or `APPLY` fails after
+`VALIDATE` already reserved quota, that reservation is released before
+the error returns. `cloud-iam`'s `assume_role`/`federate` are the first
+operations in this workspace where `cloud-policy` (Phase 1) governs
+something *within the IAM surface itself*, rather than gating another
+service's own resource operation — a principal now needs permission to
+assume a role or federate in at all, checked before any session is
+created. `load_policy_document`/`export_policy_document` make the
+active policy round-trippable through `cloud-policy-document`'s JSON
+format, with a failed load leaving the previous policy untouched.
+Unlike every earlier composed service, `cloud-iam` validates no
+account or region and reserves no quota, and registers no `Arn`: real
+IAM is inherently global, mirroring its own inconsistent resource model
+(a role has an ARN; an access key does not) rather than a gap left to
+fill later.
 
 **See [`cloud-forge/README.md`](./cloud-forge/README.md) and
 [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)
