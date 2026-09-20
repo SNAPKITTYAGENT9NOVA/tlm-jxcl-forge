@@ -30,7 +30,9 @@ pub enum PolicyError {
 impl fmt::Display for PolicyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PolicyError::ConstraintViolation(msg) => write!(f, "policy constraint violated: {}", msg),
+            PolicyError::ConstraintViolation(msg) => {
+                write!(f, "policy constraint violated: {}", msg)
+            }
             PolicyError::EvaluationError(msg) => write!(f, "policy evaluation error: {}", msg),
         }
     }
@@ -263,8 +265,8 @@ mod tests {
 
     #[test]
     fn test_policy_context_with_custom_data() {
-        let context = PolicyContext::new(true, 64, true)
-            .with_custom_data("custom info".to_string());
+        let context =
+            PolicyContext::new(true, 64, true).with_custom_data("custom info".to_string());
         assert_eq!(context.custom_data, Some("custom info".to_string()));
     }
 

@@ -104,12 +104,12 @@ impl JournalEntry {
     /// Format: [4-byte length (u32)][data]
     fn to_bytes(&self) -> Result<Vec<u8>, JournalError> {
         let mut cursor = ByteCursorMut::new();
-        cursor.write_u32(self.data.len() as u32).map_err(|e| {
-            JournalError::Io(format!("failed to write entry length: {}", e))
-        })?;
-        cursor.write_bytes(&self.data).map_err(|e| {
-            JournalError::Io(format!("failed to write entry data: {}", e))
-        })?;
+        cursor
+            .write_u32(self.data.len() as u32)
+            .map_err(|e| JournalError::Io(format!("failed to write entry length: {}", e)))?;
+        cursor
+            .write_bytes(&self.data)
+            .map_err(|e| JournalError::Io(format!("failed to write entry data: {}", e)))?;
         Ok(cursor.into_vec())
     }
 
@@ -124,9 +124,10 @@ impl JournalEntry {
         }
 
         let mut cursor = ByteCursor::new(data);
-        let entry_len = cursor.read_u32().map_err(|e| {
-            JournalError::Io(format!("failed to read entry length: {}", e))
-        })? as usize;
+        let entry_len = cursor
+            .read_u32()
+            .map_err(|e| JournalError::Io(format!("failed to read entry length: {}", e)))?
+            as usize;
 
         if cursor.remaining() < entry_len {
             return Err(JournalError::Corrupted(format!(
@@ -136,9 +137,9 @@ impl JournalEntry {
             )));
         }
 
-        let entry_data = cursor.read_bytes(entry_len).map_err(|e| {
-            JournalError::Io(format!("failed to read entry data: {}", e))
-        })?;
+        let entry_data = cursor
+            .read_bytes(entry_len)
+            .map_err(|e| JournalError::Io(format!("failed to read entry data: {}", e)))?;
 
         let entry = JournalEntry {
             data: entry_data.to_vec(),
@@ -163,9 +164,7 @@ pub struct Journal {
 impl Journal {
     /// Create a new, empty journal.
     pub fn new() -> Self {
-        Journal {
-            buffer: Vec::new(),
-        }
+        Journal { buffer: Vec::new() }
     }
 
     /// Create a journal from existing bytes (e.g., loaded from disk).
@@ -182,9 +181,10 @@ impl Journal {
             }
 
             let mut temp_cursor = ByteCursor::new(&data[cursor..]);
-            let entry_len = temp_cursor.read_u32().map_err(|e| {
-                JournalError::Io(format!("failed to read entry length: {}", e))
-            })? as usize;
+            let entry_len = temp_cursor
+                .read_u32()
+                .map_err(|e| JournalError::Io(format!("failed to read entry length: {}", e)))?
+                as usize;
 
             if temp_cursor.remaining() < entry_len {
                 return Err(JournalError::Corrupted(format!(

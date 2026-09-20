@@ -61,7 +61,7 @@ impl Machine {
     /// `PUSH` (which decrements SP before writing, per the downward-growing
     /// stack convention, spec §15) lands at the highest usable address.
     pub fn new(memory: Memory) -> Self {
-        let sp = memory.len() as u64;
+        let sp = memory.len();
         let mut machine = Machine {
             registers: RegisterFile::new(),
             memory,
@@ -76,12 +76,7 @@ impl Machine {
 
     /// Take a serializable snapshot of the current machine state.
     pub fn snapshot(&self) -> MachineSnapshot {
-        let general_registers = self
-            .registers
-            .general_registers()
-            .iter()
-            .copied()
-            .collect();
+        let general_registers = self.registers.general_registers().to_vec();
 
         MachineSnapshot {
             general_registers,
@@ -171,7 +166,10 @@ mod tests {
         let mut machine = Machine::new(mem);
 
         // Modify machine state
-        machine.registers.write(RegisterIndex::new(1), 0xABCD).unwrap();
+        machine
+            .registers
+            .write(RegisterIndex::new(1), 0xABCD)
+            .unwrap();
         machine.registers.pc = 4;
         machine.cycle_count = 7;
 

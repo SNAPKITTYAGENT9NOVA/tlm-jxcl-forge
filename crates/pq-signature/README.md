@@ -58,8 +58,7 @@ Implemented test kinds: unit (15 tests), known-answer, tamper, wrong-key.
 
 ## Status
 
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+Implemented in Batch F (independent crypto crates).
 
 ## License
 
