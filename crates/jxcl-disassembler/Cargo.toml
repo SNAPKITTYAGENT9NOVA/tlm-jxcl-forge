@@ -10,3 +10,4 @@ jxcl-decoding = { path = "../jxcl-decoding" }
 jxcl-instructions = { path = "../jxcl-instructions" }
 jxcl-symbols = { path = "../jxcl-symbols" }
 jxcl-debug-info = { path = "../jxcl-debug-info" }
+jxcl-errors = { path = "../jxcl-errors" }
