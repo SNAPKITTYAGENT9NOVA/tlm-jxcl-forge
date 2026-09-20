@@ -28,12 +28,13 @@ Used by inspection tools (e.g., `jxcl inspect`) and debuggers to report ISA capa
 
 ## Testing
 
-Planned test kinds: unit.
-
-## Status
-
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+The crate includes 9 unit tests covering:
+- Metadata describes the live ISA correctly
+- Self-consistency validation passes
+- Opcode space calculations are correct
+- Assigned opcodes match the registry
+- Validation catches inconsistencies
+- Display formatting works correctly
 
 ## License
 

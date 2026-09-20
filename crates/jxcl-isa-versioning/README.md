@@ -31,12 +31,13 @@ Examples:
 
 ## Testing
 
-Planned test kinds: unit, boundary.
-
-## Status
-
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+The crate includes 12 unit tests covering:
+- Current version derivation from binary format version
+- Compatibility checks (same version, older minor, newer minor)
+- Version comparison operations
+- Display formatting and parsing
+- Boundary cases (max version numbers)
+- Ordering relationships
 
 ## License
 

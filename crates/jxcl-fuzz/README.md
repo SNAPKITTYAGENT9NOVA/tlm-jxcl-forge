@@ -126,8 +126,7 @@ External crates:
 
 ## Status
 
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+Implemented in Batch D (debug/simulation category) with full property-based fuzzing support and extensible harness design.
 
 ## License
 
