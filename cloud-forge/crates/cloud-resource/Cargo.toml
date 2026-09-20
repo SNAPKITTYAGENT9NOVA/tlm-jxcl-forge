@@ -1,0 +1,12 @@
+[package]
+name = "cloud-resource"
+version = "0.1.0"
+edition = "2021"
+description = "Resource<T>: the generic wrapper every cloud-forge resource is built from -- id, type, region, owning account, lifecycle, a monotonic version, tags, and timestamps -- so a future Instance/Bucket/etc. never has to remember to include these fields correctly on its own."
+license = "MIT"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }
+cloud-tags = { path = "../cloud-tags" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }

@@ -3,18 +3,21 @@
 ![CI](https://github.com/SNAPKITTYAGENT9NOVA/tlm-jxcl-forge/actions/workflows/ci.yml/badge.svg)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2098%2F100%20crates-brightgreen)
-![crates](https://img.shields.io/badge/crates-100%20%2B%2021-blue)
+![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2012-blue)
 ![deps](https://img.shields.io/badge/ISA%20forge-zero%20dependencies-lightgrey)
 
 **TLM JXCL** — a from-scratch, deterministic, byte-addressable 64-bit
 instruction-set architecture and toolchain, grown into a 100-crate Rust
 workspace covering the ISA itself, a post-quantum-encrypted caching and
-storage stack, zero-knowledge error attestation, and (as a fully
-separate second workspace) a from-scratch formal verification kernel.
-Every crate is real: either genuine new functionality, or code
-extracted verbatim from this repository's original six-crate baseline
-into its own independently-testable module — never a thin wrapper
-padding a headline number.
+storage stack, and zero-knowledge error attestation. Alongside it live
+two fully independent workspaces: `verification-forge`, a from-scratch
+formal verification kernel, and `cloud-forge`, a from-first-principles
+cloud-resource substrate (build the primitives an AWS-shaped platform
+would need, before any service-named crate exists). Every crate is
+real: either genuine new functionality, or code extracted verbatim from
+this repository's original six-crate baseline into its own
+independently-testable module — never a thin wrapper padding a
+headline number.
 
 ## Table of contents
 
@@ -27,6 +30,7 @@ padding a headline number.
 - [SQL Server vault (`pq-sql-vault`)](#sql-server-vault-pq-sql-vault)
 - [Verifiable error attestations (`pq-error-proof`)](#verifiable-error-attestations-pq-error-proof)
 - [`verification-forge`: a from-scratch proof kernel](#verification-forge-a-from-scratch-proof-kernel)
+- [`cloud-forge`: a from-first-principles cloud substrate](#cloud-forge-a-from-first-principles-cloud-substrate)
 - [Why 100 crates, and how to trust that number](#why-100-crates-and-how-to-trust-that-number)
 - [Networking, services, and cross-cutting concerns](#networking-services-and-cross-cutting-concerns)
 - [Testing methodology](#testing-methodology)
@@ -50,7 +54,11 @@ mandate to decompose the workspace into 100 single-invariant crates
 produced the root workspace as it exists today. `verification-forge`
 began later and independently, as a from-scratch formal-verification
 kernel with no dependency on anything ISA- or crypto-specific — hence
-its own separate workspace rather than crate #101.
+its own separate workspace rather than crate #101. `cloud-forge` began
+later still, as an explicit from-first-principles attempt at the
+substrate underneath an AWS-shaped cloud platform — again independent
+of the other two, and again a separate workspace rather than more root
+crates, for the same reason `verification-forge` is one.
 
 ## Repository map
 
@@ -75,16 +83,27 @@ flowchart TB
         vfe --> vfk
     end
 
+    subgraph CF["cloud-forge/Cargo.toml (12 crates)"]
+        direction LR
+        cfk["Primitive kernel<br/>cloud-resource, cloud-policy, …"]
+        cfc["cloud-core facade"]
+        cfk --> cfc
+    end
+
     ROOT -.no shared code.- VF
+    ROOT -.no shared code.- CF
+    VF -.no shared code.- CF
 
     style ROOT fill:#2c5282,color:#fff,stroke:#1a365d
     style VF fill:#2d3748,color:#fff,stroke:#1a202c
+    style CF fill:#553c2c,color:#fff,stroke:#3d2b1f
 ```
 
 | Workspace | Crates | What it is | Where to read more |
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 12 | A from-first-principles cloud-resource substrate (Phase 1 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -92,7 +111,7 @@ or go straight to its own README.
 
 ## Getting started
 
-Both workspaces build with a stable Rust 2021 toolchain and no
+All three workspaces build with a stable Rust 2021 toolchain and no
 non-Rust build tooling (no `iverilog`/`yosys`, no `circom`, nothing
 outside `cargo`):
 
@@ -105,6 +124,11 @@ cargo test --workspace
 
 # verification-forge: the formal-verification kernel (separate workspace)
 cd verification-forge
+cargo build --workspace
+cargo test --workspace --release
+
+# cloud-forge: the cloud-resource substrate (separate workspace)
+cd ../cloud-forge
 cargo build --workspace
 cargo test --workspace --release
 ```
@@ -358,6 +382,47 @@ built against, a worked inductive-proof example, and the current
 roadmap** (external SMT/model-checking oracle backends and a CLI are
 still pending).
 
+## `cloud-forge`: a from-first-principles cloud substrate
+
+A completely separate, 12-crate Cargo workspace attempting the
+substrate underneath an AWS-shaped cloud platform: resource identity,
+lifecycle, ownership, tagging, policy, events, and quota — the handful
+of concepts every cloud service (compute, storage, database,
+messaging, …) would reuse rather than reinvent. Its one governing rule:
+**do not create one crate per AWS service; build the primitives once,
+then compose services from those primitives.** No crate in this
+workspace is named after an AWS product, and none will be until it is a
+composition of already-real primitive crates.
+
+```mermaid
+flowchart LR
+    subgraph cf["cloud-forge (12 crates)"]
+        direction TB
+        types["cloud-types / cloud-errors<br/>(validated ids, Arn, shared errors)"]
+        model["cloud-resource / cloud-lifecycle / cloud-tags<br/>(the Resource&lt;T&gt; wrapper)"]
+        access["cloud-region / cloud-account / cloud-identity / cloud-policy<br/>(deny-dominates evaluation)"]
+        ops["cloud-events / cloud-quota"]
+        core["cloud-core<br/>(facade + integration test)"]
+        types --> model --> core
+        access --> core
+        ops --> core
+    end
+```
+
+This is **Phase 1 of a much larger, explicitly staged roadmap** (a
+control plane in Phase 2, then compute/storage/database/messaging
+primitives, and only then AWS-shaped services composed on top). 94
+tests pass, clippy and fmt are clean, and `cloud-core`'s own
+integration test provisions a tagged, policy-checked, quota-limited
+resource end to end using nothing but the primitives in the diagram
+above — proof the composition the governing rule demands actually
+works, not just that each crate compiles in isolation.
+
+**See [`cloud-forge/README.md`](./cloud-forge/README.md) and
+[`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)
+for the full 46-phase roadmap, what Phase 1 deliberately leaves out
+(and why), and the crate-by-crate breakdown.**
+
 ## Why 100 crates, and how to trust that number
 
 The root workspace's crate count grew from an original baseline of six
@@ -575,6 +640,8 @@ request — a change that fails any of them locally will fail in CI too.
 | [`docs/DEPENDENCY_GRAPH.md`](./docs/DEPENDENCY_GRAPH.md) | The crate dependency DAG |
 | [`docs/BASELINE.md`](./docs/BASELINE.md) | The pre-expansion (six-crate) baseline this decomposition is grounded in |
 | [`verification-forge/README.md`](./verification-forge/README.md) | The formal-verification workspace: architecture, invariants, roadmap |
+| [`cloud-forge/README.md`](./cloud-forge/README.md) | The cloud-resource-substrate workspace: crate index, what's implemented |
+| [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md) | The full 46-phase roadmap, layering, and Phase 1 scope decisions |
 
 ## License
 

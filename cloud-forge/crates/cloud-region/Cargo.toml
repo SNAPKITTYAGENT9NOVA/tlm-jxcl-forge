@@ -1,0 +1,10 @@
+[package]
+name = "cloud-region"
+version = "0.1.0"
+edition = "2021"
+description = "A region/availability-zone registry: which AZs exist under which region, and validation that an AzId actually belongs to a registered region."
+license = "MIT"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }

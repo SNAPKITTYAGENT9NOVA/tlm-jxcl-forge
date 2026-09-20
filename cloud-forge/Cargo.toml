@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/cloud-types",
+    "crates/cloud-errors",
+    "crates/cloud-tags",
+    "crates/cloud-lifecycle",
+    "crates/cloud-resource",
+    "crates/cloud-region",
+    "crates/cloud-account",
+    "crates/cloud-identity",
+    "crates/cloud-policy",
+    "crates/cloud-events",
+    "crates/cloud-quota",
+    "crates/cloud-core",
+]
+
+[profile.release]
+opt-level = 3

@@ -1,0 +1,10 @@
+[package]
+name = "cloud-account"
+version = "0.1.0"
+edition = "2021"
+description = "Account: a validated account id + display name, and an AccountRegistry rejecting duplicate registration."
+license = "MIT"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }
