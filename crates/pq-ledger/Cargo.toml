@@ -8,3 +8,5 @@ license = "MIT"
 [dependencies]
 pq-journal = { path = "../pq-journal" }
 pq-proof-types = { path = "../pq-proof-types" }
+sha2 = "0.11"
+jxcl-bytes = { path = "../jxcl-bytes" }
