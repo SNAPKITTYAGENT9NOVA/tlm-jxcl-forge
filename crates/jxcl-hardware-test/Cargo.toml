@@ -3,7 +3,7 @@ name = "jxcl-hardware-test"
 version = "0.1.0"
 edition = "2021"
 description = "Golden-file regression tests for generated Verilog/VHDL/netlist, plus the mechanical width/opcode-count cross-check against the ISA schema."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-hardware = { path = "../jxcl-hardware" }

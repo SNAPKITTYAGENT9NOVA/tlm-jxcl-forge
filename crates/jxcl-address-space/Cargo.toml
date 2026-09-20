@@ -3,7 +3,7 @@ name = "jxcl-address-space"
 version = "0.1.0"
 edition = "2021"
 description = "Named memory regions (code/data/stack) with permission flags layered over raw storage."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-memory = { path = "../jxcl-memory" }

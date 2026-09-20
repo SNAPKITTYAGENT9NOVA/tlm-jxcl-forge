@@ -66,3 +66,7 @@ file and ALU placeholder ports. Run with `cargo test -p jxcl-rtl`.
 
 `implemented` (decoder, register-file interface); ALU module is an
 explicitly documented placeholder pending real `jxcl-alu`.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

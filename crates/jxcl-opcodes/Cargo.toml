@@ -3,7 +3,7 @@ name = "jxcl-opcodes"
 version = "0.1.0"
 edition = "2021"
 description = "The single authoritative opcode registry: ids, mnemonics, operand-shape metadata."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-types = { path = "../jxcl-types" }

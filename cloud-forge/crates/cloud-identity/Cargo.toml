@@ -3,7 +3,7 @@ name = "cloud-identity"
 version = "0.1.0"
 edition = "2021"
 description = "A minimal Principal type (User/Role/Service) -- enough for cloud-policy to evaluate access against. The full IAM surface (credentials, sessions, federation) is a later phase, not pulled forward here."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 cloud-errors = { path = "../cloud-errors" }

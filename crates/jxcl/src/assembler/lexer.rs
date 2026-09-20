@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Assembler lexer (spec §16): turns one source line into a token stream.
 //! JXCL assembly is line-oriented — every statement (label, directive, or
 //! instruction) occupies exactly one line, which keeps the grammar simple

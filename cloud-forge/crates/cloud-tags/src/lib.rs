@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! A validated key/value tag map, shared by every cloud-forge
 //! resource. Backed by a `BTreeMap` rather than a hash map so
 //! iteration order is deterministic (sorted by key) -- this workspace

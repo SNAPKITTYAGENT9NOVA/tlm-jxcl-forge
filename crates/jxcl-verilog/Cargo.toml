@@ -3,7 +3,7 @@ name = "jxcl-verilog"
 version = "0.1.0"
 edition = "2021"
 description = "Renders a jxcl-hdl AST to synthesizable Verilog-2001 text."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-hdl = { path = "../jxcl-hdl" }

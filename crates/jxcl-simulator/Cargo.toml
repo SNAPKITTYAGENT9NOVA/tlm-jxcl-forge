@@ -3,7 +3,7 @@ name = "jxcl-simulator"
 version = "0.1.0"
 edition = "2021"
 description = "An embeddable top-level simulation API (load + run in one call) for using jxcl as a library from other Rust programs/services."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-loader = { path = "../jxcl-loader" }

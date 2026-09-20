@@ -53,3 +53,7 @@ bytes come back zeroed even over previously-dirty memory.
 ## Status
 
 `implemented`.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

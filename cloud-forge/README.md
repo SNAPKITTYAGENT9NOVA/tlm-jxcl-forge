@@ -1,6 +1,7 @@
 # cloud-forge
 
 ![tests](https://img.shields.io/badge/tests-94%20passing-brightgreen)
+![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2012%2F12%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![status](https://img.shields.io/badge/status-phase%201%20of%2046-yellow)
@@ -95,3 +96,15 @@ touch `cloud-forge`, and vice versa. See the [repository root
 README](../README.md) for how this fits into the rest of the project,
 and [`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for
 the full roadmap beyond Phase 1.
+
+## License
+
+This workspace is dual-licensed, identically to the repository root:
+the GNU Affero General Public License v3.0
+([`LICENSE-AGPL`](./LICENSE-AGPL)), or a separately negotiated
+commercial license ([`LICENSE-COMMERCIAL`](./LICENSE-COMMERCIAL), a
+non-binding draft template). See [`LICENSE-NOTICE`](./LICENSE-NOTICE),
+[`COPYRIGHT.md`](./COPYRIGHT.md), and [`TRADEMARKS.md`](./TRADEMARKS.md)
+for the copyright holder, licensing contacts, and trademark terms. This
+workspace carries its own copy of the license set so it can be
+distributed independently of the root repository.

@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! What axiom introduction is allowed to look like in a given
 //! [`crate::Registry`]. Every policy still requires axioms to be
 //! introduced through [`crate::Registry::declare_axiom`]'s own,

@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Arithmetic/logic unit semantics: add/sub/mul/div/shift/bitwise, with flag updates.
 //!
 //! Owns: All arithmetic semantics -- no other crate performs ALU-equivalent computation independently.

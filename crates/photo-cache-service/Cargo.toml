@@ -3,7 +3,7 @@ name = "photo-cache-service"
 version = "0.1.0"
 edition = "2021"
 description = "Rust port of the original Express/Redis /photos caching demo, with post-quantum envelope encryption at rest"
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [[bin]]
 name = "server"

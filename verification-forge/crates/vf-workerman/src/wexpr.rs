@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! `WExpr`: Workerman's Calculus's expression type, plus `weval`
 //! (evaluation) and `wderiv` ("the Workerman derivative" -- see this
 //! crate's top-level doc comment for why that name is in scare quotes).

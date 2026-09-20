@@ -3,7 +3,7 @@ name = "jxcl-rpc"
 version = "0.1.0"
 edition = "2021"
 description = "A minimal RPC server/client implementing jxcl-protocol over line-delimited JSON on TCP."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-protocol = { path = "../jxcl-protocol" }

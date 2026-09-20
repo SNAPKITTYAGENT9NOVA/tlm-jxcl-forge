@@ -3,7 +3,7 @@ name = "jxcl-encoding"
 version = "0.1.0"
 edition = "2021"
 description = "Encodes an Instruction to its binary wire format."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-instructions = { path = "../jxcl-instructions" }

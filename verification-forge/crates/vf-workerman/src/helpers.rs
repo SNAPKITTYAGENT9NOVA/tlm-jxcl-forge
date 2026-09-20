@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Small term-building helpers shared across this crate's declarations
 //! -- the same pattern `vf-axioms::prelude` and `vf-elucidian` use,
 //! reimplemented locally rather than factored into a shared crate (see

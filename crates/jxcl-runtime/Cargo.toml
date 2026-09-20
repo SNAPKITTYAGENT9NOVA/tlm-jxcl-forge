@@ -3,7 +3,7 @@ name = "jxcl-runtime"
 version = "0.1.0"
 edition = "2021"
 description = "Tokio runtime configuration/startup helpers (worker-thread count from env, panic-hook wiring)."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-config = { path = "../jxcl-config" }

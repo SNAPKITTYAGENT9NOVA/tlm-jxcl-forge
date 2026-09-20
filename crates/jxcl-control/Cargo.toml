@@ -3,7 +3,7 @@ name = "jxcl-control"
 version = "0.1.0"
 edition = "2021"
 description = "Branch/jump condition evaluation against the flags register."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-types = { path = "../jxcl-types" }

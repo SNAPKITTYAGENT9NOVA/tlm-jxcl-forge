@@ -3,7 +3,7 @@ name = "cloud-types"
 version = "0.1.0"
 edition = "2021"
 description = "Primitive, validated identifier and value types shared across cloud-forge: ResourceId, ResourceType, AccountId, RegionId, AzId, Arn, Timestamp. No dependents on any other cloud-forge crate except cloud-errors -- this is the bottom of the stack."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 cloud-errors = { path = "../cloud-errors" }

@@ -3,7 +3,7 @@ name = "pq-error-proof"
 version = "0.1.0"
 edition = "2021"
 description = "Zero-knowledge proofs (Groth16 over BLS12-381/Jubjub, via arkworks) that an error attestation commitment was honestly derived from a public error context, without revealing the attestation's secret opening randomness"
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-proof-types = { path = "../pq-proof-types" }

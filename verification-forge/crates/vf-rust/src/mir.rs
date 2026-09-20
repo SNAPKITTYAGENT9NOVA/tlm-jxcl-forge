@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! A MIR-like IR: functions as a control-flow graph of basic blocks,
 //! each a straight-line sequence of single-operation assignments
 //! ending in one terminator -- deliberately modeled after rustc's MIR

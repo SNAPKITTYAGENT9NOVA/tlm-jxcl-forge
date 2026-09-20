@@ -3,7 +3,7 @@ name = "jxcl-pipeline"
 version = "0.1.0"
 edition = "2021"
 description = "A staged fetch/decode/execute/writeback pipeline-stage model used to report realistic per-instruction cycle costs, distinct from the (non-pipelined) reference execution semantics."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-instructions = { path = "../jxcl-instructions" }

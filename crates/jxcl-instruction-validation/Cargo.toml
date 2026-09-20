@@ -3,7 +3,7 @@ name = "jxcl-instruction-validation"
 version = "0.1.0"
 edition = "2021"
 description = "Per-instruction operand-legality checks (register range, immediate range, addressing-mode compatibility with the opcode) shared by the decoder and the static binary validator."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-instructions = { path = "../jxcl-instructions" }

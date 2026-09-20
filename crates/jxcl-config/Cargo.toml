@@ -3,7 +3,7 @@ name = "jxcl-config"
 version = "0.1.0"
 edition = "2021"
 description = "Environment-variable configuration parsing helpers (typed env_or, hex-seed decoding) shared by the CLI and services."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-errors = { path = "../jxcl-errors" }

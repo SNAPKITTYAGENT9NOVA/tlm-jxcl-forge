@@ -3,7 +3,7 @@ name = "jxcl-replay"
 version = "0.1.0"
 edition = "2021"
 description = "Deterministically replays a recorded trace to reconstruct machine state at any step, without re-running the original inputs."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-trace = { path = "../jxcl-trace" }

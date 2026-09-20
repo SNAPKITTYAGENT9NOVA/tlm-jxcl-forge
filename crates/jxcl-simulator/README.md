@@ -54,3 +54,7 @@ imported by this crate's code.
 This crate's own implementation (above) is complete for this batch;
 `docs/crates.toml`'s `status` field is out of this batch's scope to
 edit.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

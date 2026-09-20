@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! The `jxcl` command-line interface: asm/disasm/run/inspect/validate subcommands.
 //!
 //! Owns: The CLI argument parsing and subcommand dispatch (main.rs's logic).

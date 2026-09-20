@@ -3,7 +3,7 @@ name = "vf-reducer"
 version = "0.1.0"
 edition = "2021"
 description = "Beta/zeta/delta/iota reduction and definitional equality, with fuel/depth limits and cycle detection."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 vf-core = { path = "../vf-core" }

@@ -3,7 +3,7 @@ name = "pq-attestation"
 version = "0.1.0"
 edition = "2021"
 description = "Combines sealing a value (pq-envelope) with a verifiable attestation (pq-proof-types) that it was sealed under a specific, named key version, in one call."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-envelope = { path = "../pq-envelope" }

@@ -3,7 +3,7 @@ name = "vf-elucidian"
 version = "0.1.0"
 edition = "2021"
 description = "Elucidian Algebra: a user-defined algebraic theory (not an established discipline) built on vf-algebra."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 vf-core = { path = "../vf-core" }

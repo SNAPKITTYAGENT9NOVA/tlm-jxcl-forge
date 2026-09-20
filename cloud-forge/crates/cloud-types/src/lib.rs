@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Primitive, validated value types shared across every `cloud-forge`
 //! crate: [`ResourceId`], [`ResourceType`], [`AccountId`], [`RegionId`],
 //! [`AzId`], [`Arn`], and [`Timestamp`]. Every constructor validates

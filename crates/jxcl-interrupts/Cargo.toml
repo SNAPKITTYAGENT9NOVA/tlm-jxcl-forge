@@ -3,7 +3,7 @@ name = "jxcl-interrupts"
 version = "0.1.0"
 edition = "2021"
 description = "A deterministic external-interrupt injection mechanism (priority queue + mask flag) for embedding jxcl in a simulator or RPC host."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-flags = { path = "../jxcl-flags" }
