@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 39 | A from-first-principles cloud-resource substrate (Phase 14 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 39 | A from-first-principles cloud-resource substrate (Phase 15 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -408,8 +408,11 @@ service), `cloud-orchestration` (Phase 12 — the first crate to compose two of
 those *services* together, rather than primitives within one), the IAM
 surface `cloud-identity` deferred all the way back in Phase 1 —
 `cloud-credentials`, `cloud-session`, and `cloud-policy-document`
-(Phase 13) — and now `cloud-iam` (Phase 14 — a fifth composed service,
-this one over those three IAM primitives). Its one governing rule: **do
+(Phase 13) — `cloud-iam` (Phase 14 — a fifth composed service, this one
+over those three IAM primitives), and now (Phase 15) a second
+cross-service composition inside `cloud-orchestration` itself —
+`cloud-compute` + `cloud-messaging`, with this workspace's first
+rollback spanning two independent services. Its one governing rule: **do
 not create one crate per AWS
 service; build the primitives once, then compose services from those
 primitives.** No crate in this workspace is named after an AWS
@@ -440,7 +443,7 @@ flowchart LR
         storageSvc["cloud-storage<br/>(create_volume/transition_attachment/delete_volume)"]
         databaseSvc["cloud-database<br/>(create_database/apply_migration/<br/>create_snapshot/expire_snapshots/delete_database)"]
         messagingSvc["cloud-messaging<br/>(create_queue/create_topic/subscribe/publish/<br/>enqueue/receive/delete_queue/delete_topic)"]
-        orchestration["cloud-orchestration<br/>(attach_volume/detach_volume)"]
+        orchestration["cloud-orchestration<br/>(attach_volume/detach_volume/<br/>transition_runtime_and_notify/terminate_and_notify)"]
         iam["cloud-credentials / cloud-session /<br/>cloud-policy-document<br/>(active-credential cap, session validity, policy JSON)"]
         iamSvc["cloud-iam<br/>(assume_role/federate/authorize/<br/>load_policy_document)"]
         types --> model --> core
@@ -455,33 +458,28 @@ flowchart LR
         messaging --> messagingSvc
         computeSvc --> orchestration
         storageSvc --> orchestration
+        messagingSvc --> orchestration
         access -.deferred to Phase 13.-> iam
         iam --> iamSvc
     end
 ```
 
-This is **Phase 14 of a much larger, explicitly staged roadmap** — the
-fifth composed service, this one over Phase 13's IAM surface
-(`cloud-credentials`/`cloud-session`/`cloud-policy-document`), following
-exactly the "compose already-real primitives" discipline
-`cloud-compute`/`cloud-storage`/`cloud-database`/`cloud-messaging`
-(Phases 8-11) each established. 357 tests pass, clippy and fmt are
-clean, and `cloud-provisioner`'s own rollback tests still prove the
-pipeline's atomicity claim directly: if `PLAN` or `APPLY` fails after
-`VALIDATE` already reserved quota, that reservation is released before
-the error returns. `cloud-iam`'s `assume_role`/`federate` are the first
-operations in this workspace where `cloud-policy` (Phase 1) governs
-something *within the IAM surface itself*, rather than gating another
-service's own resource operation — a principal now needs permission to
-assume a role or federate in at all, checked before any session is
-created. `load_policy_document`/`export_policy_document` make the
-active policy round-trippable through `cloud-policy-document`'s JSON
-format, with a failed load leaving the previous policy untouched.
-Unlike every earlier composed service, `cloud-iam` validates no
-account or region and reserves no quota, and registers no `Arn`: real
-IAM is inherently global, mirroring its own inconsistent resource model
-(a role has an ARN; an access key does not) rather than a gap left to
-fill later.
+This is **Phase 15 of a much larger, explicitly staged roadmap** —
+`cloud-orchestration`'s second cross-service composition, resolving a
+deferral `cloud-messaging` itself named in its own Phase 11 closing
+note: "what remains deferred is composing these services *together*
+(e.g. a compute instance's logs delivered through a queue)."
+`transition_runtime_and_notify`/`terminate_and_notify` enqueue a
+notification into `cloud-messaging` *before* attempting the
+`cloud-compute` mutation, then delete that message if the mutation
+fails — unlike Phase 12's `attach_volume`, which needed no rollback at
+all, a `RuntimeState` transition genuinely can fail and isn't generally
+reversible, so this is the first rollback anywhere in this workspace
+spanning two independent services rather than undoing steps within
+one. 362 tests pass, clippy and fmt are clean, and `cloud-provisioner`'s
+own rollback tests still prove the pipeline's atomicity claim directly:
+if `PLAN` or `APPLY` fails after `VALIDATE` already reserved quota,
+that reservation is released before the error returns.
 
 **See [`cloud-forge/README.md`](./cloud-forge/README.md) and
 [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)

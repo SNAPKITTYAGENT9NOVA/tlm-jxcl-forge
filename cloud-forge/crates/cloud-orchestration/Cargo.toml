@@ -2,13 +2,14 @@
 name = "cloud-orchestration"
 version = "0.1.0"
 edition = "2021"
-description = "Cross-service composition: attach_volume/detach_volume validate a cloud-storage attachment target against a real cloud-compute instance, resolving Phase 9's own deferral note that this validation belongs to 'whatever future layer calls both services'. No new state machine, no new primitive -- only coordination between two already-real services."
+description = "Cross-service composition. attach_volume/detach_volume (Phase 12) validate a cloud-storage attachment target against a real cloud-compute instance. transition_runtime_and_notify/terminate_and_notify (Phase 15) enqueue a cloud-messaging notification atomically with a compute runtime transition, rolling back the notification if the transition fails -- resolving cloud-messaging's own Phase 11 closing note about a compute instance's events delivered through a queue. No new state machine, no new primitive -- only coordination between already-real services."
 license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 cloud-attachment = { path = "../cloud-attachment" }
 cloud-compute = { path = "../cloud-compute" }
 cloud-errors = { path = "../cloud-errors" }
+cloud-messaging = { path = "../cloud-messaging" }
 cloud-runtime = { path = "../cloud-runtime" }
 cloud-storage = { path = "../cloud-storage" }
 cloud-types = { path = "../cloud-types" }
@@ -16,6 +17,7 @@ cloud-types = { path = "../cloud-types" }
 [dev-dependencies]
 cloud-account = { path = "../cloud-account" }
 cloud-capacity = { path = "../cloud-capacity" }
+cloud-delivery = { path = "../cloud-delivery" }
 cloud-identity = { path = "../cloud-identity" }
 cloud-image = { path = "../cloud-image" }
 cloud-policy = { path = "../cloud-policy" }

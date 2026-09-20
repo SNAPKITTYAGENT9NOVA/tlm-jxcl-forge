@@ -37,14 +37,34 @@
 //! service can force-detach a volume even from an instance that no
 //! longer exists. The concern there is releasing the volume, not the
 //! instance's own health.
+//!
+//! ## Phase 15: a second composition, this time with a real rollback
+//!
+//! [`transition_runtime_and_notify`] and [`terminate_and_notify`]
+//! compose `cloud-compute` with `cloud-messaging`, resolving
+//! `cloud-messaging`'s own Phase 11 closing note: "what remains
+//! deferred is composing these services *together* (e.g. a compute
+//! instance's logs delivered through a queue)." Both functions enqueue
+//! a notification message *before* attempting the compute mutation,
+//! then roll the message back with `MessagingService::delete_message`
+//! if that mutation fails -- unlike [`attach_volume`]/[`detach_volume`],
+//! which needed no rollback at all (their second step was always
+//! unconditionally valid once the first succeeded), a `RuntimeState`
+//! transition genuinely can fail (an invalid jump, an unknown
+//! instance), and `RuntimeState` transitions are not generally
+//! reversible, so the only correct order is: reserve the notification
+//! first, then attempt the mutation, then undo the reservation if the
+//! mutation didn't happen. This is the first rollback in this
+//! workspace that spans two independent services rather than one.
 #![forbid(unsafe_code)]
 
 use cloud_attachment::AttachmentState;
 use cloud_compute::ComputeService;
 use cloud_errors::CloudError;
+use cloud_messaging::MessagingService;
 use cloud_runtime::RuntimeState;
 use cloud_storage::StorageService;
-use cloud_types::ResourceId;
+use cloud_types::{ResourceId, Timestamp};
 
 /// Attaches `volume_id` (in `storage`) to `instance_id` (in `compute`).
 /// Refuses unless `instance_id` names a real, non-terminating,
@@ -87,14 +107,65 @@ pub fn detach_volume(
     storage.transition_attachment(volume_id, AttachmentState::Detached)
 }
 
+/// Transitions `instance_id`'s runtime state and enqueues
+/// `message_id` onto `queue_id` to notify of it, as one unit: the
+/// message is enqueued first, and rolled back (via `delete_message`)
+/// if the runtime transition then fails, so a failed transition never
+/// leaves a stray notification behind.
+pub fn transition_runtime_and_notify(
+    compute: &mut ComputeService,
+    messaging: &mut MessagingService,
+    instance_id: &ResourceId,
+    to: RuntimeState,
+    queue_id: &ResourceId,
+    message_id: ResourceId,
+    now: Timestamp,
+) -> Result<RuntimeState, CloudError> {
+    messaging.enqueue(queue_id, message_id.clone(), now)?;
+    match compute.transition_runtime(instance_id, to) {
+        Ok(state) => Ok(state),
+        Err(e) => {
+            messaging
+                .delete_message(queue_id, &message_id, now)
+                .expect("the message just enqueued above must still be present to delete");
+            Err(e)
+        }
+    }
+}
+
+/// Terminates `instance_id` and enqueues `message_id` onto `queue_id`
+/// to notify of it, with the same enqueue-first, roll-back-on-failure
+/// discipline as [`transition_runtime_and_notify`].
+pub fn terminate_and_notify(
+    compute: &mut ComputeService,
+    messaging: &mut MessagingService,
+    instance_id: &ResourceId,
+    queue_id: &ResourceId,
+    message_id: ResourceId,
+    now: Timestamp,
+) -> Result<(), CloudError> {
+    messaging.enqueue(queue_id, message_id.clone(), now)?;
+    match compute.terminate(instance_id, now) {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            messaging
+                .delete_message(queue_id, &message_id, now)
+                .expect("the message just enqueued above must still be present to delete");
+            Err(e)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use cloud_account::Account;
     use cloud_capacity::Capacity;
     use cloud_compute::LaunchRequest;
+    use cloud_delivery::DeliverySemantics;
     use cloud_identity::Principal;
     use cloud_image::Architecture;
+    use cloud_messaging::CreateQueueRequest;
     use cloud_policy::{Effect, Policy, PrincipalMatcher, Statement};
     use cloud_redundancy::RedundancyScheme;
     use cloud_storage::CreateVolumeRequest;
@@ -167,6 +238,34 @@ mod tests {
             })
             .unwrap();
         instance_id
+    }
+
+    fn setup_messaging() -> MessagingService {
+        let mut svc = MessagingService::new(allow_all_policy(), "core", "messaging");
+        svc.register_account(
+            Account::new(account_id(), "test", Timestamp::from_millis(0)).unwrap(),
+        )
+        .unwrap();
+        svc.register_region(region_id(), 1).unwrap();
+        svc.set_quota_limit("queues", 10);
+        svc
+    }
+
+    fn create_queue(messaging: &mut MessagingService, id: &str) -> ResourceId {
+        let queue_id = ResourceId::new(id).unwrap();
+        messaging
+            .create_queue(CreateQueueRequest {
+                id: queue_id.clone(),
+                account: account_id(),
+                region: region_id(),
+                principal: principal(),
+                delivery: DeliverySemantics::AtLeastOnce,
+                visibility_timeout_millis: 30_000,
+                max_receives: 3,
+                created_at: Timestamp::from_millis(1000),
+            })
+            .unwrap();
+        queue_id
     }
 
     fn create_volume(storage: &mut StorageService, id: &str) -> ResourceId {
@@ -306,5 +405,163 @@ mod tests {
 
         let err = attach_volume(&compute, &mut storage, &instance, &volume).unwrap_err();
         assert!(matches!(err, CloudError::InvalidTransition { .. }));
+    }
+
+    #[test]
+    fn transition_runtime_and_notify_enqueues_and_transitions_together() {
+        let mut compute = setup_compute();
+        let mut messaging = setup_messaging();
+        let instance = launch(&mut compute, "i-1");
+        let queue = create_queue(&mut messaging, "q-1");
+
+        let state = transition_runtime_and_notify(
+            &mut compute,
+            &mut messaging,
+            &instance,
+            RuntimeState::Running,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap();
+
+        assert_eq!(state, RuntimeState::Running);
+        assert_eq!(
+            compute.runtime_state(&instance),
+            Some(RuntimeState::Running)
+        );
+        // The notification message is present and receivable.
+        let outcome = messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100),
+            )
+            .unwrap();
+        assert!(matches!(
+            outcome,
+            cloud_messaging::ReceiveOutcome::Delivered { .. }
+        ));
+    }
+
+    #[test]
+    fn transition_runtime_and_notify_rolls_back_the_message_on_an_invalid_transition() {
+        let mut compute = setup_compute();
+        let mut messaging = setup_messaging();
+        let instance = launch(&mut compute, "i-1");
+        let queue = create_queue(&mut messaging, "q-1");
+
+        // Pending -> Stopped is not a valid runtime transition.
+        let err = transition_runtime_and_notify(
+            &mut compute,
+            &mut messaging,
+            &instance,
+            RuntimeState::Stopped,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap_err();
+
+        assert!(matches!(err, CloudError::InvalidTransition { .. }));
+        // The rolled-back message must not still be sitting in the queue.
+        let recv_err = messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100),
+            )
+            .unwrap_err();
+        assert!(matches!(recv_err, CloudError::NotFound { .. }));
+    }
+
+    #[test]
+    fn transition_runtime_and_notify_rejects_a_duplicate_message_id_and_touches_nothing() {
+        let mut compute = setup_compute();
+        let mut messaging = setup_messaging();
+        let instance = launch(&mut compute, "i-1");
+        let queue = create_queue(&mut messaging, "q-1");
+        messaging
+            .enqueue(
+                &queue,
+                ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(1500),
+            )
+            .unwrap();
+
+        let err = transition_runtime_and_notify(
+            &mut compute,
+            &mut messaging,
+            &instance,
+            RuntimeState::Running,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap_err();
+
+        assert!(matches!(err, CloudError::Conflict { .. }));
+        // The runtime transition must never have been attempted.
+        assert_eq!(
+            compute.runtime_state(&instance),
+            Some(RuntimeState::Pending)
+        );
+    }
+
+    #[test]
+    fn terminate_and_notify_enqueues_and_terminates_together() {
+        let mut compute = setup_compute();
+        let mut messaging = setup_messaging();
+        let instance = launch(&mut compute, "i-1");
+        let queue = create_queue(&mut messaging, "q-1");
+
+        terminate_and_notify(
+            &mut compute,
+            &mut messaging,
+            &instance,
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap();
+
+        assert_eq!(
+            compute.runtime_state(&instance),
+            Some(RuntimeState::Terminated)
+        );
+        assert!(messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100)
+            )
+            .is_ok());
+    }
+
+    #[test]
+    fn terminate_and_notify_rolls_back_the_message_for_an_unknown_instance() {
+        let mut compute = setup_compute();
+        let mut messaging = setup_messaging();
+        let queue = create_queue(&mut messaging, "q-1");
+
+        let err = terminate_and_notify(
+            &mut compute,
+            &mut messaging,
+            &ResourceId::new("i-ghost").unwrap(),
+            &queue,
+            ResourceId::new("evt-1").unwrap(),
+            Timestamp::from_millis(2000),
+        )
+        .unwrap_err();
+
+        assert!(matches!(err, CloudError::NotFound { .. }));
+        let recv_err = messaging
+            .receive(
+                &queue,
+                &ResourceId::new("evt-1").unwrap(),
+                Timestamp::from_millis(2100),
+            )
+            .unwrap_err();
+        assert!(matches!(recv_err, CloudError::NotFound { .. }));
     }
 }

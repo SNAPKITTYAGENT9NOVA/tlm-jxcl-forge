@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-357%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-362%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2039%2F39%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%2014%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%2015%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -15,11 +15,13 @@ actually composed from them, with Phase 12 (`cloud-orchestration`)
 composing two of those services *together* for the first time, Phase 13
 building out the IAM surface (`cloud-credentials`, `cloud-session`,
 `cloud-policy-document`) `cloud-identity` deferred all the way back in
-Phase 1, and now Phase 14 (`cloud-iam`) composing those three IAM
-primitives into a fifth real service. This is a **separate Cargo
-workspace** from the rest of this repository's 100-crate `jxcl`/`pq-*`
-stack and from `verification-forge` — nothing here depends on either,
-and neither
+Phase 1, Phase 14 (`cloud-iam`) composing those three IAM primitives
+into a fifth real service, and now Phase 15 giving `cloud-orchestration`
+a second cross-service composition — `cloud-compute` + `cloud-messaging`
+— with this workspace's first rollback spanning two independent
+services. This is a **separate Cargo workspace** from the rest of this
+repository's 100-crate `jxcl`/`pq-*` stack and from `verification-forge`
+— nothing here depends on either, and neither
 depends on this.
 
 > **The non-negotiable rule:** do not create one crate per AWS service.
@@ -371,7 +373,33 @@ ARN; an access key does not), not a gap left to fill later. See
 [`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
 full reasoning.
 
-**357 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 15, `cloud-orchestration`'s second composition
+
+Phase 12 gave `cloud-orchestration` its first cross-service
+composition, resolving `cloud-storage`'s own Phase 9 deferral. Phase
+15 gives it a second, in the same crate, resolving a deferral
+`cloud-messaging` itself named in its own Phase 11 closing note: "what
+remains deferred is composing these services *together* (e.g. a
+compute instance's logs delivered through a queue)."
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-orchestration`](./crates/cloud-orchestration) | Adds `transition_runtime_and_notify`/`terminate_and_notify` (`cloud-compute` + `cloud-messaging`) alongside Phase 12's `attach_volume`/`detach_volume` | 18 |
+
+Both new functions enqueue a notification message into `cloud-messaging`
+*before* attempting the compute mutation, then delete that message if
+the mutation fails — unlike Phase 12's `attach_volume`, which needed no
+rollback at all (its second step was unconditionally valid once the
+first succeeded), a `RuntimeState` transition genuinely can fail, and
+`RuntimeState` transitions aren't generally reversible the way
+`cloud-attachment`'s are. This is the first rollback anywhere in this
+workspace that spans two independent services rather than undoing
+steps within one. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
+full reasoning, including why this composition still has no message
+body, no notification on other operations, and no fan-out.
+
+**362 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -431,10 +459,15 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   `launch` reserved; nothing about an instance's lifecycle beyond
   launch/run/stop/terminate is modeled yet, and `control-api` remains
   deferred from Phase 2's own reasoning.
-- **All four originally-planned service categories are now composed.**
-  What remains deferred is composing these services *together* (e.g. a
-  compute instance's logs delivered through a queue), which is
-  deliberately out of scope for any single phase so far.
+- **All four originally-planned service categories are now composed,
+  and one cross-service composition (`cloud-compute` + `cloud-messaging`)
+  is real as of Phase 15.** `cloud-database`/`cloud-messaging` and
+  `cloud-database`/`cloud-compute` cross-service composition remain
+  open questions with no equivalent stated deferral yet.
+- **`cloud-orchestration`'s notifications carry no message body, fire
+  on no operation besides a runtime transition or termination, and
+  fan out to exactly one queue** — extending any of these needs a
+  concrete motivating case, not speculation ahead of one.
 - **`cloud-iam` links no credential to any session.** A long-term
   credential and a short-term session are tracked independently;
   exchanging one for the other the way real STS `GetSessionToken` does
@@ -528,6 +561,14 @@ Two tests are the best reads for how these primitives fit together:
   showing `cloud-policy-document`'s round trip and `cloud-iam`'s
   policy-gated session creation compose correctly together, not just
   each in isolation.
+- `cloud-orchestration`'s
+  [`transition_runtime_and_notify_rolls_back_the_message_on_an_invalid_transition`](./crates/cloud-orchestration/src/lib.rs)
+  — attempts an invalid `RuntimeState` jump through the composed
+  function, then proves the notification message it enqueued into a
+  real `MessagingService` queue moments earlier is gone: `receive`
+  on that exact message id comes back `NotFound`, showing the
+  rollback actually reached across into the other service's own
+  store rather than just returning an error.
 
 ## Building and testing
 
