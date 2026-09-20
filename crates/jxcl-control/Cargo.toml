@@ -9,3 +9,4 @@ license = "MIT"
 jxcl-types = { path = "../jxcl-types" }
 jxcl-flags = { path = "../jxcl-flags" }
 jxcl-registers = { path = "../jxcl-registers" }
+jxcl-opcodes = { path = "../jxcl-opcodes" }
