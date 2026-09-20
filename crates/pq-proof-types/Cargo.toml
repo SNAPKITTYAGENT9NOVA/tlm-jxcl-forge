@@ -3,7 +3,7 @@ name = "pq-proof-types"
 version = "0.1.0"
 edition = "2021"
 description = "Backend-independent proof types: the ProofScheme trait and shared Attestation/Error types, so callers never depend on a concrete proof backend directly."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 # (none yet -- external dependencies for this crate's

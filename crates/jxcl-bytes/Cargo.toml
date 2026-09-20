@@ -3,7 +3,7 @@ name = "jxcl-bytes"
 version = "0.1.0"
 edition = "2021"
 description = "A bounds-checked byte-buffer cursor used by the encoder, decoder, binary container, and object format."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-errors = { path = "../jxcl-errors" }

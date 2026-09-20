@@ -41,3 +41,7 @@ built-in `TrapHandler` implementations.
 ## Status
 
 `implemented`.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

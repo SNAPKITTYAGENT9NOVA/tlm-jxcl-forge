@@ -3,6 +3,6 @@ name = "vf-rust"
 version = "0.1.0"
 edition = "2021"
 description = "Restricted Rust verification language parser + MIR-like IR + contract system (requires/ensures/invariant/decreases)."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]

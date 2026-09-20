@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! A minimal string interner. Every identifier that appears in a
 //! [`crate::Term`] -- a bound-variable name hint, a free/local
 //! variable, or a global constant -- is interned into a [`Symbol`]

@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Rust port of the original `server-cached.js`: a `/photos` endpoint
 //! backed by a Redis cache whose entries are sealed with post-quantum
 //! envelope encryption (`pq-crypto`/`pq-cache`) before ever reaching

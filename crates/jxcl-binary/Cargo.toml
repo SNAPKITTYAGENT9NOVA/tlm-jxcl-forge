@@ -3,7 +3,7 @@ name = "jxcl-binary"
 version = "0.1.0"
 edition = "2021"
 description = "The final linked-executable container format: header, version, code/data sections."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-bytes = { path = "../jxcl-bytes" }

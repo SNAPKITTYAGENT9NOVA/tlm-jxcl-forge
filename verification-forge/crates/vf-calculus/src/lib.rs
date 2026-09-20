@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Symbolic calculus judgments: shared term-building infrastructure for
 //! the *statement shapes* a symbolic calculus theory typically wants
 //! -- evaluation, equivalence, and differentiation -- parallel to

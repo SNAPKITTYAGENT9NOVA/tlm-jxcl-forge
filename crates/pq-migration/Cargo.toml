@@ -3,7 +3,7 @@ name = "pq-migration"
 version = "0.1.0"
 edition = "2021"
 description = "Applies pq-sql-vault's sql/*.sql migration files in order against a live connection and tracks which have been applied."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 # Same feature set as pq-sql-vault (native-tls, not rustls -- see that

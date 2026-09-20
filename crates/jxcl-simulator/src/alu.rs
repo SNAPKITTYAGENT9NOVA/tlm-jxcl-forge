@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Pure 64-bit ALU ops for this crate's embedded execution loop, ported
 //! from `crates/jxcl/src/alu.rs`'s carry/overflow conventions (x86-style
 //! carry, signed overflow for V) for the operations `exec` actually

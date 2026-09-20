@@ -3,7 +3,7 @@ name = "jxcl-conformance"
 version = "0.1.0"
 edition = "2021"
 description = "The mechanical spec-vs-code conformance suite: checks docs/ISA_SPEC.md and docs/RTL_CONTRACT.md's stated facts against jxcl-isa-schema and jxcl-hardware's generated RTL."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-isa-schema = { path = "../jxcl-isa-schema" }

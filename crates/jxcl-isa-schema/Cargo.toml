@@ -3,7 +3,7 @@ name = "jxcl-isa-schema"
 version = "0.1.0"
 edition = "2021"
 description = "A serde-serializable schema of the ISA generated from jxcl-opcodes/jxcl-constants/jxcl-registers/jxcl-flags, plus a mechanical cross-check against the numbers documented in docs/ISA_SPEC.md."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-opcodes = { path = "../jxcl-opcodes" }

@@ -1,6 +1,7 @@
 # tlm-jxcl-forge
 
 ![CI](https://github.com/SNAPKITTYAGENT9NOVA/tlm-jxcl-forge/actions/workflows/ci.yml/badge.svg)
+![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2098%2F100%20crates-brightgreen)
 ![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2012-blue)
@@ -645,5 +646,23 @@ request — a change that fails any of them locally will fail in CI too.
 
 ## License
 
-No license file is currently published in this repository. Treat the
-code as all-rights-reserved until a `LICENSE` file is added.
+This repository is dual-licensed:
+
+1. **Open source:** the GNU Affero General Public License v3.0
+   (AGPLv3), reproduced verbatim in [`LICENSE-AGPL`](./LICENSE-AGPL).
+   Unless you have a signed commercial license (below), your use of
+   this code is governed solely by that file.
+2. **Commercial:** a separately negotiated commercial license,
+   available as an alternative for parties who cannot or do not wish
+   to comply with the AGPLv3's copyleft terms. See
+   [`LICENSE-COMMERCIAL`](./LICENSE-COMMERCIAL) for the licensing
+   program template (a non-binding draft, not an executed agreement)
+   and contacts.
+
+See [`LICENSE-NOTICE`](./LICENSE-NOTICE) for the copyright holder and
+a summary of how the two licenses relate,
+[`COPYRIGHT.md`](./COPYRIGHT.md) for the full copyright notice, and
+[`TRADEMARKS.md`](./TRADEMARKS.md) for trademark terms (separate from
+the copyright licenses above). `verification-forge/` and `cloud-forge/`
+each carry their own identical copy of this same license set, since
+either could be distributed independently of the root workspace.

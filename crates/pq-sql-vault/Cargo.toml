@@ -3,7 +3,7 @@ name = "pq-sql-vault"
 version = "0.1.0"
 edition = "2021"
 description = "SQL Server-backed vault for post-quantum-sealed values (pq-crypto), storing only ciphertext and enforcing key-rotation policy in T-SQL"
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-crypto = { path = "../pq-crypto" }

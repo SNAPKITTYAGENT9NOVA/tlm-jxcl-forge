@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Generic service scaffolding (graceful shutdown, health-check endpoint pattern, startup logging) extracted from photo-cache-service's two binaries' shared boilerplate.
 //!
 //! Owns: serve_with_graceful_shutdown and the healthz handler pattern.

@@ -3,7 +3,7 @@ name = "jxcl-endian"
 version = "0.1.0"
 edition = "2021"
 description = "The ISA's fixed-endianness integer <-> byte conversions, isolated from the general byte-buffer cursor."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 # (none yet -- external dependencies for this crate's

@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! ISA/binary-format version negotiation so old binaries fail closed against an incompatible newer decoder rather than silently misdecoding.
 //!
 //! Owns: IsaVersion, its embedding in the binary container header, and the compatibility check.

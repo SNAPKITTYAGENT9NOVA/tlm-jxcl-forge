@@ -3,7 +3,7 @@ name = "jxcl-relocations"
 version = "0.1.0"
 edition = "2021"
 description = "Relocation entry types and the patch-in-place logic that fixes up an encoded instruction once a symbol's final address is known."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-symbols = { path = "../jxcl-symbols" }

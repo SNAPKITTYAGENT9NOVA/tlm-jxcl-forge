@@ -1,6 +1,7 @@
 # verification-forge
 
 ![tests](https://img.shields.io/badge/tests-174%20passing-brightgreen)
+![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2020%2F21%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![status](https://img.shields.io/badge/status-active%20development-yellow)
@@ -42,6 +43,7 @@ here depends on, or is depended on by, that workspace.
 - [Building and testing](#building-and-testing)
 - [Glossary](#glossary)
 - [Frequently asked questions](#frequently-asked-questions)
+- [License](#license)
 
 ## What this is (and is not)
 
@@ -585,3 +587,15 @@ most useful bug report is a minimal `.vf` (or `vf-rust`) program that
 the kernel accepts when it should reject, or vice versa — exactly the
 shape of the regression tests already in each crate's `#[cfg(test)]`
 module.
+
+## License
+
+This workspace is dual-licensed, identically to the repository root:
+the GNU Affero General Public License v3.0
+([`LICENSE-AGPL`](./LICENSE-AGPL)), or a separately negotiated
+commercial license ([`LICENSE-COMMERCIAL`](./LICENSE-COMMERCIAL), a
+non-binding draft template). See [`LICENSE-NOTICE`](./LICENSE-NOTICE),
+[`COPYRIGHT.md`](./COPYRIGHT.md), and [`TRADEMARKS.md`](./TRADEMARKS.md)
+for the copyright holder, licensing contacts, and trademark terms. This
+workspace carries its own copy of the license set so it can be
+distributed independently of the root repository.

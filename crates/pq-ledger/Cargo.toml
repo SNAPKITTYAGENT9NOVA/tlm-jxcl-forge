@@ -3,7 +3,7 @@ name = "pq-ledger"
 version = "0.1.0"
 edition = "2021"
 description = "A tamper-evident, hash-chained audit ledger recording proof attestations in order, built on pq-journal."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-journal = { path = "../pq-journal" }

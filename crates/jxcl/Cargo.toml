@@ -3,7 +3,7 @@ name = "jxcl"
 version = "0.1.0"
 edition = "2021"
 description = "TLM JXCL — a deterministic, raw hardware-oriented dense instruction-set architecture forge"
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [lib]
 name = "jxcl"

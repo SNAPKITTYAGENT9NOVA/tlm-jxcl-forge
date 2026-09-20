@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! `Nat` arithmetic (`add`/`mul`) and the one lemma about it this
 //! crate needs (`add_zero_right`), defined and proved locally here
 //! rather than added to `vf-axioms`'s prelude -- the prelude's scope

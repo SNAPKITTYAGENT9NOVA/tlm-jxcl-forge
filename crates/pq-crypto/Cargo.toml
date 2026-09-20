@@ -3,7 +3,7 @@ name = "pq-crypto"
 version = "0.1.0"
 edition = "2021"
 description = "Post-quantum envelope encryption: ML-KEM-768 (FIPS 203) + HKDF-SHA256 + AES-256-GCM"
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 kem = "0.3"

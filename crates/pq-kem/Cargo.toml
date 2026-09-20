@@ -3,7 +3,7 @@ name = "pq-kem"
 version = "0.1.0"
 edition = "2021"
 description = "ML-KEM-768 (NIST FIPS 203) key generation and encapsulation/decapsulation."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 kem = "0.3"

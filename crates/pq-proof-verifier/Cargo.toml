@@ -3,7 +3,7 @@ name = "pq-proof-verifier"
 version = "0.1.0"
 edition = "2021"
 description = "A verifier facade that looks up the right scheme via pq-proof-registry and verifies, so callers never touch arkworks types directly."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-proof-types = { path = "../pq-proof-types" }

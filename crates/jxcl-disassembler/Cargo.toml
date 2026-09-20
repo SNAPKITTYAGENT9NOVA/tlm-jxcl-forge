@@ -3,7 +3,7 @@ name = "jxcl-disassembler"
 version = "0.1.0"
 edition = "2021"
 description = "Disassembles a binary/object file back to readable assembly text, symbolizing addresses when debug info is present."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-decoding = { path = "../jxcl-decoding" }

@@ -3,7 +3,7 @@ name = "pq-envelope"
 version = "0.1.0"
 edition = "2021"
 description = "The sealed-value wire format: key version, KEM ciphertext, nonce, AEAD ciphertext."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-kem = { path = "../pq-kem" }

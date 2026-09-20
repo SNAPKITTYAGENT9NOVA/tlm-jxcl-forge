@@ -3,7 +3,7 @@ name = "pq-journal"
 version = "0.1.0"
 edition = "2021"
 description = "An append-only, length-prefixed write-ahead log file format with replay, for durability."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-bytes = { path = "../jxcl-bytes" }

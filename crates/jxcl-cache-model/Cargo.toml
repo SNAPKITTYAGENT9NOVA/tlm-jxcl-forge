@@ -3,7 +3,7 @@ name = "jxcl-cache-model"
 version = "0.1.0"
 edition = "2021"
 description = "A direct-mapped/set-associative cache simulation layered over memory, for profiling hit/miss behavior."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-memory = { path = "../jxcl-memory" }

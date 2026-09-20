@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! A real integration test against a live SQL Server, gated behind an
 //! env var rather than `#[ignore]` so it's opt-in-and-obvious rather
 //! than silently skipped by a plain `cargo test`.

@@ -3,7 +3,7 @@ name = "cloud-policy"
 version = "0.1.0"
 edition = "2021"
 description = "An IAM-style Allow/Deny policy evaluation engine: principal + action + resource -> a decision, with the invariant that an explicit deny always dominates any number of matching allows."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 cloud-errors = { path = "../cloud-errors" }

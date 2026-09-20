@@ -3,7 +3,7 @@ name = "jxcl-golden"
 version = "0.1.0"
 edition = "2021"
 description = "The golden-vector format, loader, and canonical vector files used as the ISA conformance baseline."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-simulator = { path = "../jxcl-simulator" }
