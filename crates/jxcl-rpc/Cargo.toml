@@ -8,3 +8,9 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 [dependencies]
 jxcl-protocol = { path = "../jxcl-protocol" }
 jxcl-network = { path = "../jxcl-network" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["rt", "net", "io-util", "time"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "net", "io-util", "macros", "time"] }
