@@ -218,6 +218,49 @@ from "the individual stages are each atomic" — since a multi-stage
 pipeline built from atomic parts is not itself atomic unless someone
 wires the rollback path and verifies it.
 
+## Phase 3: AWS-like resource identification
+
+The roadmap names four crates for this phase: `cloud-arn`,
+`cloud-resource-id`, `cloud-resource-parser`, `cloud-resource-registry`.
+Three of the four already exist — just earlier than the roadmap's own
+ordering expected, because the resource model itself needed them from
+day one:
+
+| Roadmap name | Where it actually lives | Since |
+|---|---|---|
+| `cloud-arn` | `cloud_types::Arn` — parses and formats `jxcl:cloud:<partition>:<service>:<region>:<account>:<resource>` | Phase 1 |
+| `cloud-resource-id` | `cloud_types::ResourceId` | Phase 1 |
+| `cloud-resource-parser` | `Arn`'s own `FromStr` impl — a separate parser crate would parse into the exact same `Arn` struct `cloud-types` already owns, with nothing new to own | Phase 1 (not a separate crate — see below) |
+| `cloud-resource-registry` | **New this phase** | Phase 3 |
+
+`Resource<T>` (Phase 1) has an id, a type, a region, and an owning
+account, but nothing before Phase 3 ever assembles those into the
+*canonical, fully-qualified name* for a provisioned resource, or lets
+anyone look a resource up by that name rather than by its bare
+`ResourceId`. That's what this phase adds:
+
+- **`cloud-resource-registry`** owns exactly one thing: an `Arn` ↔
+  `ResourceId` mapping. It rejects a second registration of an
+  already-used ARN, and (a stricter, deliberate choice beyond what the
+  roadmap specifies) rejects registering the same resource under a
+  second ARN too — a provisioned resource's canonical name is chosen
+  once, at creation, and does not change.
+- **`cloud-control-plane`** now knows its own `partition` and
+  `service` (constructor arguments), and computes each resource's
+  `Arn` from `partition` + `service` + the resource's own
+  region/account/id at `create()` time, registering it in an
+  internally-owned `ResourceRegistry` — with the same rollback
+  discipline as every other `create()` failure mode: if ARN
+  construction or registration fails, the quota reservation and
+  placement `create()` already made through `cloud-provisioner` are
+  released before the error returns, exactly like an `APPLY` failure.
+  `resolve_arn()` and `arn_of()` expose the new lookup direction.
+
+`cloud-provisioner` itself is untouched by this phase: ARN identity is
+a *naming* concern that belongs to whatever owns a `partition`/
+`service` (the control plane), not to the provisioning pipeline, which
+stays deliberately ignorant of naming schemes.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive
