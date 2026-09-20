@@ -1780,6 +1780,7 @@ dependencies = [
 name = "jxcl-alu"
 version = "0.1.0"
 dependencies = [
+ "jxcl-constants",
  "jxcl-errors",
  "jxcl-flags",
  "jxcl-types",
@@ -1890,6 +1891,7 @@ name = "jxcl-control"
 version = "0.1.0"
 dependencies = [
  "jxcl-flags",
+ "jxcl-opcodes",
  "jxcl-registers",
  "jxcl-types",
 ]
@@ -2014,7 +2016,10 @@ name = "jxcl-fuzz"
 version = "0.1.0"
 dependencies = [
  "jxcl-decoding",
+ "jxcl-determinism",
+ "jxcl-errors",
  "jxcl-instructions",
+ "jxcl-simulator",
 ]
 
 [[package]]
@@ -2082,6 +2087,7 @@ version = "0.1.0"
 dependencies = [
  "jxcl-errors",
  "jxcl-instructions",
+ "jxcl-opcodes",
  "jxcl-operands",
  "jxcl-registers",
 ]
@@ -2129,6 +2135,8 @@ dependencies = [
  "jxcl-flags",
  "jxcl-opcodes",
  "jxcl-registers",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2192,7 +2200,9 @@ dependencies = [
 name = "jxcl-machine"
 version = "0.1.0"
 dependencies = [
+ "jxcl-errors",
  "jxcl-flags",
+ "jxcl-memory",
  "jxcl-registers",
  "jxcl-types",
 ]
@@ -2980,8 +2990,10 @@ dependencies = [
 name = "pq-ledger"
 version = "0.1.0"
 dependencies = [
+ "jxcl-bytes",
  "pq-journal",
  "pq-proof-types",
+ "sha2 0.11.0",
 ]
 
 [[package]]
@@ -3054,6 +3066,7 @@ name = "pq-signature"
 version = "0.1.0"
 dependencies = [
  "ml-dsa",
+ "sha2 0.10.9",
 ]
 
 [[package]]

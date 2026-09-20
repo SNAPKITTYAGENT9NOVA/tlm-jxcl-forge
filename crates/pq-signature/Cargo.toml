@@ -7,6 +7,4 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 ml-dsa = "0.1.1"
-# (none yet -- external dependencies for this crate's
-# real implementation are added when that batch lands,
-# per docs/crates.toml's external_dependencies field)
+sha2 = "0.10"

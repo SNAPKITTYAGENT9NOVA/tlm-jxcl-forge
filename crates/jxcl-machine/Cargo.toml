@@ -9,3 +9,5 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 jxcl-registers = { path = "../jxcl-registers" }
 jxcl-flags = { path = "../jxcl-flags" }
 jxcl-types = { path = "../jxcl-types" }
+jxcl-errors = { path = "../jxcl-errors" }
+jxcl-memory = { path = "../jxcl-memory" }

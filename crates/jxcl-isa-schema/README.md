@@ -1,29 +1,30 @@
 # jxcl-isa-schema
 
-A serde-serializable schema of the ISA generated from jxcl-opcodes/jxcl-constants/jxcl-registers/jxcl-flags, plus a mechanical cross-check against the numbers documented in docs/ISA_SPEC.md.
+A serde-serializable schema of the JXCL ISA with conformance checking against documentation.
 
-## Architecture
+## Purpose
 
-**Owns:** IsaSchema and the spec-vs-code conformance check that ISA_SPEC.md's stated widths/opcode-count match the generated schema.
+Provides a machine-readable, serde-serializable schema of the JXCL ISA:
+- Architectural parameters (word width, address width, opcode width, binary version)
+- Opcode table metadata (addressable space, assigned opcodes)
+- Register file description (GP register count, special registers)
+- Flags register description (flag names)
 
-**Category:** isa · **Source:** new
+Can be checked against documentation to ensure spec/code consistency.
 
 ## Public API
 
-`IsaSchema`, `IsaSchema::generate`, `IsaSchema::check_against_spec`
+- `IsaSchema::generate() -> IsaSchema` - Generate schema from live ISA registries
+- `IsaSchema::check_against_spec() -> Result<(), String>` - Verify against documented ISA parameters
+- `IsaSchema::to_json(&self) -> Result<String>` - Serialize to JSON
+- `IsaSchema::from_json(json: &str) -> Result<IsaSchema>` - Deserialize from JSON
 
-## Dependencies
+## Implementation Notes
 
-Workspace crates:
-
-- `jxcl-opcodes`
-- `jxcl-constants`
-- `jxcl-registers`
-- `jxcl-flags`
-
-External crates:
-
-- `serde`
+- The schema is mechanical - generated entirely from live authoritative sources
+- Documented values (64-bit words, 32 registers, 256 opcode space, etc.) are embedded as invariants
+- `check_against_spec()` verifies the documented ISA parameters match the code
+- Full JSON round-trip compatibility via serde
 
 ## Testing
 

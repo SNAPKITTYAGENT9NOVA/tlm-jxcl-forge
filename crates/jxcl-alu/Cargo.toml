@@ -7,5 +7,6 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-types = { path = "../jxcl-types" }
+jxcl-constants = { path = "../jxcl-constants" }
 jxcl-flags = { path = "../jxcl-flags" }
 jxcl-errors = { path = "../jxcl-errors" }

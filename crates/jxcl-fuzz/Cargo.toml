@@ -8,3 +8,6 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 [dependencies]
 jxcl-decoding = { path = "../jxcl-decoding" }
 jxcl-instructions = { path = "../jxcl-instructions" }
+jxcl-errors = { path = "../jxcl-errors" }
+jxcl-simulator = { path = "../jxcl-simulator" }
+jxcl-determinism = { path = "../jxcl-determinism" }
