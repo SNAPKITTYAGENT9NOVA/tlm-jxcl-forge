@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-128%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-138%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2017%2F17%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2018%2F18%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%202%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%203%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -56,7 +56,31 @@ checked, placed, constructed, and recorded, atomically:
 | [`cloud-provisioner`](./crates/cloud-provisioner) | The `AUTHORIZE→VALIDATE→PLAN→APPLY→VERIFY→AUDIT` pipeline; **rolls back every earlier stage's reservation if a later stage fails** | 6 |
 | [`cloud-control-plane`](./crates/cloud-control-plane) | `ControlPlane<T>`: registries + policy + quota + events + a resource store, with real `create`/`get`/`list`/`delete` | 8 |
 
-**128 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 3, AWS-like resource identification
+
+Phase 3 gives every provisioned resource a canonical, globally
+resolvable name — an `Arn` — and a registry that resolves it back to
+the resource it names:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-resource-registry`](./crates/cloud-resource-registry) | An `Arn` ↔ `ResourceId` registry: rejects a second registration of an already-used ARN, and a resource claiming a second ARN | 7 |
+
+The roadmap names four crates for this phase
+(`cloud-arn`, `cloud-resource-id`, `cloud-resource-parser`,
+`cloud-resource-registry`); three of the four already existed since
+Phase 1 as `cloud_types::Arn`, `cloud_types::ResourceId`, and `Arn`'s
+own `FromStr` impl — see
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for why.
+`cloud-control-plane::create()` now computes and registers each new
+resource's `Arn` right after provisioning succeeds, with the same
+rollback discipline as every other stage: a failed ARN registration
+releases the quota and placement reservations `cloud-provisioner`
+already made. `resolve_arn()`/`arn_of()` expose the mapping in both
+directions, and a resource's ARN stays resolvable even after it's
+deleted (consistent with the CLOUD-I003 no-id-reuse invariant).
+
+**138 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 

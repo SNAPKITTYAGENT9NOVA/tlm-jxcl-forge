@@ -18,3 +18,4 @@ cloud-resource = { path = "../cloud-resource" }
 cloud-lifecycle = { path = "../cloud-lifecycle" }
 cloud-provisioner = { path = "../cloud-provisioner" }
 cloud-reconciler = { path = "../cloud-reconciler" }
+cloud-resource-registry = { path = "../cloud-resource-registry" }
