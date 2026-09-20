@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2098%2F100%20crates-brightgreen)
-![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2024-blue)
+![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2027-blue)
 ![deps](https://img.shields.io/badge/ISA%20forge-zero%20dependencies-lightgrey)
 
 **TLM JXCL** — a from-scratch, deterministic, byte-addressable 64-bit
@@ -84,7 +84,7 @@ flowchart TB
         vfe --> vfk
     end
 
-    subgraph CF["cloud-forge/Cargo.toml (24 crates)"]
+    subgraph CF["cloud-forge/Cargo.toml (27 crates)"]
         direction LR
         cfk["Primitive kernel<br/>cloud-resource, cloud-policy, …"]
         cfc["cloud-core facade"]
@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 24 | A from-first-principles cloud-resource substrate (Phase 5 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 27 | A from-first-principles cloud-resource substrate (Phase 6 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -385,14 +385,16 @@ still pending).
 
 ## `cloud-forge`: a from-first-principles cloud substrate
 
-A completely separate, 24-crate Cargo workspace attempting the
+A completely separate, 27-crate Cargo workspace attempting the
 substrate underneath an AWS-shaped cloud platform: resource identity,
 lifecycle, ownership, tagging, policy, events, quota, a provisioning
 pipeline and control plane (Phase 2), canonical resolvable resource
 names (Phase 3), compute-specific primitives (Phase 4 — execution
-state, per-AZ capacity, a machine-image registry), and now (Phase 5)
-storage-specific primitives — content-integrity checksums, durability
-schemes, and volume attachment state — the handful of concepts every
+state, per-AZ capacity, a machine-image registry), storage-specific
+primitives (Phase 5 — content-integrity checksums, durability schemes,
+volume attachment state), and now (Phase 6) database-specific
+primitives — a consistency-level order, sequential schema-migration
+enforcement, and snapshot retention — the handful of concepts every
 cloud service (compute, storage, database, messaging, …) would reuse
 rather than reinvent. Its one governing rule: **do not create one
 crate per AWS service; build the primitives once, then compose
@@ -402,7 +404,7 @@ already-real primitive crates.
 
 ```mermaid
 flowchart LR
-    subgraph cf["cloud-forge (24 crates)"]
+    subgraph cf["cloud-forge (27 crates)"]
         direction TB
         types["cloud-types / cloud-errors<br/>(validated ids, Arn, shared errors)"]
         model["cloud-resource / cloud-lifecycle / cloud-tags<br/>(the Resource&lt;T&gt; wrapper)"]
@@ -415,6 +417,7 @@ flowchart LR
         names["cloud-resource-registry<br/>(Arn ↔ ResourceId)"]
         compute["cloud-runtime / cloud-capacity / cloud-image<br/>(execution state, capacity, images)"]
         storage["cloud-checksum / cloud-redundancy / cloud-attachment<br/>(integrity, durability, attach state)"]
+        database["cloud-consistency / cloud-migration / cloud-retention<br/>(consistency order, schema versions, snapshot retention)"]
         types --> model --> core
         access --> core
         ops --> core
@@ -424,21 +427,20 @@ flowchart LR
     end
 ```
 
-This is **Phase 5 of a much larger, explicitly staged roadmap**
-(database/messaging primitives next, and only then AWS-shaped services
-composed on top). 197 tests pass, clippy and fmt are clean, and
+This is **Phase 6 of a much larger, explicitly staged roadmap**
+(messaging primitives next, and only then AWS-shaped services composed
+on top). 219 tests pass, clippy and fmt are clean, and
 `cloud-provisioner`'s own rollback tests prove the pipeline's
 atomicity claim directly: if `PLAN` or `APPLY` fails after `VALIDATE`
 already reserved quota, that reservation is released before the error
 returns — not just asserted, but tested against both failure points.
-Phase 5's `cloud-checksum` applies that same rigor to an algorithm
-rather than a pipeline: its CRC-32 implementation is checked against
-the algorithm's own published standard test vector, not just internal
-self-consistency. `cloud-attachment` is a third state machine
-alongside `cloud-lifecycle::Lifecycle` and `cloud-runtime::RuntimeState`
-(Phase 4) — deliberately not a rename of either, since a volume's
-resource record, a compute resource's execution, and this volume's
-attachment to something all vary independently.
+Phase 6's `cloud-consistency` gets its `Eventual < BoundedStaleness <
+Strong` ordering for free from `#[derive(Ord)]`'s own declaration-order
+rule rather than a hand-written comparison that could drift out of
+sync with the enum. `cloud-migration` and `cloud-retention`
+deliberately don't depend on each other: schema shape over time and
+data lifetime are unrelated questions, and coupling them would force
+every caller of one to drag in a concept the other owns.
 
 **See [`cloud-forge/README.md`](./cloud-forge/README.md) and
 [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)

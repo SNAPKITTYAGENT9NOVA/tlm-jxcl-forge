@@ -25,6 +25,9 @@ members = [
     "crates/cloud-checksum",
     "crates/cloud-redundancy",
     "crates/cloud-attachment",
+    "crates/cloud-consistency",
+    "crates/cloud-migration",
+    "crates/cloud-retention",
 ]
 
 [profile.release]
