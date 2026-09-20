@@ -7,3 +7,9 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-errors = { path = "../jxcl-errors" }
+axum = "0.8"
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "json"] }
+tokio = { version = "1", features = ["rt", "time"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "time", "macros"] }

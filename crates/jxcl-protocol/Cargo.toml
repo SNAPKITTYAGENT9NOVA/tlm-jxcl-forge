@@ -8,3 +8,5 @@ license = "AGPL-3.0-only OR LicenseRef-Commercial"
 [dependencies]
 jxcl-simulator = { path = "../jxcl-simulator" }
 jxcl-trace = { path = "../jxcl-trace" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
