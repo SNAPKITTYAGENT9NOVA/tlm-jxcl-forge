@@ -1,0 +1,10 @@
+[package]
+name = "cloud-image"
+version = "0.1.0"
+edition = "2021"
+description = "A registry of machine images a compute primitive can be launched from: validated id, name, size, and architecture, immutable once registered."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }

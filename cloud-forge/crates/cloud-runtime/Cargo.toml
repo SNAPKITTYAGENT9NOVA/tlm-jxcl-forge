@@ -1,0 +1,9 @@
+[package]
+name = "cloud-runtime"
+version = "0.1.0"
+edition = "2021"
+description = "The execution-state machine for something actually running (a compute instance, a container, a function invocation), distinct from cloud-lifecycle's resource-record lifecycle."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }

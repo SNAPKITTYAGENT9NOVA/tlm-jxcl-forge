@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-138%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-171%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2018%2F18%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2021%2F21%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%203%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%204%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -50,7 +50,7 @@ checked, placed, constructed, and recorded, atomically:
 
 | Crate | Owns | Tests |
 |---|---|---:|
-| [`cloud-scheduler`](./crates/cloud-scheduler) | Least-loaded-AZ placement over a region's registered AZs | 6 |
+| [`cloud-scheduler`](./crates/cloud-scheduler) | Least-loaded-AZ placement over a region's registered AZs (Phase 4 adds a capacity-aware variant) | 11 |
 | [`cloud-service-registry`](./crates/cloud-service-registry) | Named control-plane services and their health (`Healthy`/`Unhealthy`/`Unknown`) | 7 |
 | [`cloud-reconciler`](./crates/cloud-reconciler) | BFS over `cloud-lifecycle`'s transition graph: shortest path from a current to a desired state | 7 |
 | [`cloud-provisioner`](./crates/cloud-provisioner) | The `AUTHORIZE→VALIDATE→PLAN→APPLY→VERIFY→AUDIT` pipeline; **rolls back every earlier stage's reservation if a later stage fails** | 6 |
@@ -80,7 +80,31 @@ already made. `resolve_arn()`/`arn_of()` expose the mapping in both
 directions, and a resource's ARN stays resolvable even after it's
 deleted (consistent with the CLOUD-I003 no-id-reuse invariant).
 
-**138 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 4, compute primitives
+
+Phase 4 builds the three primitives a compute-shaped resource needs
+that nothing before it required: something to track whether it's
+actually running, a pool of capacity to run it on, and something to
+boot it from.
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-runtime`](./crates/cloud-runtime) | `RuntimeState`: the execution-state machine (`Pending`/`Running`/`Stopping`/`Stopped`/`Terminating`/`Terminated`) — deliberately separate from `cloud-lifecycle::Lifecycle` | 9 |
+| [`cloud-capacity`](./crates/cloud-capacity) | Per-AZ vCPU/memory-MiB capacity; reservations fail closed against an unregistered AZ, unlike `cloud-quota`'s default-unlimited caps | 12 |
+| [`cloud-image`](./crates/cloud-image) | A registry of machine images to launch from: validated id/name/size/architecture, immutable once registered | 7 |
+
+`cloud-scheduler` also gains `place_least_loaded_with_capacity`,
+composing `cloud-capacity` into placement so a resource is never
+assigned to an AZ without room for it — the one real composition this
+phase adds, kept generic (any resource type can ask for
+capacity-aware placement) rather than folded into a compute-specific
+crate that doesn't exist yet. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for why
+`cloud-runtime` and `cloud-lifecycle` are two state machines rather
+than one, and why `cloud-provisioner`/`cloud-control-plane` are
+untouched by this phase.
+
+**171 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -98,9 +122,14 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
 - **`control-api`** (a REST/gRPC layer) is deferred — the roadmap's own
   execution order puts the API layer well after the control plane it
   would expose.
-- **`cloud-runtime`** is deferred again, now to Phase 4 (compute
-  primitives) — a "runtime" only becomes a real primitive once
-  something is actually executing.
+- **No `cloud-compute` (or similarly named) crate exists yet.** Wiring
+  `cloud-runtime` + `cloud-capacity` + `cloud-image` into an actual
+  "launch an instance" operation is the first genuinely compute-shaped
+  service this workspace would build, and it doesn't get built (or
+  named) until it's a real composition of already-real primitives.
+- **Image deregistration is not implemented** — whether an in-use
+  image can be safely removed depends on resource-to-image references
+  `cloud-image` alone cannot see.
 - **The full IAM surface** (credentials, sessions, federation, JSON
   policy documents) is Phase 13 — `cloud-identity` only has enough of a
   `Principal` for `cloud-policy` to evaluate against.

@@ -261,6 +261,95 @@ a *naming* concern that belongs to whatever owns a `partition`/
 `service` (the control plane), not to the provisioning pipeline, which
 stays deliberately ignorant of naming schemes.
 
+## Phase 4: compute primitives
+
+Phase 1 deferred `cloud-runtime` twice (first past Phase 1, then again
+past Phase 2) on the same stated grounds: "a runtime only becomes a
+real, distinct primitive once something is actually executing." This
+phase is where that becomes true, and where the two other primitives a
+compute-shaped resource needs alongside a runtime -- a supply of
+capacity to run on, and something to boot from -- are built:
+
+| Crate | Owns |
+|---|---|
+| [`cloud-runtime`](./crates/cloud-runtime) | `RuntimeState`: the execution-state machine (`Pending`/`Running`/`Stopping`/`Stopped`/`Terminating`/`Terminated`) for something actually running, kept deliberately separate from `cloud-lifecycle::Lifecycle` (see below) |
+| [`cloud-capacity`](./crates/cloud-capacity) | Per-AZ vCPU/memory-MiB capacity: reservations fail closed against an AZ's registered total |
+| [`cloud-image`](./crates/cloud-image) | A registry of machine images to launch from: validated id, name, size, architecture; immutable once registered |
+
+### `cloud-runtime` vs. `cloud-lifecycle`
+
+These are not the same state machine wearing two names. `Lifecycle`
+answers "does this resource *record* exist, and in what stage of
+being provisioned/updated/torn down?" -- a question every resource in
+this workspace has needed an answer to since Phase 1, whether or not
+anything about it ever executes. `RuntimeState` answers "is the thing
+that record represents currently running?" -- a question that is
+meaningless for a bucket or a policy, and that varies *independently*
+of `Lifecycle` for the resources it does apply to: a compute instance
+can sit `Lifecycle::Active` for its entire existence while cycling
+between `RuntimeState::Running` and `RuntimeState::Stopped` many times
+over. Collapsing the two into one enum would either force every
+non-compute resource to carry meaningless `Running`/`Stopped` states,
+or force compute resources to smuggle their execution state through
+`Lifecycle::Updating` -- both of which misrepresent what actually
+changed. Two small, single-purpose state machines is the primitive
+answer; one overloaded one is the shortcut this workspace's rule
+exists to reject.
+
+### Why capacity is a different shape from quota
+
+`cloud-quota` (Phase 1) and `cloud-capacity` (this phase) look similar
+-- both track a limit and a running usage -- but encode an opposite
+default on purpose. `cloud-quota` is an *account cap*: a resource
+category nobody has configured a limit for is unlimited, because the
+absence of a quota policy should not itself block anything. `cloud-capacity`
+is a *physical(-ish) pool*: an availability zone nobody has told its
+own size has nothing to schedule onto, so `CapacityTracker::try_reserve`
+fails closed with `NotFound` against an unregistered AZ rather than
+inventing an unlimited pool that doesn't exist. Same shape of code,
+opposite failure mode, because they model opposite kinds of limit.
+
+### The one real composition this phase adds
+
+`cloud-scheduler` (Phase 2) gains `place_least_loaded_with_capacity`,
+which filters `cloud-region`'s candidate AZs down to the ones
+`cloud-capacity` reports enough spare room in, picks the least-loaded
+survivor exactly as `place_least_loaded` already did, and reserves
+that capacity on the winner in the same call -- all-or-nothing, per
+`cloud-capacity::CapacityTracker::try_reserve`'s own atomicity, and
+touching neither `usage` nor `capacity` for any AZ if none qualifies.
+This is a deliberately generic extension (any resource type can ask
+for capacity-aware placement, not just compute), which is why it lives
+in `cloud-scheduler` rather than in a new crate: capacity-aware
+placement is a placement-policy concern `cloud-scheduler` already
+owns, not a compute-specific one.
+
+### What Phase 4 deliberately does not include
+
+- **No `cloud-compute` (or similarly named) crate exists yet.** Wiring
+  `cloud-runtime` + `cloud-capacity` + `cloud-image` into an actual
+  "launch an instance" operation -- a compute-specific `ProvisionRequest`
+  payload, start/stop/terminate operations driving `RuntimeState`
+  transitions -- is the first genuinely compute-shaped service this
+  workspace would build, and per the non-negotiable rule, that
+  composition doesn't get built (or named) until it is one: three
+  standalone, independently real primitives today, not a shell crate
+  waiting for them.
+- **`cloud-provisioner` and `cloud-control-plane` are untouched by this
+  phase.** Reserving vCPU/memory at provisioning time is a
+  compute-specific requirement, not a property every resource
+  `cloud-provisioner`'s generic pipeline creates has (a bucket or a
+  policy has no vCPU count) -- baking it into the generic pipeline
+  would be exactly the kind of one-off special case this workspace's
+  primitives are supposed to prevent. The capacity-aware scheduler
+  function above is available to whatever later composes a compute
+  service on top of the existing pipeline.
+- **Image deregistration is not implemented.** Whether an image that's
+  still referenced by a launched (but not yet modeled) instance can be
+  safely removed is a question `cloud-image` alone cannot answer --
+  it would need to see resource-to-image references that don't exist
+  in this workspace until compute resources themselves do.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive
