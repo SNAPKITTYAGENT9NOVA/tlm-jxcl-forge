@@ -1790,13 +1790,17 @@ dependencies = [
 name = "jxcl-assembler"
 version = "0.1.0"
 dependencies = [
+ "jxcl-binary",
  "jxcl-debug-info",
  "jxcl-encoding",
+ "jxcl-errors",
  "jxcl-instructions",
  "jxcl-lexer",
  "jxcl-linker",
  "jxcl-object",
+ "jxcl-opcodes",
  "jxcl-parser",
+ "jxcl-registers",
  "jxcl-relocations",
  "jxcl-symbols",
 ]
