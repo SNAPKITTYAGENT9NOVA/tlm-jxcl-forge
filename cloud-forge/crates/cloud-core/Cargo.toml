@@ -1,0 +1,19 @@
+[package]
+name = "cloud-core"
+version = "0.1.0"
+edition = "2021"
+description = "A thin facade re-exporting cloud-forge's Phase 1 primitive kernel under one crate, plus an integration test demonstrating the primitives actually compose. Owns no new logic of its own."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }
+cloud-tags = { path = "../cloud-tags" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }
+cloud-resource = { path = "../cloud-resource" }
+cloud-region = { path = "../cloud-region" }
+cloud-account = { path = "../cloud-account" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-policy = { path = "../cloud-policy" }
+cloud-events = { path = "../cloud-events" }
+cloud-quota = { path = "../cloud-quota" }

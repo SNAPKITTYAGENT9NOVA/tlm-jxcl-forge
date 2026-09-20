@@ -1,0 +1,10 @@
+[package]
+name = "vf-kernel"
+version = "0.1.0"
+edition = "2021"
+description = "The trusted proof-checking kernel: infer_type, check, definitional_equal. Never trusts vf-elab/vf-typecheck output."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+vf-core = { path = "../vf-core" }
+vf-reducer = { path = "../vf-reducer" }

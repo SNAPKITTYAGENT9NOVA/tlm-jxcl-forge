@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Integration tests against a real, locally spawned `redis-server`
 //! (available in this environment) rather than a mock — matching this
 //! workspace's preference for genuine end-to-end testing wherever it's

@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Shared plumbing for the `server` and `server-cached` binaries: both
 //! are a faithful Rust port of the original `server.js`/`server-cached.js`
 //! Express demo, hardened for production use (structured logging,

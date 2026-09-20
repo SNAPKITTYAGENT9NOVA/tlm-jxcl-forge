@@ -1,0 +1,8 @@
+[package]
+name = "cloud-errors"
+version = "0.1.0"
+edition = "2021"
+description = "The shared, structured error type every cloud-forge crate returns. No dependents on any other cloud-forge crate -- this sits at the bottom of the stack alongside cloud-types."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]

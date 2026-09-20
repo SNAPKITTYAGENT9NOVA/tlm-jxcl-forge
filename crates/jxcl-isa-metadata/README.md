@@ -28,10 +28,13 @@ Used by inspection tools (e.g., `jxcl inspect`) and debuggers to report ISA capa
 
 ## Testing
 
-The crate includes 9 unit tests covering:
-- Metadata describes the live ISA correctly
-- Self-consistency validation passes
-- Opcode space calculations are correct
-- Assigned opcodes match the registry
-- Validation catches inconsistencies
-- Display formatting works correctly
+Planned test kinds: unit.
+
+## Status
+
+`planned` in `docs/crates.toml` -- see
+`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

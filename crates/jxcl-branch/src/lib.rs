@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Branch-target address computation (relative/absolute addressing) split out of condition evaluation.
 //!
 //! Owns: compute_branch_target. Extracted from `jxcl/src/control.rs`.

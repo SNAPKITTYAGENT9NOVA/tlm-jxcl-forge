@@ -3,7 +3,7 @@ name = "jxcl-machine"
 version = "0.1.0"
 edition = "2021"
 description = "Architectural state: the register file, flags, and program counter as one cohesive Machine struct."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-registers = { path = "../jxcl-registers" }

@@ -3,7 +3,7 @@ name = "pq-proof-registry"
 version = "0.1.0"
 edition = "2021"
 description = "A registry mapping scheme-id strings to boxed ProofScheme implementations, supporting future proof schemes beyond Groth16-Pedersen."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-proof-types = { path = "../pq-proof-types" }

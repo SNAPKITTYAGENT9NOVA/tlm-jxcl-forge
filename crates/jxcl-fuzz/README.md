@@ -126,4 +126,9 @@ External crates:
 
 ## Status
 
-Implemented in Batch D (debug/simulation category) with full property-based fuzzing support and extensible harness design.
+`planned` in `docs/crates.toml` -- see
+`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

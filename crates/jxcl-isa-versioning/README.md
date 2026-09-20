@@ -31,10 +31,13 @@ Examples:
 
 ## Testing
 
-The crate includes 12 unit tests covering:
-- Current version derivation from binary format version
-- Compatibility checks (same version, older minor, newer minor)
-- Version comparison operations
-- Display formatting and parsing
-- Boundary cases (max version numbers)
-- Ordering relationships
+Planned test kinds: unit, boundary.
+
+## Status
+
+`planned` in `docs/crates.toml` -- see
+`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

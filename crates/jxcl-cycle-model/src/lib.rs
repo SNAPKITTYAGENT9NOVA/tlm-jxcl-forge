@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! A per-opcode cycle-cost table and accumulator giving a deterministic total-cycle count for a run.
 //!
 //! Owns: CYCLE_COST_TABLE and CycleCounter. Provides a deterministic cycle accounting

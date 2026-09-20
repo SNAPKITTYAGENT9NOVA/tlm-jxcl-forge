@@ -1,6 +1,8 @@
-//! Queryable descriptive metadata about the running ISA build (opcode
-//! count, register count, build flags) used by `jxcl inspect` and the
-//! debugger.
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
+//! Queryable descriptive metadata about the running ISA build (opcode count, register count, build flags) used by `jxcl inspect` and the debugger.
 //!
 //! Owns: `IsaMetadata` struct and the `describe()` function that
 //! generates it from the authoritative ISA registries.

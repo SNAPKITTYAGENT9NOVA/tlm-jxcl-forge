@@ -1,7 +1,8 @@
-//! A serde-serializable schema of the ISA generated from
-//! jxcl-opcodes/jxcl-constants/jxcl-registers/jxcl-flags, plus a
-//! mechanical cross-check against the numbers documented in
-//! docs/ISA_SPEC.md.
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
+//! A serde-serializable schema of the ISA generated from jxcl-opcodes/jxcl-constants/jxcl-registers/jxcl-flags, plus a mechanical cross-check against the numbers documented in docs/ISA_SPEC.md.
 //!
 //! Owns: `IsaSchema` struct and the `check_against_spec()` conformance
 //! check that verifies the documented ISA parameters match the live code.

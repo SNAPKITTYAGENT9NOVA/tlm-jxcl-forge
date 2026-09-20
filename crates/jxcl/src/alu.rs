@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! The Arithmetic Logic Unit (spec §23): pure, host-independent 64-bit
 //! integer operations with explicit carry/overflow/shift semantics,
 //! testable in isolation from the execution engine (spec §23: "Implement

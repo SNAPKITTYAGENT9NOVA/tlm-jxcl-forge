@@ -1,0 +1,10 @@
+[package]
+name = "cloud-capacity"
+version = "0.1.0"
+edition = "2021"
+description = "Per-availability-zone vCPU/memory capacity tracking: reservations fail closed against an AZ's registered total, distinct from cloud-quota's default-unlimited account caps."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }

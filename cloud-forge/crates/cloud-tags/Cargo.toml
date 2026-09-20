@@ -1,0 +1,9 @@
+[package]
+name = "cloud-tags"
+version = "0.1.0"
+edition = "2021"
+description = "A validated key/value tag map shared by every cloud-forge resource: length limits, a reserved key prefix for system-managed tags, and a maximum tag count."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }

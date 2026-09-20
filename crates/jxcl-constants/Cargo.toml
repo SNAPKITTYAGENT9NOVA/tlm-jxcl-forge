@@ -3,7 +3,7 @@ name = "jxcl-constants"
 version = "0.1.0"
 edition = "2021"
 description = "Architecture-wide constants: word width, register count, memory size, opcode width."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 # (none yet -- external dependencies for this crate's

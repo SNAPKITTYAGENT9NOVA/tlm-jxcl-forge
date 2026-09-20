@@ -3,7 +3,7 @@ name = "pq-kdf"
 version = "0.1.0"
 edition = "2021"
 description = "HKDF-SHA256 expansion of a KEM shared secret into an AES-256 key, with fixed domain separation."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 hkdf = "0.13"

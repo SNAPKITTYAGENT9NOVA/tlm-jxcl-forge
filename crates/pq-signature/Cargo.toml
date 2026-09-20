@@ -3,7 +3,7 @@ name = "pq-signature"
 version = "0.1.0"
 edition = "2021"
 description = "ML-DSA (NIST FIPS 204 / Dilithium) signing and verification -- a second, complementary post-quantum primitive (authenticity, alongside pq-kem's confidentiality)."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 ml-dsa = "0.1.1"

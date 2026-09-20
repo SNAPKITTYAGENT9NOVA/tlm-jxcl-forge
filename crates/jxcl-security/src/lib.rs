@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! Cross-cutting secret-redaction utilities, generalizing the two independent redaction implementations found in photo-cache-service (Redis URL) and pq-sql-vault (ADO connection string) into one shared, tested implementation.
 //!
 //! Owns: redact_secret_bearing_string and the shared redaction convention.

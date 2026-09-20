@@ -1,0 +1,9 @@
+[package]
+name = "cloud-migration"
+version = "0.1.0"
+edition = "2021"
+description = "MigrationLedger: enforces that a database-shaped resource's schema migrations apply strictly sequentially and without gaps, and tracks the current schema version."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }

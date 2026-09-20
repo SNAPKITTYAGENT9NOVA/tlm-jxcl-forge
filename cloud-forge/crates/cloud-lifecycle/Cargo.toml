@@ -1,0 +1,9 @@
+[package]
+name = "cloud-lifecycle"
+version = "0.1.0"
+edition = "2021"
+description = "The resource lifecycle state machine shared by every cloud-forge resource: Creating/Active/Updating/Deleting/Deleted/Failed, with an explicit, exhaustively-tested transition table."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }

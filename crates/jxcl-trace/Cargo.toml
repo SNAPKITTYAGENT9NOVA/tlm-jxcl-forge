@@ -3,7 +3,7 @@ name = "jxcl-trace"
 version = "0.1.0"
 edition = "2021"
 description = "The per-step execution trace record format and its writer/reader, reused by the profiler and replay."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-machine = { path = "../jxcl-machine" }

@@ -66,3 +66,7 @@ jxcl-hardware-test`.
 
 `implemented`, with the `jxcl-isa-schema` cross-check as a documented
 direct-table fallback pending that crate's real implementation.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

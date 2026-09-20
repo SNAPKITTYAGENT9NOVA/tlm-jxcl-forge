@@ -63,3 +63,7 @@ forcing R0 back to zero, special-register defaults, and the
 ## Status
 
 `implemented`.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

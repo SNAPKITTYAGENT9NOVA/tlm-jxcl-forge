@@ -1,0 +1,15 @@
+[package]
+name = "vf-elucidian"
+version = "0.1.0"
+edition = "2021"
+description = "Elucidian Algebra: a user-defined algebraic theory (not an established discipline) built on vf-algebra."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+vf-core = { path = "../vf-core" }
+vf-axioms = { path = "../vf-axioms" }
+vf-algebra = { path = "../vf-algebra" }
+
+[dev-dependencies]
+vf-reducer = { path = "../vf-reducer" }
+vf-kernel = { path = "../vf-kernel" }

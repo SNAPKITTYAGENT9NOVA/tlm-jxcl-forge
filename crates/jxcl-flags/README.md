@@ -58,3 +58,7 @@ results, and `apply_effect` for `NONE`/`ZN`/`ZNV`/`ZNCV_FULL` masks
 ## Status
 
 `implemented`.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

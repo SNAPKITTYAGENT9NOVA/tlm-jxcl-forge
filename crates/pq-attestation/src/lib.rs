@@ -1,6 +1,8 @@
-//! Combines sealing a value (pq-envelope) with a verifiable attestation
-//! (pq-proof-types) that it was sealed under a specific, named key version,
-//! in one call.
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
+//! Combines sealing a value (pq-envelope) with a verifiable attestation (pq-proof-types) that it was sealed under a specific, named key version, in one call.
 //!
 //! # Attestation format
 //!

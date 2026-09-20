@@ -3,7 +3,7 @@ name = "jxcl-flags"
 version = "0.1.0"
 edition = "2021"
 description = "The flags register: zero/carry/overflow/negative/interrupt-mask bit semantics."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-types = { path = "../jxcl-types" }

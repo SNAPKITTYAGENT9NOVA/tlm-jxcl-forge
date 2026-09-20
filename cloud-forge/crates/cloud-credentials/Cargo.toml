@@ -1,0 +1,11 @@
+[package]
+name = "cloud-credentials"
+version = "0.1.0"
+edition = "2021"
+description = "Long-lived credential material bound to a Principal: a CredentialStore enforcing the real-world IAM rule that a principal may hold at most two Active credentials at once. Part of Phase 13's IAM surface (credentials, sessions, federation, policy documents), deferred from Phase 1's minimal cloud-identity."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-types = { path = "../cloud-types" }

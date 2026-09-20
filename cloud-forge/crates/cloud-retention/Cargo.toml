@@ -1,0 +1,10 @@
+[package]
+name = "cloud-retention"
+version = "0.1.0"
+edition = "2021"
+description = "RetentionPolicy: which of a database-shaped resource's backups/snapshots are eligible for deletion, by age, while always protecting a minimum number of the most recent ones regardless of age."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }

@@ -3,7 +3,7 @@ name = "jxcl-symbols"
 version = "0.1.0"
 edition = "2021"
 description = "The symbol table type (name -> address/section) shared by the assembler, object format, linker, and disassembler."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-types = { path = "../jxcl-types" }

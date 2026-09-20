@@ -3,7 +3,7 @@ name = "jxcl-types"
 version = "0.1.0"
 edition = "2021"
 description = "Shared newtype wrappers for architectural primitive values (word, address, register index, immediate) so every ISA/execution crate agrees on one representation."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 # (none yet -- external dependencies for this crate's

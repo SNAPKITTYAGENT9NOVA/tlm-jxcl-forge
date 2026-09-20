@@ -1,0 +1,16 @@
+[package]
+name = "cloud-iam"
+version = "0.1.0"
+edition = "2021"
+description = "IamService: the fifth composed service in this workspace, and the first to compose Phase 13's IAM surface (cloud-credentials, cloud-session, cloud-policy-document) together with cloud-policy and cloud-events -- no new primitive, only composition. assume_role/federate are gated by policy authorization, the first time this workspace's own Policy::authorize governs an operation within the IAM surface itself rather than another service's resource operation."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-credentials = { path = "../cloud-credentials" }
+cloud-errors = { path = "../cloud-errors" }
+cloud-events = { path = "../cloud-events" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-policy = { path = "../cloud-policy" }
+cloud-policy-document = { path = "../cloud-policy-document" }
+cloud-session = { path = "../cloud-session" }
+cloud-types = { path = "../cloud-types" }

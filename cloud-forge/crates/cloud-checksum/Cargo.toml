@@ -1,0 +1,8 @@
+[package]
+name = "cloud-checksum"
+version = "0.1.0"
+edition = "2021"
+description = "Content-integrity checksums for stored data: a from-scratch CRC-32/ISO-HDLC implementation, streaming and one-shot, verified against the standard check value."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]

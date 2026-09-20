@@ -24,8 +24,13 @@ This is the single source of truth for instruction legality, used by both the de
 
 ## Testing
 
-The crate includes 34 unit tests covering:
-- Valid instructions with all operand formats (None, R, RR, RRR, RImm64, RMem, MemR, Cas, BranchImm32, Imm16)
-- Boundary cases (register 0, register 31)
-- Invalid register indices (32, 255)
-- All combinations of register operand validity in multi-operand formats
+Planned test kinds: unit, boundary, error-path.
+
+## Status
+
+`planned` in `docs/crates.toml` -- see
+`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

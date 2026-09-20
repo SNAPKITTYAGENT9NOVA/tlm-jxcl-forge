@@ -1,0 +1,8 @@
+[package]
+name = "cloud-delivery"
+version = "0.1.0"
+edition = "2021"
+description = "DeliverySemantics: the loss/duplicate guarantees a messaging-shaped resource offers (AtMostOnce, AtLeastOnce, ExactlyOnce), forming a partial order (not a total one) with a satisfies() check against a caller's requirement."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]

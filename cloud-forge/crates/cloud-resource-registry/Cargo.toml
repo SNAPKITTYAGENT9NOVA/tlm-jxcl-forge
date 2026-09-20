@@ -1,0 +1,10 @@
+[package]
+name = "cloud-resource-registry"
+version = "0.1.0"
+edition = "2021"
+description = "An Arn <-> ResourceId registry: resolves a fully-qualified resource name to the resource it names, and back. Rejects a second registration of an already-used ARN, and a resource claiming a second ARN."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }

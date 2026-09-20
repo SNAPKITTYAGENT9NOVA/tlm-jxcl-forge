@@ -3,7 +3,7 @@ name = "jxcl-synthesis"
 version = "0.1.0"
 edition = "2021"
 description = "A toy (explicitly documented, non-production) structural synthesis pass lowering a subset of the HDL AST into primitive-gate netlist form."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-hdl = { path = "../jxcl-hdl" }

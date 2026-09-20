@@ -1,3 +1,7 @@
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
 //! The opcode registry (spec §19): the single authoritative source of
 //! truth for every JXCL instruction's mnemonic, opcode byte, wire format
 //! and flag effects. The encoder, decoder, assembler, disassembler and

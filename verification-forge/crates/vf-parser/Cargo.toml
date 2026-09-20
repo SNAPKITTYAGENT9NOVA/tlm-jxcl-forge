@@ -1,0 +1,10 @@
+[package]
+name = "vf-parser"
+version = "0.1.0"
+edition = "2021"
+description = "Recursive-descent parser producing vf-ast::Module from .vf source text."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+vf-lexer = { path = "../vf-lexer" }
+vf-ast = { path = "../vf-ast" }

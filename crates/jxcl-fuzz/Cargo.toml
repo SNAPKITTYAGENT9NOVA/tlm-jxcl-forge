@@ -2,8 +2,8 @@
 name = "jxcl-fuzz"
 version = "0.1.0"
 edition = "2021"
-description = "Fuzzing infrastructure for the ISA: mutation-based and coverage-driven feedback for instruction codec testing."
-license = "MIT"
+description = "A structured fuzz harness for the decoder (and other parser/decoder boundaries) against malformed input."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 jxcl-decoding = { path = "../jxcl-decoding" }

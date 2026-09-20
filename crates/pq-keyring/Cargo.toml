@@ -3,7 +3,7 @@ name = "pq-keyring"
 version = "0.1.0"
 edition = "2021"
 description = "The KeyRing data structure: an indexed set of key-pair entries."
-license = "MIT"
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
 pq-envelope = { path = "../pq-envelope" }

@@ -28,10 +28,13 @@ Can be checked against documentation to ensure spec/code consistency.
 
 ## Testing
 
-The crate includes 15 unit tests covering:
-- Schema generation from live ISA
-- Spec conformance checking
-- Detection of architectural parameter mismatches
-- JSON serialization and deserialization
-- Schema round-trip preservation
-- Opcode space calculations and sanity checks
+Planned test kinds: unit, conformance.
+
+## Status
+
+`planned` in `docs/crates.toml` -- see
+`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.

@@ -1,5 +1,8 @@
-//! Table-driven opcode-to-handler dispatch, extracted from the fetch/decode/execute loop's
-//! match statement so dispatch can be tested and extended independently of execution semantics.
+// Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO) % SNAPKITTY COLLECTIVE
+// SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Commercial
+// See LICENSE-AGPL and LICENSE-COMMERCIAL in this repository for license terms.
+
+//! Table-driven opcode-to-handler dispatch, extracted from the fetch/decode/execute loop's match statement so dispatch can be tested and extended independently of execution semantics.
 //!
 //! Owns: The dispatch table (Opcode -> handler fn pointer). Provides a fast, testable
 //! mapping from opcode mnemonics to their handler routines.

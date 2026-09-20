@@ -68,3 +68,7 @@ nothing is written on failure), `encode_all` concatenation, and that
 ## Status
 
 `implemented`.
+
+## License
+
+AGPLv3 / Commercial dual-license. See `LICENSE-AGPL`, `LICENSE-COMMERCIAL`, and `LICENSE-NOTICE` at the repository root.
