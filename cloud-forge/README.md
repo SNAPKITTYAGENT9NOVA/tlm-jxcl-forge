@@ -1,19 +1,20 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-283%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-307%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2033%2F33%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2034%2F34%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%2010%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%2011%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
 compose from, built for real before any service-shaped crate existed —
-and, as of Phase 10, the first three (`cloud-compute`, Phase 8;
-`cloud-storage`, Phase 9; `cloud-database`, Phase 10) actually composed
-from them. This is a **separate Cargo workspace** from the rest of this
-repository's 100-crate `jxcl`/`pq-*` stack and from `verification-forge`
-— nothing here depends on either, and neither depends on this.
+and, as of Phase 11, all four (`cloud-compute`, Phase 8; `cloud-storage`,
+Phase 9; `cloud-database`, Phase 10; `cloud-messaging`, Phase 11)
+actually composed from them. This is a **separate Cargo workspace** from
+the rest of this repository's 100-crate `jxcl`/`pq-*` stack and from
+`verification-forge` — nothing here depends on either, and neither
+depends on this.
 
 > **The non-negotiable rule:** do not create one crate per AWS service.
 > Build the primitives once, then compose services from those
@@ -243,7 +244,37 @@ established. See
 [`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
 full reasoning.
 
-**283 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 11, `cloud-messaging` — the fourth and last composed service
+
+The fourth and final service category gets composed, completing the
+set `cloud-compute`, `cloud-storage`, and `cloud-database` began:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-messaging`](./crates/cloud-messaging) | `MessagingService`: `create_queue`/`create_topic`/`subscribe`/`publish`/`enqueue`/`receive`/`delete_message`/`delete_queue`/`delete_topic`, composing eleven existing crates — no new primitive | 24 |
+
+Unlike the other three, `MessagingService` has two top-level resource
+kinds instead of one: a queue, which holds messages directly as
+`cloud-visibility::MessageLease`s, and a topic, which holds none of its
+own — only a fan-out list of subscriber queues via
+`cloud-fanout::FanoutRegistry`. `publish` is exactly the composition
+`cloud-fanout`'s own Phase 7 doc comment named as deferred: fanning a
+message out to every subscriber and giving each one a real
+`MessageLease`, so `receive` gets at-least-once redelivery and
+dead-lettering for free regardless of whether a message arrived by
+direct `enqueue` or by fan-out. `subscribe` refuses to link a queue to
+a topic whose required `cloud-delivery::DeliverySemantics` the queue's
+own semantics don't satisfy — the same cross-primitive gate shape
+`cloud-storage::delete_volume` (Phase 9) used, applied here to a new
+operation. `delete_queue`/`delete_topic` each refuse based on their own
+recorded state (a non-empty inbox; a remaining subscriber) — the same
+own-state gate shape `cloud-database::delete_database` (Phase 10) used,
+applied here twice. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
+full reasoning, including how `publish` avoids partial fan-out on a
+message-id collision.
+
+**307 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -289,21 +320,23 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   just an id and a creation time; content-integrity checking would
   need the snapshot to hold real bytes, which this phase's model
   doesn't have.
-- **No `cloud-queue`/`cloud-topic` (or similarly named) service yet.**
-  Same reasoning as compute/storage/database above — no composition
-  until it's real; messaging is the one service category not yet
-  composed.
-- **`cloud-fanout` does not deliver anything** — only the
-  topic-to-subscriber mapping; fanning a message out (and tracking
-  each subscriber's own `MessageLease`) belongs to a future service.
-- **No message ordering (FIFO) primitive** — ordering interacts with
-  partitioning and fanout in ways that need a concrete queue/topic
-  shape to be meaningful.
+- **`cloud-messaging` has no message body, and no per-message quota** —
+  a message is just a `ResourceId`, exactly as a `cloud-database`
+  snapshot (Phase 10) was just an id and a creation time; `"queues"`
+  and `"topics"` are quota'd at creation, but messages flowing through
+  them are not, the same pattern Phase 10 used for snapshots.
+- **No message ordering (FIFO) guarantee** — `cloud-messaging` uses
+  `BTreeMap`'s key order for deterministic tests and listings, not as a
+  delivery-order promise.
 - **`cloud-compute` has no instance resize, no attached volumes, and
   no HTTP/gRPC API surface** — `terminate` releases exactly what
   `launch` reserved; nothing about an instance's lifecycle beyond
   launch/run/stop/terminate is modeled yet, and `control-api` remains
   deferred from Phase 2's own reasoning.
+- **All four originally-planned service categories are now composed.**
+  What remains deferred is composing these services *together* (e.g. a
+  compute instance's logs delivered through a queue), which is
+  deliberately out of scope for any single phase so far.
 - **The full IAM surface** (credentials, sessions, federation, JSON
   policy documents) is Phase 13 — `cloud-identity` only has enough of a
   `Principal` for `cloud-policy` to evaluate against.
@@ -348,6 +381,13 @@ Two tests are the best reads for how these primitives fit together:
   protects the newest snapshot even though the older one is well past
   its age window, and only the actually-expired one is removed from
   the store.
+- `cloud-messaging`'s
+  [`publish_with_a_colliding_message_id_leaves_no_partial_fanout`](./crates/cloud-messaging/src/lib.rs)
+  — proves the validate-before-apply discipline holds across a fan-out
+  to multiple subscribers, not just a single resource's creation: a
+  message id already present in one subscriber's inbox rejects the
+  whole `publish` call, and the *other* subscriber, which had room,
+  still never receives it.
 
 ## Building and testing
 
