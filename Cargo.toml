@@ -73,6 +73,7 @@ members = [
     "crates/jxcl-simulator",
     "crates/jxcl-stack",
     "crates/jxcl-symbols",
+    "crates/jxcl-tensor",
     "crates/jxcl-synthesis",
     "crates/jxcl-trace",
     "crates/jxcl-types",
