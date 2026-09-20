@@ -1088,6 +1088,59 @@ gap to fill later.
   prior policies, no policy identifiers, and no way to attach different
   policies to different principals within one `IamService`.
 
+## Phase 15: `cloud-orchestration` gets a second composition, and its first rollback
+
+Phase 12 gave `cloud-orchestration` its first cross-service
+composition (`cloud-compute` + `cloud-storage`, resolving
+`cloud-storage`'s own Phase 9 deferral). Phase 15 gives it a second,
+in the same crate: `cloud-compute` + `cloud-messaging`, resolving a
+deferral `cloud-messaging` itself named in its own Phase 11 closing
+note -- "what remains deferred is composing these services *together*
+(e.g. a compute instance's logs delivered through a queue)."
+
+| Crate | Owns |
+|---|---|
+| [`cloud-orchestration`](./crates/cloud-orchestration) | Adds `transition_runtime_and_notify`/`terminate_and_notify` alongside Phase 12's `attach_volume`/`detach_volume` |
+
+### Why this composition needs a rollback and Phase 12's didn't
+
+Phase 12's doc comment explained, at some length, why `attach_volume`
+needed no rollback: once its instance check passed, `cloud-attachment`'s
+own transition table made the second step (`Attaching -> Attached`)
+unconditionally valid, so there was no failure mode between the two
+steps to roll back from. `transition_runtime_and_notify` and
+`terminate_and_notify` are different: a `RuntimeState` transition
+genuinely can fail (an invalid jump, an unknown instance), and unlike
+`cloud-attachment`'s state machine, `RuntimeState` transitions are not
+generally reversible -- there is no transition that undoes an arbitrary
+runtime-state change the way `Detaching -> Detached` undoes
+`Attaching`. That asymmetry decides the ordering: both functions
+enqueue the notification message into `cloud-messaging` *first*, then
+attempt the compute mutation, then -- only if that mutation fails --
+delete the message they just enqueued via `MessagingService::delete_message`.
+A failed transition or termination therefore never leaves a stray
+notification sitting in a queue, and this is the first rollback
+anywhere in this workspace that spans two independent services rather
+than undoing steps within one.
+
+### What this composition still doesn't do
+
+- **No message body describing the event.** Exactly as `cloud-messaging`
+  (Phase 11) itself deferred, a message is just a `ResourceId`; the
+  caller chooses a `message_id` that means whatever it needs to mean
+  (an event id, a correlation id), and `cloud-orchestration` does not
+  interpret it.
+- **No notification on `launch` or on volume attach/detach.** This
+  phase covers exactly the two operations its motivating deferral
+  named (an instance's own lifecycle events); extending notification
+  to other operations or other services is a separate question with
+  no equivalent stated deferral yet.
+- **No fan-out to multiple queues.** Both functions take exactly one
+  `queue_id`; delivering the same notification to several queues would
+  need `cloud-messaging`'s own topic/subscriber model (`publish`), not
+  a direct `enqueue`, and composing that is left for whenever a
+  concrete need for it exists.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive
