@@ -902,6 +902,119 @@ not to protect an instance that no longer needs protecting.
   -- both already exist; this phase adds no new states and no new
   transitions to either.
 
+## Phase 13: the IAM surface -- credentials, sessions, policy documents
+
+`cloud-identity`'s own Phase 1 doc comment named this explicitly: "the
+full IAM surface (credentials, sessions, federation, policy
+documents-as-JSON) is Phase 13 in the roadmap and is not pulled
+forward." Phase 13 is that surface -- three new primitive crates, the
+same shape Phases 4-7 each used (multiple disjoint primitives, no
+service composition yet), rather than a service. A future IAM service
+composing them is deferred exactly as `cloud-compute` was deferred
+until Phase 8, well after Phase 4 built its primitives.
+
+| Crate | Owns |
+|---|---|
+| [`cloud-credentials`](./crates/cloud-credentials) | `CredentialStore`: at most two `Active` credentials per principal, the real IAM rule AWS itself enforces |
+| [`cloud-session`](./crates/cloud-session) | `SessionStore`: assumed-role and federated sessions, valid only while un-revoked and unexpired |
+| [`cloud-policy-document`](./crates/cloud-policy-document) | `to_json`/`from_json`: a `cloud-policy::Policy` serialized to and parsed from a JSON-shaped document, via a hand-rolled parser restricted to exactly this schema |
+
+### Why no real secret material
+
+`cloud-credentials` models a credential's *lifecycle* -- its id, the
+principal it belongs to, and whether it's `Active` or `Inactive` -- and
+nothing about its actual secret bytes. Generating a cryptographically
+secure secret needs a real source of randomness, which this
+zero-external-dependency workspace deliberately doesn't pull in (every
+crate here depends only on other `cloud-*` crates). This mirrors
+`cloud-lifecycle` modeling a resource's lifecycle without knowing what
+the resource actually does: the state machine is real; the payload it
+governs is out of scope for the crate that owns the state machine.
+
+### The real IAM rule: at most two active credentials
+
+Rather than invent a business rule, `cloud-credentials` implements one
+AWS itself enforces on its own IAM users: a principal may hold at most
+`MAX_ACTIVE_CREDENTIALS_PER_PRINCIPAL` (2) `Active` credentials at
+once. `Inactive` credentials don't count against the cap, so a
+principal can rotate safely -- create a new key, deactivate the old
+one, delete it later -- without ever exceeding the limit at any point
+in between. Reactivating a credential re-checks the same cap `create`
+does, since reactivation can push a principal back over the limit just
+as creation can.
+
+### `cloud-session`'s two independent invalidity paths
+
+A [`Session`] is valid only while it is **both** un-revoked and
+unexpired -- deliberately the same two-independent-axis shape
+`cloud_visibility::MessageLease` (Phase 7) already established for
+at-least-once redelivery, where a message became undeliverable either
+by being in flight or by exceeding its receive count. Here, a session
+becomes invalid either by outliving its `expires_at` or by an explicit
+`SessionStore::revoke` call ahead of that natural expiry; neither
+condition implies the other, and `Session::is_valid` checks both.
+`SessionSource` captures the two ways Phase 13's own scope named a
+session can come to exist -- `AssumedRole` and `Federated` -- covering
+both "sessions" and "federation" from `cloud-identity`'s original
+deferral in one type, rather than a separate `cloud-federation` crate
+for what is, underneath, still just a session with a different origin.
+
+### `cloud-policy-document`'s hand-rolled, deliberately narrow parser
+
+Serializing a `Policy` to JSON and back needs *something* that
+understands JSON syntax, and pulling in a general-purpose JSON crate
+would break this workspace's zero-external-dependency posture --
+exactly the same posture `cloud-checksum` (Phase 5) upheld by
+implementing CRC-32 from scratch, and `cloud-types::Arn` (Phase 1)
+upheld with its own hand-rolled `Display`/`FromStr` pair instead of a
+generic serialization framework. `cloud-policy-document::from_json` is
+a parser restricted to exactly the fixed schema a policy document
+needs -- strings, arrays, and objects, no numbers, booleans, or `null`
+-- not a general JSON value type. It also deliberately does not
+replicate AWS's own polymorphism, where `Principal`/`Action`/`Resource`
+may each be either a bare string or an array interchangeably: here
+`Action`/`Resource` are always arrays, and `Principal` is either the
+literal string `"*"` or an array, never a bare non-`"*"` string. This
+is the same kind of deliberate scope-narrowing `cloud-policy`'s own
+`matches_pattern` already applies (a single trailing-wildcard position,
+not a general glob engine) -- one shape per field is all this phase
+needs.
+
+### `Policy::statements`, a small accessor added to an earlier crate
+
+`cloud-policy-document` needs to read a `Policy`'s statements to
+serialize them, and `Policy` (Phase 1) never exposed a way to do that
+from outside its own crate. Rather than duplicate that data somewhere
+else, `cloud-policy` gained one narrow, backward-compatible accessor,
+`statements(&self) -> &[Statement]` -- the same precedent
+`cloud-scheduler` (Phase 2) already set when it gained
+`place_least_loaded_with_capacity` in Phase 4: a later phase's
+composition need is satisfied by adding to the crate that already owns
+the data, not by duplicating it or routing around it.
+
+### What Phase 13 deliberately does not include
+
+- **No IAM service composing these three crates.** Exactly as Phases
+  4-7 each built primitives with service composition deferred to
+  Phases 8-11, Phase 13 is primitives only; a service that creates
+  credentials/sessions/policy documents together, with quota, events,
+  and an `Arn`-resolvable identity, is a future phase's concern.
+- **No real cryptographic secret material, signing, or verification**
+  for `cloud-credentials` -- see above.
+- **No `cloud-federation` crate.** Federation is modeled as one
+  `SessionSource` variant in `cloud-session`, not a fourth crate, since
+  a federated identity's whole lifecycle *is* a session with a
+  different origin.
+- **`cloud-policy-document` does not support AWS's bare-string-or-array
+  polymorphism** for `Action`/`Resource`, and supports only the literal
+  `"*"` (not an arbitrary bare string) for `Principal` -- see above.
+- **No resource-based policies** (a policy document attached to a
+  specific resource rather than a principal) -- `cloud-resource::Resource<T>`'s
+  own Phase 1 doc comment already named this as a Phase 13 concept not
+  pulled forward into `Resource<T>` itself, and this phase's policy
+  documents remain principal-facing, the same shape `cloud-policy`
+  already evaluates against.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

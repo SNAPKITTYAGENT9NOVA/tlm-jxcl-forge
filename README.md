@@ -84,7 +84,7 @@ flowchart TB
         vfe --> vfk
     end
 
-    subgraph CF["cloud-forge/Cargo.toml (35 crates)"]
+    subgraph CF["cloud-forge/Cargo.toml (38 crates)"]
         direction LR
         cfk["Primitive kernel<br/>cloud-resource, cloud-policy, …"]
         cfc["cloud-core facade"]
@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 35 | A from-first-principles cloud-resource substrate (Phase 12 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 38 | A from-first-principles cloud-resource substrate (Phase 13 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -385,7 +385,7 @@ still pending).
 
 ## `cloud-forge`: a from-first-principles cloud substrate
 
-A completely separate, 35-crate Cargo workspace attempting the
+A completely separate, 38-crate Cargo workspace attempting the
 substrate underneath an AWS-shaped cloud platform: resource identity,
 lifecycle, ownership, tagging, policy, events, quota, a provisioning
 pipeline and control plane (Phase 2), canonical resolvable resource
@@ -404,9 +404,12 @@ composed into a real "launch an instance" service), `cloud-storage`
 database, migrate its schema, snapshot and expire it" service),
 `cloud-messaging` (Phase 11 — the fourth and last, composing a real
 "create queues and topics, subscribe, publish, and fan a message out"
-service), and now (Phase 12) `cloud-orchestration` — the first crate to
-compose two of those *services* together, rather than primitives within
-one. Its one governing rule: **do not create one crate per AWS
+service), `cloud-orchestration` (Phase 12 — the first crate to compose two of
+those *services* together, rather than primitives within one), and now
+(Phase 13) the IAM surface `cloud-identity` deferred all the way back
+in Phase 1 — `cloud-credentials`, `cloud-session`, and
+`cloud-policy-document`. Its one governing rule: **do not create one
+crate per AWS
 service; build the primitives once, then compose services from those
 primitives.** No crate in this workspace is named after an AWS
 product, and none will be until it is a composition of already-real
@@ -417,7 +420,7 @@ product.
 
 ```mermaid
 flowchart LR
-    subgraph cf["cloud-forge (35 crates)"]
+    subgraph cf["cloud-forge (38 crates)"]
         direction TB
         types["cloud-types / cloud-errors<br/>(validated ids, Arn, shared errors)"]
         model["cloud-resource / cloud-lifecycle / cloud-tags<br/>(the Resource&lt;T&gt; wrapper)"]
@@ -437,6 +440,7 @@ flowchart LR
         databaseSvc["cloud-database<br/>(create_database/apply_migration/<br/>create_snapshot/expire_snapshots/delete_database)"]
         messagingSvc["cloud-messaging<br/>(create_queue/create_topic/subscribe/publish/<br/>enqueue/receive/delete_queue/delete_topic)"]
         orchestration["cloud-orchestration<br/>(attach_volume/detach_volume)"]
+        iam["cloud-credentials / cloud-session /<br/>cloud-policy-document<br/>(active-credential cap, session validity, policy JSON)"]
         types --> model --> core
         access --> core
         ops --> core
@@ -449,26 +453,33 @@ flowchart LR
         messaging --> messagingSvc
         computeSvc --> orchestration
         storageSvc --> orchestration
+        access -.deferred to Phase 13.-> iam
     end
 ```
 
-This is **Phase 12 of a much larger, explicitly staged roadmap** — the
-first phase to compose two already-real *services* together, rather
-than composing primitives into one service the way Phases 8-11 each
-did. 315 tests pass, clippy and fmt are clean, and `cloud-provisioner`'s
-own rollback tests prove the pipeline's atomicity claim directly: if
-`PLAN` or `APPLY` fails after `VALIDATE` already reserved quota, that
-reservation is released before the error returns. `cloud-orchestration`
-resolves a deferral `cloud-storage` (Phase 9) stated in its own doc
-comment, verbatim: "whether the id \[a volume is attached to\] names a
-real `cloud-compute` instance is an orchestration concern for whatever
-future layer calls both services." `attach_volume` is that layer — it
-takes a `&ComputeService` and a `&mut StorageService` together, checks
-the instance exists and isn't `Terminating`/`Terminated`, and only then
-drives the volume's attachment transitions, leaving the volume
-completely untouched if that check fails. It owns no state of its own,
-following the same free-function shape `cloud-provisioner` (Phase 2)
-established for a pipeline with nothing to hold between calls.
+This is **Phase 13 of a much larger, explicitly staged roadmap** —
+building out the IAM surface `cloud-identity`'s own Phase 1 doc comment
+named as deferred: "credentials, sessions, federation, policy
+documents ... is Phase 13." 345 tests pass, clippy and fmt are clean,
+and `cloud-provisioner`'s own rollback tests prove the pipeline's
+atomicity claim directly: if `PLAN` or `APPLY` fails after `VALIDATE`
+already reserved quota, that reservation is released before the error
+returns. `cloud-credentials` models a credential's lifecycle (not real
+secret material) and enforces AWS's own rule that a principal may hold
+at most two `Active` credentials at once. `cloud-session` covers both
+"sessions" and "federation" in one `Session` type, valid only while
+un-revoked *and* unexpired — the same two-independent-invalidity-path
+shape `cloud-visibility::MessageLease` (Phase 7) established.
+`cloud-policy-document` hand-rolls a JSON parser restricted to exactly
+a policy document's fixed schema, upholding this workspace's
+zero-external-dependency posture the same way `cloud-checksum`'s
+hand-rolled CRC-32 (Phase 5) does; `cloud-policy` itself gained one
+small `statements()` accessor to make this possible, the same
+precedent `cloud-scheduler` (Phase 2) set gaining
+`place_least_loaded_with_capacity` in Phase 4. Phase 13 builds
+primitives only, following primitives-before-a-service exactly as
+Phases 4-7 each did before compute/storage/database/messaging's own
+service phases arrived later.
 
 **See [`cloud-forge/README.md`](./cloud-forge/README.md) and
 [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)

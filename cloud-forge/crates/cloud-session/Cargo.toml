@@ -1,0 +1,11 @@
+[package]
+name = "cloud-session"
+version = "0.1.0"
+edition = "2021"
+description = "Temporary, expiring sessions -- assumed-role and federated -- for Phase 13's IAM surface. A Session is valid only while un-revoked and before its expiry, the same two-independent-invalidity-path shape cloud-visibility::MessageLease already established for at-least-once redelivery."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-types = { path = "../cloud-types" }
