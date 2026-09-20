@@ -486,6 +486,72 @@ migration- or consistency-specific.
   (Phase 2) computes a lifecycle transition path without executing
   whatever makes a resource actually reach the next state.
 
+## Phase 7: messaging primitives
+
+Compute, storage, and database (Phases 4-6) each needed their own
+disjoint set of concepts. Messaging-shaped resources (queues, topics,
+pub/sub) need a fourth, equally disjoint set -- the last of the four
+service categories this repository's own README names before AWS-shaped
+service composition begins:
+
+| Crate | Owns |
+|---|---|
+| [`cloud-delivery`](./crates/cloud-delivery) | `DeliverySemantics` (`AtMostOnce`/`AtLeastOnce`/`ExactlyOnce`): a genuine **partial order**, not a total one |
+| [`cloud-visibility`](./crates/cloud-visibility) | `MessageLease`: the visibility-timeout mechanism that actually implements at-least-once delivery, plus a dead-letter threshold on receive count |
+| [`cloud-fanout`](./crates/cloud-fanout) | `FanoutRegistry`: the topic-to-subscriber pub/sub topology |
+
+### Why `cloud-delivery` doesn't derive `Ord`, unlike `cloud-consistency`
+
+Phase 6's `cloud-consistency::ConsistencyLevel` is a genuine total
+order: every pair of levels is comparable, and `#[derive(Ord)]`'s
+declaration-order rule gives the correct answer for free. Delivery
+semantics are different in kind, not just in domain: they vary along
+**two independent axes** -- whether loss is tolerated, and whether
+duplication is tolerated. `AtMostOnce` (loss allowed, duplication
+forbidden) and `AtLeastOnce` (loss forbidden, duplication allowed) are
+**incomparable**: neither is "stronger" than the other, because each
+permits something the other categorically forbids. A derived (or
+hand-rolled linear) ordering would have to put one before the other
+arbitrarily, and `satisfies()` would then give a wrong answer for that
+pair. `cloud-delivery` instead checks both axes explicitly, which
+correctly reports `AtMostOnce.satisfies(AtLeastOnce)` and its reverse
+as both `false`, while `ExactlyOnce` (which forbids both) satisfies
+every requirement. This is worth stating explicitly because it would
+have been easy, and wrong, to copy Phase 6's pattern here without
+checking whether the underlying relationship was actually total.
+
+### Why `cloud-visibility` is a separate crate from `cloud-delivery`
+
+`DeliverySemantics` *declares* a guarantee; `MessageLease` is the
+actual mechanism (a hide-until-deadline lease plus a receive counter)
+that makes `AtLeastOnce` true in practice -- a message that isn't
+acknowledged in time becomes visible again automatically, which is how
+"never loses, may duplicate" is achieved mechanically rather than
+merely claimed. Keeping the declaration and the mechanism in separate
+crates mirrors `cloud-lifecycle` (Phase 1, a state machine) staying
+separate from `cloud-provisioner` (Phase 2, what actually drives state
+transitions) -- a semantics type and the engine that upholds it are
+different kinds of thing even when tightly related.
+
+### What Phase 7 deliberately does not include
+
+- **No `cloud-queue`/`cloud-topic` (or similarly named) crate.**
+  Composing `cloud-delivery` + `cloud-visibility` + `cloud-fanout` (and
+  earlier phases' `cloud-provisioner`/`cloud-control-plane`) into an
+  actual messaging service is the same composition every prior phase
+  deferred for its own service category: it doesn't get built, or
+  named, until it's real.
+- **`cloud-fanout` does not deliver anything.** It owns the
+  topic-to-subscriber mapping only -- no idea what a message is, no
+  retry, no per-subscriber `MessageLease`. Actually fanning a
+  published message out (and tracking each subscriber's own lease) is
+  a future service's job, exactly as the Phase 3 `Arn` registry owns a
+  name-to-resource mapping without touching provisioning.
+- **No message ordering (FIFO) primitive.** Ordering guarantees
+  interact with partitioning and fanout in ways that need a concrete
+  queue/topic shape to be meaningful; modeling it against primitives
+  alone risked producing an untestable abstraction.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

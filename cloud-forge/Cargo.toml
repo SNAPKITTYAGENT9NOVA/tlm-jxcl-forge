@@ -28,6 +28,9 @@ members = [
     "crates/cloud-consistency",
     "crates/cloud-migration",
     "crates/cloud-retention",
+    "crates/cloud-delivery",
+    "crates/cloud-visibility",
+    "crates/cloud-fanout",
 ]
 
 [profile.release]

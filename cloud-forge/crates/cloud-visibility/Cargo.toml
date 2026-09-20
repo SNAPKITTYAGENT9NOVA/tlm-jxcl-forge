@@ -1,0 +1,10 @@
+[package]
+name = "cloud-visibility"
+version = "0.1.0"
+edition = "2021"
+description = "MessageLease: the visibility-timeout mechanism that implements at-least-once message delivery -- hides a received message until a deadline, tracks receive count, and reports when a message should be dead-lettered."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-errors = { path = "../cloud-errors" }
+cloud-types = { path = "../cloud-types" }
