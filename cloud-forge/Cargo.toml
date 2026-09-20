@@ -35,6 +35,7 @@ members = [
     "crates/cloud-storage",
     "crates/cloud-database",
     "crates/cloud-messaging",
+    "crates/cloud-orchestration",
 ]
 
 [profile.release]

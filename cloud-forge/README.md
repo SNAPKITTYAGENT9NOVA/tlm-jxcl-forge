@@ -1,20 +1,21 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-307%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-315%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2034%2F34%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2035%2F35%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%2011%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%2012%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
 compose from, built for real before any service-shaped crate existed —
 and, as of Phase 11, all four (`cloud-compute`, Phase 8; `cloud-storage`,
 Phase 9; `cloud-database`, Phase 10; `cloud-messaging`, Phase 11)
-actually composed from them. This is a **separate Cargo workspace** from
-the rest of this repository's 100-crate `jxcl`/`pq-*` stack and from
-`verification-forge` — nothing here depends on either, and neither
-depends on this.
+actually composed from them, with Phase 12 (`cloud-orchestration`)
+composing two of those services *together* for the first time. This is
+a **separate Cargo workspace** from the rest of this repository's
+100-crate `jxcl`/`pq-*` stack and from `verification-forge` — nothing
+here depends on either, and neither depends on this.
 
 > **The non-negotiable rule:** do not create one crate per AWS service.
 > Build the primitives once, then compose services from those
@@ -274,7 +275,34 @@ applied here twice. See
 full reasoning, including how `publish` avoids partial fan-out on a
 message-id collision.
 
-**307 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 12, `cloud-orchestration` — the first cross-service composition
+
+Phases 8-11 each composed primitives *within* one service category.
+Phase 12 composes two already-real **services** together for the first
+time, resolving a deferral `cloud-storage` (Phase 9) stated in its own
+words:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-orchestration`](./crates/cloud-orchestration) | `attach_volume`/`detach_volume`: free functions coordinating `ComputeService` and `StorageService` — no new state machine, no new primitive | 8 |
+
+`attach_volume` takes a `&ComputeService` and a `&mut StorageService`
+together, checks the target instance exists and isn't `Terminating`/
+`Terminated`, and only then drives the volume's attachment transitions
+— exactly the "orchestration concern for whatever future layer calls
+both services" Phase 9's own doc comment named as deferred. An unknown
+or terminated instance leaves the volume's `AttachmentState` completely
+untouched. `cloud-orchestration` owns no resource store, quota, policy,
+or event log of its own — it borrows both services for the duration of
+one call and returns, the same shape `cloud-provisioner` (Phase 2)
+already established for a pipeline with nothing to hold between calls.
+`detach_volume` deliberately does not consult `compute` at all: force-detaching
+a volume must stay possible even from an instance that's since been
+terminated. See [`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md)
+for the full reasoning, including why this phase, unlike every earlier
+pipeline in this workspace, has no rollback path to write.
+
+**315 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -299,10 +327,11 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   byte-capacity primitive to feed it; `cloud-storage` (Phase 9) tracks
   volume size as an account-level `cloud-quota` reservation instead,
   same as `cloud-compute` does for instance count.
-- **`cloud-storage` doesn't validate attachment targets** — attaching a
-  volume moves only its own `AttachmentState`; whether the id it's
-  attached to names a real `cloud-compute` instance is an
-  orchestration concern for whatever future layer calls both services.
+- **`cloud-orchestration` only covers attach/detach, not database or
+  messaging cross-service composition** — this phase resolves exactly
+  the one deferral `cloud-storage` stated; wiring a database or a queue
+  to a compute instance is a different cross-service question with no
+  equivalent stated deferral yet.
 - **`cloud-storage` still has no snapshots or `cloud-checksum`/
   `cloud-retention` integration** — a volume has no content-integrity
   check or backup lifecycle; `cloud-database` (Phase 10) is where a
@@ -388,6 +417,13 @@ Two tests are the best reads for how these primitives fit together:
   message id already present in one subscriber's inbox rejects the
   whole `publish` call, and the *other* subscriber, which had room,
   still never receives it.
+- `cloud-orchestration`'s
+  [`attach_volume_rejects_a_terminated_instance`](./crates/cloud-orchestration/src/lib.rs)
+  — the first test in this workspace of a composition spanning two
+  independent services: it terminates a real `ComputeService` instance,
+  then proves `attach_volume` refuses to touch a `StorageService`
+  volume's `AttachmentState` at all on account of the *other* service's
+  state, leaving it exactly `Detached`.
 
 ## Building and testing
 
