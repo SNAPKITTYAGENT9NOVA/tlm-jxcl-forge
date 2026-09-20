@@ -1141,6 +1141,47 @@ than undoing steps within one.
   a direct `enqueue`, and composing that is left for whenever a
   concrete need for it exists.
 
+## Phase 16: `cloud-orchestration` gets a third composition, with database operations
+
+Phase 15 composed `cloud-compute` with `cloud-messaging`. Phase 16
+adds a third composition in the same crate: `cloud-database` +
+`cloud-messaging`. Both [`apply_migration_and_notify`] and
+[`delete_database_and_notify`] follow the same enqueue-first,
+rollback-on-failure discipline, since database operations like schema
+migrations can fail (an invalid version jump, incompatible changes) and
+are typically not reversible (schema changes are one-way; deletions are
+final).
+
+| Crate | Owns |
+|---|---|
+| [`cloud-orchestration`](./crates/cloud-orchestration) | Adds `apply_migration_and_notify`/`delete_database_and_notify` alongside Phase 12's attach/detach and Phase 15's compute+messaging |
+
+### Why database operations need the same rollback pattern
+
+Unlike [`attach_volume`]'s second step (which `cloud-attachment`'s own
+transition table made unconditionally valid once the first succeeded),
+and matching Phase 15's reasoning for `RuntimeState` transitions:
+database mutations can fail independently. Applying a migration version
+requires the prior version to exist; deleting a database requires all
+snapshots to have expired. These operations are also not generally
+reversible -- there is no `unapply_migration` that undoes an arbitrary
+schema change, and deletion is final. So both functions enqueue the
+notification message first, then attempt the database mutation, then
+delete the message if the mutation fails. This mirrors Phase 15 exactly,
+and is the second (and second-and-third) composition in this workspace
+spanning two independent services.
+
+### What this composition still doesn't do
+
+- **No message body describing the event.** Exactly as Phase 15 deferred
+  this, a message is just a `ResourceId`.
+- **No notification on `create_database` or other database operations.**
+  This phase covers exactly the two operations with clear, stated use
+  cases (migration and deletion); extending to other operations or other
+  services is a separate question.
+- **No fan-out to multiple queues.** Both functions take exactly one
+  `queue_id`, matching Phase 15's scope limitation.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

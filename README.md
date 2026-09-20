@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 39 | A from-first-principles cloud-resource substrate (Phase 15 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 39 | A from-first-principles cloud-resource substrate (Phase 16 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -409,10 +409,11 @@ those *services* together, rather than primitives within one), the IAM
 surface `cloud-identity` deferred all the way back in Phase 1 —
 `cloud-credentials`, `cloud-session`, and `cloud-policy-document`
 (Phase 13) — `cloud-iam` (Phase 14 — a fifth composed service, this one
-over those three IAM primitives), and now (Phase 15) a second
+over those three IAM primitives), Phase 15 added a second
 cross-service composition inside `cloud-orchestration` itself —
-`cloud-compute` + `cloud-messaging`, with this workspace's first
-rollback spanning two independent services. Its one governing rule: **do
+`cloud-compute` + `cloud-messaging`, and Phase 16 added a third —
+`cloud-database` + `cloud-messaging`, with two independent rollbacks
+spanning two independent services each. Its one governing rule: **do
 not create one crate per AWS
 service; build the primitives once, then compose services from those
 primitives.** No crate in this workspace is named after an AWS
@@ -443,7 +444,7 @@ flowchart LR
         storageSvc["cloud-storage<br/>(create_volume/transition_attachment/delete_volume)"]
         databaseSvc["cloud-database<br/>(create_database/apply_migration/<br/>create_snapshot/expire_snapshots/delete_database)"]
         messagingSvc["cloud-messaging<br/>(create_queue/create_topic/subscribe/publish/<br/>enqueue/receive/delete_queue/delete_topic)"]
-        orchestration["cloud-orchestration<br/>(attach_volume/detach_volume/<br/>transition_runtime_and_notify/terminate_and_notify)"]
+        orchestration["cloud-orchestration<br/>(attach_volume/detach_volume/<br/>transition_runtime_and_notify/terminate_and_notify/<br/>apply_migration_and_notify/delete_database_and_notify)"]
         iam["cloud-credentials / cloud-session /<br/>cloud-policy-document<br/>(active-credential cap, session validity, policy JSON)"]
         iamSvc["cloud-iam<br/>(assume_role/federate/authorize/<br/>load_policy_document)"]
         types --> model --> core
@@ -458,18 +459,20 @@ flowchart LR
         messaging --> messagingSvc
         computeSvc --> orchestration
         storageSvc --> orchestration
+        databaseSvc --> orchestration
         messagingSvc --> orchestration
         access -.deferred to Phase 13.-> iam
         iam --> iamSvc
     end
 ```
 
-This is **Phase 15 of a much larger, explicitly staged roadmap** —
-`cloud-orchestration`'s second cross-service composition, resolving a
-deferral `cloud-messaging` itself named in its own Phase 11 closing
-note: "what remains deferred is composing these services *together*
-(e.g. a compute instance's logs delivered through a queue)."
-`transition_runtime_and_notify`/`terminate_and_notify` enqueue a
+This is **Phase 16 of a much larger, explicitly staged roadmap** —
+the third cross-service composition inside `cloud-orchestration`,
+adding `cloud-database` + `cloud-messaging` after Phase 15's
+`cloud-compute` + `cloud-messaging`. Phase 15 resolved a deferral
+`cloud-messaging` itself named in its own Phase 11 closing note:
+"what remains deferred is composing these services *together*."
+`apply_migration_and_notify`/`delete_database_and_notify` enqueue a
 notification into `cloud-messaging` *before* attempting the
 `cloud-compute` mutation, then delete that message if the mutation
 fails — unlike Phase 12's `attach_volume`, which needed no rollback at
