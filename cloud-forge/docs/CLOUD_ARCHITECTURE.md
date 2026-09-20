@@ -628,6 +628,62 @@ never changes just because the instance was started or stopped.
   exposes is itself real, and `cloud-compute` is the first phase where
   that precondition starts to hold for any one category.
 
+## Phase 9: `cloud-storage`, the second composed service
+
+Phase 8's closing note named exactly this: "the other three primitive
+categories built in Phases 5-7 remain uncomposed." Phase 9 composes
+the second -- storage -- following `cloud-compute`'s own shape
+deliberately rather than inventing a new one: a service composes
+already-real primitives, adds no new primitive of its own, and keeps
+the same `AUTHORIZE -> VALIDATE -> APPLY`-shaped pipeline with full
+rollback.
+
+| Crate | Owns |
+|---|---|
+| [`cloud-storage`](./crates/cloud-storage) | `StorageService`: `create_volume`/`transition_attachment`/`delete_volume`, composing nine existing crates |
+
+### What's different from `cloud-compute`, and why
+
+- **No AZ placement.** `cloud-compute` places instances via
+  `cloud_scheduler::place_least_loaded_with_capacity` because
+  `cloud-capacity` (Phase 4) gives it a real per-AZ vCPU/memory pool to
+  place against. Phase 5 deliberately never built a `cloud-storage-capacity`
+  equivalent -- "no concrete allocator to feed" -- and Phase 9 doesn't
+  retroactively invent one just to mirror `cloud-compute`'s shape. A
+  volume's size is tracked the same way `cloud-compute` tracks instance
+  count: an account-level `cloud-quota` reservation (`"storage_bytes"`),
+  real and tested, but not AZ-scoped.
+- **A real, new business rule**: `delete_volume` refuses to proceed
+  unless the volume's `AttachmentState` is `Detached`, checked before
+  any lifecycle reconciliation or quota release happens. This is the
+  first place in the workspace a service-level operation is gated by a
+  *different* primitive's current state (attachment) rather than just
+  its own resource's lifecycle -- a real cross-primitive invariant, not
+  a restatement of something `cloud-attachment` or `cloud-lifecycle`
+  already enforces on its own.
+- **`transition_attachment` mirrors `cloud-compute::transition_runtime`
+  exactly**: a thin, single-step wrapper around the primitive's own
+  `transition_to`, leaving the higher-level operation (`delete_volume`,
+  parallel to `terminate`) to own the multi-step, side-effecting case.
+
+### What Phase 9 deliberately does not include
+
+- **No attachment target validation.** `transition_attachment` moves a
+  volume's own state machine; it does not check that some real compute
+  instance exists to attach to, or call into `cloud-compute` to verify
+  one. Two service crates directly depending on each other's internal
+  stores would be a tighter coupling than either has needed so far --
+  reconciling "does the thing I'm attaching to actually exist" across
+  two independent services is an orchestration concern for whatever
+  future layer calls both, exactly as `cloud-fanout` (Phase 7) doesn't
+  verify a subscriber id names a real resource either.
+- **No `cloud-database`/`cloud-messaging` (or similarly named)
+  services yet.** Phase 9 is storage's turn only.
+- **No snapshots, no `cloud-checksum`/`cloud-retention` integration.**
+  A volume in this phase has no content-integrity check and no backup
+  lifecycle; wiring those Phase 5/6 primitives in is future work once a
+  snapshot concept exists to attach them to.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive
