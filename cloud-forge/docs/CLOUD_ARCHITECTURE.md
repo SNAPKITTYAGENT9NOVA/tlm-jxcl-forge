@@ -684,6 +684,66 @@ rollback.
   lifecycle; wiring those Phase 5/6 primitives in is future work once a
   snapshot concept exists to attach them to.
 
+## Phase 10: `cloud-database`, the third composed service
+
+The third of the four service categories (Phases 5-7) gets composed,
+following exactly the shape `cloud-compute` and `cloud-storage`
+established.
+
+| Crate | Owns |
+|---|---|
+| [`cloud-database`](./crates/cloud-database) | `DatabaseService`: `create_database`/`apply_migration`/`create_snapshot`/`expire_snapshots`/`delete_database`, composing ten existing crates |
+
+### `cloud-retention` finally gets a stateful caller
+
+Phase 6 built `RetentionPolicy::eligible_for_deletion` as a pure
+function: given "now" and a list of `(id, created_at)` pairs, it
+computes which ids a policy would allow deleting. Nothing before this
+phase actually *kept* such a list anywhere. `cloud-database` is the
+first thing that does: `create_snapshot` appends to a real,
+per-database snapshot list, and `expire_snapshots` calls
+`eligible_for_deletion` against it and then actually removes what
+comes back -- the stateful half of a primitive Phase 6 deliberately
+left as pure computation. This also resolves Phase 9's own deferral
+note on `cloud-storage` ("wiring \[retention\] in is future work once a
+snapshot concept exists to attach them to"): the snapshot concept now
+exists, here, in the service where it was always going to make more
+sense (a database's point-in-time backups, not a raw block volume).
+
+### The delete-time gate, and how it differs from `cloud-storage`'s
+
+`cloud-storage::delete_volume` refuses based on another primitive's
+*current state* (`AttachmentState != Detached`). `cloud-database::delete_database`
+refuses based on **this service's own recorded state** (a non-empty
+snapshot list) rather than a different primitive's state machine --
+a different kind of cross-cutting check, but the same underlying
+discipline: a service-level delete operation must look past its own
+resource's `Lifecycle` before deciding it's safe to proceed.
+
+### Why `apply_migration` is a thin pass-through
+
+Exactly like `cloud-compute::transition_runtime` and
+`cloud-storage::transition_attachment`, `apply_migration` does nothing
+beyond delegating to the primitive's own method
+(`MigrationLedger::apply`) and keeping the per-database map in sync.
+The pattern across all three services is now well-established: a
+primitive's own state-changing method is never reimplemented at the
+service layer, only looked up, called, and stored back.
+
+### What Phase 10 deliberately does not include
+
+- **No query execution, no schema DDL.** `apply_migration` records
+  that a version was applied; it has no idea what SQL or
+  transformation that version represents, exactly as `cloud-migration`
+  itself (Phase 6) does not run migrations.
+- **No `cloud-messaging` (or similarly named) service yet.** Phase 10
+  is database's turn only; messaging (Phase 7's primitives) remains
+  the one service category not yet composed.
+- **`create_snapshot` does not use `cloud-checksum`.** A snapshot here
+  is just an id and a creation time -- verifying a snapshot's actual
+  content integrity would need the snapshot to contain real bytes,
+  which this phase's model doesn't have.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

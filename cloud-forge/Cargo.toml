@@ -33,6 +33,7 @@ members = [
     "crates/cloud-fanout",
     "crates/cloud-compute",
     "crates/cloud-storage",
+    "crates/cloud-database",
 ]
 
 [profile.release]

@@ -1,16 +1,17 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-267%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-283%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2032%2F32%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2033%2F33%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%209%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%2010%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
 compose from, built for real before any service-shaped crate existed —
-and, as of Phase 9, the first two (`cloud-compute`, Phase 8; `cloud-storage`,
-Phase 9) actually composed from them. This is a **separate Cargo workspace** from the rest of this
+and, as of Phase 10, the first three (`cloud-compute`, Phase 8;
+`cloud-storage`, Phase 9; `cloud-database`, Phase 10) actually composed
+from them. This is a **separate Cargo workspace** from the rest of this
 repository's 100-crate `jxcl`/`pq-*` stack and from `verification-forge`
 — nothing here depends on either, and neither depends on this.
 
@@ -219,7 +220,30 @@ its own. See
 full reasoning, including why attachment targets aren't validated
 against `cloud-compute`.
 
-**267 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 10, `cloud-database` — the third composed service
+
+The third of the four service categories gets composed, following
+exactly the shape `cloud-compute` and `cloud-storage` established:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-database`](./crates/cloud-database) | `DatabaseService`: `create_database`/`apply_migration`/`create_snapshot`/`expire_snapshots`/`delete_database`, composing ten existing crates — no new primitive | 16 |
+
+`cloud-retention` (Phase 6) finally gets a stateful caller: Phase 6
+only computed which snapshots a policy would allow deleting, given a
+list; `create_snapshot`/`expire_snapshots` are the first things in
+this workspace that actually keep such a list and act on the answer —
+resolving `cloud-storage`'s own Phase 9 deferral note. `delete_database`
+refuses while any snapshot is still recorded, a cross-cutting gate like
+`cloud-storage::delete_volume`'s, but reading this service's *own*
+recorded state rather than a different primitive's state machine.
+`apply_migration` is a thin pass-through to `MigrationLedger::apply`,
+the same pattern `transition_runtime`/`transition_attachment` already
+established. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
+full reasoning.
+
+**283 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -248,25 +272,27 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   volume moves only its own `AttachmentState`; whether the id it's
   attached to names a real `cloud-compute` instance is an
   orchestration concern for whatever future layer calls both services.
-- **No snapshots, and no `cloud-checksum`/`cloud-retention`
-  integration in `cloud-storage`** — a volume has no content-integrity
-  check or backup lifecycle yet; those wire in once a snapshot concept
-  exists to attach them to.
+- **`cloud-storage` still has no snapshots or `cloud-checksum`/
+  `cloud-retention` integration** — a volume has no content-integrity
+  check or backup lifecycle; `cloud-database` (Phase 10) is where a
+  snapshot concept first exists, since a database's point-in-time
+  backups made more sense there than on a raw block volume.
 - **No erasure-coding encoder/decoder** — `cloud-redundancy` models
   the arithmetic a real erasure code guarantees, not the encoding
   itself.
-- **No `cloud-database` (or similarly named) crate, and no
-  `cloud-table`/`cloud-index`/`cloud-query` crates.** Same reasoning as
-  storage above — no composition until it's real.
-- **No query language, execution engine, or storage engine** — this
-  phase answers what guarantee a database offers and what data may be
-  discarded, not how data is stored or queried.
-- **`cloud-migration` does not run migrations** — only the
-  version-ordering invariant; executing a migration's actual contents
-  belongs to whatever future service calls the ledger.
-- **No `cloud-queue`/`cloud-topic` (or similarly named) crate.** Same
-  reasoning as storage/database above — no composition
-  until it's real.
+- **No `cloud-table`/`cloud-index`/`cloud-query` crates, no query
+  language, and no execution/storage engine in `cloud-database`** —
+  `apply_migration` records that a version was applied without any
+  idea what SQL or transformation it represents, exactly as
+  `cloud-migration` itself (Phase 6) does not run migrations.
+- **`create_snapshot` does not use `cloud-checksum`** — a snapshot is
+  just an id and a creation time; content-integrity checking would
+  need the snapshot to hold real bytes, which this phase's model
+  doesn't have.
+- **No `cloud-queue`/`cloud-topic` (or similarly named) service yet.**
+  Same reasoning as compute/storage/database above — no composition
+  until it's real; messaging is the one service category not yet
+  composed.
 - **`cloud-fanout` does not deliver anything** — only the
   topic-to-subscriber mapping; fanning a message out (and tracking
   each subscriber's own `MessageLease`) belongs to a future service.
@@ -315,6 +341,13 @@ Two tests are the best reads for how these primitives fit together:
   reading one primitive's current state (`cloud-attachment`) to gate
   an operation on a different resource store entirely, and proving the
   refusal leaves the earlier quota reservation untouched.
+- `cloud-database`'s
+  [`expire_snapshots_removes_only_expired_ones_beyond_the_floor`](./crates/cloud-database/src/lib.rs)
+  — proves `cloud-retention`'s pure `eligible_for_deletion` computation
+  and a service's real, mutated snapshot list agree: the floor
+  protects the newest snapshot even though the older one is well past
+  its age window, and only the actually-expired one is removed from
+  the store.
 
 ## Building and testing
 
