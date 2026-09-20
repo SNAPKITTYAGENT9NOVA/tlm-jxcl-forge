@@ -143,21 +143,17 @@ impl AttestationContext {
 
         // Decode state_id
         let state_id = match bytes[offset] {
-            0 => {
-                offset += 1;
-                None
-            }
+            0 => None,
             1 => {
                 if offset + 3 > bytes.len() {
                     return Err(AttestationError::MalformedContext);
                 }
                 let len = u16::from_be_bytes([bytes[offset + 1], bytes[offset + 2]]) as usize;
-                offset += 3;
-                if offset + len > bytes.len() {
+                let data_start = offset + 3;
+                if data_start + len > bytes.len() {
                     return Err(AttestationError::MalformedContext);
                 }
-                let state = bytes[offset..offset + len].to_vec();
-                offset += len;
+                let state = bytes[data_start..data_start + len].to_vec();
                 Some(state)
             }
             _ => return Err(AttestationError::MalformedContext),
@@ -372,7 +368,10 @@ mod tests {
         // Should be 4 (key_version) + 1 (error_code flag) + 1 (state_id flag) = 6 bytes minimum
         assert_eq!(bytes.len(), 6);
         // First 4 bytes = 12345 in big-endian
-        assert_eq!(u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]), 12345);
+        assert_eq!(
+            u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]),
+            12345
+        );
         // Next byte should be 0 (no error code)
         assert_eq!(bytes[4], 0);
         // Next byte should be 0 (no state_id)

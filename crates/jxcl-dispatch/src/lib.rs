@@ -69,8 +69,10 @@ mod tests {
 
     #[test]
     fn dispatch_table_lookup() {
-        let handlers = &[(Mnemonic::Nop, nop_handler as DispatchHandler),
-                         (Mnemonic::Halt, halt_handler as DispatchHandler)];
+        let handlers = &[
+            (Mnemonic::Nop, nop_handler as DispatchHandler),
+            (Mnemonic::Halt, halt_handler as DispatchHandler),
+        ];
         let table = DispatchTable::new(handlers);
 
         assert!(table.lookup(Mnemonic::Nop).is_some());
@@ -89,8 +91,10 @@ mod tests {
 
     #[test]
     fn dispatch_table_len() {
-        let handlers = &[(Mnemonic::Nop, nop_handler as DispatchHandler),
-                         (Mnemonic::Halt, halt_handler as DispatchHandler)];
+        let handlers = &[
+            (Mnemonic::Nop, nop_handler as DispatchHandler),
+            (Mnemonic::Halt, halt_handler as DispatchHandler),
+        ];
         let table = DispatchTable::new(handlers);
 
         assert_eq!(table.len(), 2);

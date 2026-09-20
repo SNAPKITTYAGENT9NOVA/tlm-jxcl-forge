@@ -63,7 +63,7 @@ mod prng;
 mod target;
 
 pub use corpus::{Corpus, TestCase};
-pub use mutations::{Mutator, MutationStrategy};
+pub use mutations::{MutationStrategy, Mutator};
 pub use prng::Xorshift64;
 pub use target::{FuzzCampaign, FuzzResult, FuzzStats, FuzzTarget};
 
@@ -202,7 +202,10 @@ mod tests {
         }
 
         // Extremely unlikely that 100 consecutive values from different seeds match
-        assert!(same_count < 5, "Different seeds produced too many identical values");
+        assert!(
+            same_count < 5,
+            "Different seeds produced too many identical values"
+        );
     }
 
     #[test]
@@ -223,6 +226,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::same_item_push)]
     fn decoder_handles_truncated_instructions() {
         // Create a buffer that starts with a valid opcode but is too short
         let mut buf = vec![0x01]; // Start with a valid opcode

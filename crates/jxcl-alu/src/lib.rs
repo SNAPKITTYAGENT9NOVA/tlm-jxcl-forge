@@ -19,9 +19,9 @@
 //! - Shift/rotate counts are masked to the low 6 bits of the count operand (never a fault).
 #![forbid(unsafe_code)]
 
-use jxcl_types::Word;
-use jxcl_flags::Flags;
 use jxcl_constants::SHIFT_AMOUNT_MASK;
+use jxcl_flags::Flags;
+use jxcl_types::Word;
 
 /// Bundles a 64-bit result with the four condition flags an ALU operation may produce.
 /// Callers apply only the flags declared by the instruction's FlagEffect mask (spec §6).
@@ -292,7 +292,11 @@ fn shift_amount(count: Word) -> u32 {
 /// Logical shift left.
 pub fn shl(a: Word, count: Word) -> AluResult {
     let amt = shift_amount(count);
-    let value = if amt == 0 { a } else { Word::new(a.get().wrapping_shl(amt)) };
+    let value = if amt == 0 {
+        a
+    } else {
+        Word::new(a.get().wrapping_shl(amt))
+    };
     let carry = if amt == 0 {
         false
     } else {
@@ -313,7 +317,11 @@ pub fn shl(a: Word, count: Word) -> AluResult {
 /// Logical shift right.
 pub fn shr(a: Word, count: Word) -> AluResult {
     let amt = shift_amount(count);
-    let value = if amt == 0 { a } else { Word::new(a.get().wrapping_shr(amt)) };
+    let value = if amt == 0 {
+        a
+    } else {
+        Word::new(a.get().wrapping_shr(amt))
+    };
     let carry = if amt == 0 {
         false
     } else {

@@ -295,6 +295,8 @@ mod tests {
         let stats2 = campaign2.run_with_seed(100, 0x2222222222222222);
 
         // Different seeds should produce different results (very likely)
-        assert!(stats1.successful != stats2.successful || stats1.decode_errors != stats2.decode_errors);
+        assert!(
+            stats1.successful != stats2.successful || stats1.decode_errors != stats2.decode_errors
+        );
     }
 }

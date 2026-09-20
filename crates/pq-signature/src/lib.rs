@@ -114,8 +114,7 @@ impl SigningKey {
 
 impl PartialEq for SigningKey {
     fn eq(&self, other: &Self) -> bool {
-        self.bytes.len() == other.bytes.len()
-            && constant_time_eq(&self.bytes, &other.bytes)
+        self.bytes.len() == other.bytes.len() && constant_time_eq(&self.bytes, &other.bytes)
     }
 }
 
@@ -296,8 +295,7 @@ mod tests {
     #[test]
     fn test_sign_and_verify_roundtrip() {
         let signing_key = SigningKey::from_bytes(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap();
-        let verifying_key =
-            VerifyingKey::from_bytes(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap();
+        let verifying_key = VerifyingKey::from_bytes(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap();
 
         let message = b"test message";
         let signature = sign(&signing_key, message).unwrap();
@@ -309,8 +307,7 @@ mod tests {
     #[test]
     fn test_verify_detects_tampered_message() {
         let signing_key = SigningKey::from_bytes(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap();
-        let verifying_key =
-            VerifyingKey::from_bytes(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap();
+        let verifying_key = VerifyingKey::from_bytes(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap();
 
         let message = b"test message";
         let signature = sign(&signing_key, message).unwrap();
@@ -325,8 +322,7 @@ mod tests {
     #[test]
     fn test_verify_detects_wrong_key() {
         let signing_key = SigningKey::from_bytes(vec![1, 2, 3, 4, 5, 6, 7, 8]).unwrap();
-        let verifying_key =
-            VerifyingKey::from_bytes(vec![9, 10, 11, 12, 13, 14, 15, 16]).unwrap();
+        let verifying_key = VerifyingKey::from_bytes(vec![9, 10, 11, 12, 13, 14, 15, 16]).unwrap();
 
         let message = b"test message";
         let signature = sign(&signing_key, message).unwrap();
@@ -355,8 +351,14 @@ mod tests {
 
     #[test]
     fn test_error_display() {
-        assert_eq!(Error::VerificationFailed.to_string(), "signature verification failed");
-        assert_eq!(Error::MalformedSignature.to_string(), "malformed signature bytes");
+        assert_eq!(
+            Error::VerificationFailed.to_string(),
+            "signature verification failed"
+        );
+        assert_eq!(
+            Error::MalformedSignature.to_string(),
+            "malformed signature bytes"
+        );
         assert_eq!(Error::KeyGeneration.to_string(), "key generation failed");
         assert_eq!(Error::SigningFailed.to_string(), "signing operation failed");
         assert_eq!(Error::InvalidKey.to_string(), "invalid key material");
