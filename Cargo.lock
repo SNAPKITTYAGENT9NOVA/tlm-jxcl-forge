@@ -2093,7 +2093,10 @@ dependencies = [
 name = "jxcl-http"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "jxcl-errors",
+ "reqwest",
+ "tokio",
 ]
 
 [[package]]
