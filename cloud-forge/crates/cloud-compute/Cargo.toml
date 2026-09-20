@@ -1,0 +1,24 @@
+[package]
+name = "cloud-compute"
+version = "0.1.0"
+edition = "2021"
+description = "ComputeService: the first real composed service in this workspace, launching/terminating compute instances by composing cloud-image, cloud-capacity, capacity-aware cloud-scheduler placement, cloud-runtime, cloud-resource-registry, cloud-reconciler, and the Phase 1 resource model -- no new primitives, only composition."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-account = { path = "../cloud-account" }
+cloud-capacity = { path = "../cloud-capacity" }
+cloud-errors = { path = "../cloud-errors" }
+cloud-events = { path = "../cloud-events" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-image = { path = "../cloud-image" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }
+cloud-policy = { path = "../cloud-policy" }
+cloud-quota = { path = "../cloud-quota" }
+cloud-reconciler = { path = "../cloud-reconciler" }
+cloud-region = { path = "../cloud-region" }
+cloud-resource = { path = "../cloud-resource" }
+cloud-resource-registry = { path = "../cloud-resource-registry" }
+cloud-runtime = { path = "../cloud-runtime" }
+cloud-scheduler = { path = "../cloud-scheduler" }
+cloud-types = { path = "../cloud-types" }

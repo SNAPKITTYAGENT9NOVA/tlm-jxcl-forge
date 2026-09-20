@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2098%2F100%20crates-brightgreen)
-![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2030-blue)
+![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2031-blue)
 ![deps](https://img.shields.io/badge/ISA%20forge-zero%20dependencies-lightgrey)
 
 **TLM JXCL** — a from-scratch, deterministic, byte-addressable 64-bit
@@ -84,7 +84,7 @@ flowchart TB
         vfe --> vfk
     end
 
-    subgraph CF["cloud-forge/Cargo.toml (30 crates)"]
+    subgraph CF["cloud-forge/Cargo.toml (31 crates)"]
         direction LR
         cfk["Primitive kernel<br/>cloud-resource, cloud-policy, …"]
         cfc["cloud-core facade"]
@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 30 | A from-first-principles cloud-resource substrate (Phase 7 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 31 | A from-first-principles cloud-resource substrate (Phase 8 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -385,7 +385,7 @@ still pending).
 
 ## `cloud-forge`: a from-first-principles cloud substrate
 
-A completely separate, 30-crate Cargo workspace attempting the
+A completely separate, 31-crate Cargo workspace attempting the
 substrate underneath an AWS-shaped cloud platform: resource identity,
 lifecycle, ownership, tagging, policy, events, quota, a provisioning
 pipeline and control plane (Phase 2), canonical resolvable resource
@@ -394,19 +394,22 @@ state, per-AZ capacity, a machine-image registry), storage-specific
 primitives (Phase 5 — content-integrity checksums, durability schemes,
 volume attachment state), database-specific primitives (Phase 6 — a
 consistency-level order, sequential schema-migration enforcement,
-snapshot retention), and now (Phase 7) messaging-specific primitives —
-a delivery-semantics partial order, the visibility-timeout mechanism
-behind at-least-once delivery, and pub/sub topic fanout — the last of
-the four service categories this README names before AWS-shaped
-service composition begins. Its one governing rule: **do not create
-one crate per AWS service; build the primitives once, then compose
-services from those primitives.** No crate in this workspace is named
-after an AWS product, and none will be until it is a composition of
-already-real primitive crates.
+snapshot retention), messaging-specific primitives (Phase 7 — a
+delivery-semantics partial order, the visibility-timeout mechanism
+behind at-least-once delivery, pub/sub topic fanout), and now
+(Phase 8) `cloud-compute` — the first of those four service categories
+actually composed into a real "launch an instance" service, rather
+than a category of standalone primitives. Its one governing rule: **do
+not create one crate per AWS service; build the primitives once, then
+compose services from those primitives.** No crate in this workspace
+is named after an AWS product, and none will be until it is a
+composition of already-real primitive crates — `cloud-compute` is
+exactly such a composition, named for the service category it
+provides rather than any specific vendor's product.
 
 ```mermaid
 flowchart LR
-    subgraph cf["cloud-forge (30 crates)"]
+    subgraph cf["cloud-forge (31 crates)"]
         direction TB
         types["cloud-types / cloud-errors<br/>(validated ids, Arn, shared errors)"]
         model["cloud-resource / cloud-lifecycle / cloud-tags<br/>(the Resource&lt;T&gt; wrapper)"]
@@ -421,29 +424,33 @@ flowchart LR
         storage["cloud-checksum / cloud-redundancy / cloud-attachment<br/>(integrity, durability, attach state)"]
         database["cloud-consistency / cloud-migration / cloud-retention<br/>(consistency order, schema versions, snapshot retention)"]
         messaging["cloud-delivery / cloud-visibility / cloud-fanout<br/>(delivery semantics, visibility leases, pub/sub topology)"]
+        service["cloud-compute<br/>(launch/transition_runtime/terminate)"]
         types --> model --> core
         access --> core
         ops --> core
         core --> control --> pipeline --> plane
         plane --> names
         compute -.capacity-aware placement.-> control
+        compute --> service
     end
 ```
 
-This is **Phase 7 of a much larger, explicitly staged roadmap** — the
-last primitives phase for the four service categories this README
-names, before AWS-shaped services get composed on top of them. 241
-tests pass, clippy and fmt are clean, and `cloud-provisioner`'s own
-rollback tests prove the pipeline's atomicity claim directly: if
-`PLAN` or `APPLY` fails after `VALIDATE` already reserved quota, that
-reservation is released before the error returns — not just asserted,
-but tested against both failure points. Phase 7's `cloud-delivery` is
-worth calling out specifically: unlike Phase 6's `cloud-consistency`
-(a genuine total order, correctly derived), delivery semantics vary
-along two independent axes — loss and duplication — so `AtMostOnce`
-and `AtLeastOnce` are **incomparable**, and `cloud-delivery` checks
-both axes explicitly rather than forcing a linear order that would
-give a wrong answer for that pair.
+This is **Phase 8 of a much larger, explicitly staged roadmap** — the
+first service-composition phase, after four phases (4-7) that each
+built primitives for one service category and explicitly deferred
+composing them. 254 tests pass, clippy and fmt are clean, and
+`cloud-provisioner`'s own rollback tests prove the pipeline's
+atomicity claim directly: if `PLAN` or `APPLY` fails after `VALIDATE`
+already reserved quota, that reservation is released before the error
+returns. `cloud-compute` proves the same claim one layer up, across
+eleven composed crates rather than `cloud-provisioner`'s five, and
+deliberately does *not* reuse `cloud-provisioner`/`cloud-control-plane`:
+their placement (`cloud_scheduler::place_least_loaded`) knows nothing
+about vCPU/memory, and teaching a generic pipeline about compute
+capacity would be exactly the one-off special-casing this workspace's
+rule exists to prevent. `cloud-compute` instead runs its own pipeline
+directly against `cloud-capacity`/`cloud-image`/`cloud-runtime`, with
+the same rollback discipline.
 
 **See [`cloud-forge/README.md`](./cloud-forge/README.md) and
 [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)
