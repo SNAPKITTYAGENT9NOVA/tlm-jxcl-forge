@@ -1,10 +1,10 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-94%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-128%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2012%2F12%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2017%2F17%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%201%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%202%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
@@ -42,37 +42,65 @@ every later phase composes from:
 | [`cloud-quota`](./crates/cloud-quota) | Limit/usage tracking; a rejected reservation commits nothing | 7 |
 | [`cloud-core`](./crates/cloud-core) | A facade re-exporting all of the above, plus an integration test | 1 |
 
-**94 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 2, the control plane
+
+Phase 2 adds the pipeline that turns Phase 1's independent data types
+into an actual "create a resource" operation — authorized, quota
+checked, placed, constructed, and recorded, atomically:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-scheduler`](./crates/cloud-scheduler) | Least-loaded-AZ placement over a region's registered AZs | 6 |
+| [`cloud-service-registry`](./crates/cloud-service-registry) | Named control-plane services and their health (`Healthy`/`Unhealthy`/`Unknown`) | 7 |
+| [`cloud-reconciler`](./crates/cloud-reconciler) | BFS over `cloud-lifecycle`'s transition graph: shortest path from a current to a desired state | 7 |
+| [`cloud-provisioner`](./crates/cloud-provisioner) | The `AUTHORIZE→VALIDATE→PLAN→APPLY→VERIFY→AUDIT` pipeline; **rolls back every earlier stage's reservation if a later stage fails** | 6 |
+| [`cloud-control-plane`](./crates/cloud-control-plane) | `ControlPlane<T>`: registries + policy + quota + events + a resource store, with real `create`/`get`/`list`/`delete` | 8 |
+
+**128 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
-## Deliberately not in Phase 1
+## Deliberately skipped or deferred
 
 - **`cloud-metadata`** isn't a separate crate — its proposed fields are
   exactly `cloud-resource`'s `created_at`/`updated_at`/`version` and
   `cloud-tags`'s `Tags`.
-- **`cloud-runtime`** is deferred to Phase 2 (the control plane) — a
-  "runtime" has nothing real to run until a scheduler or reconciler
-  exists to run something on.
+- **`resource-manager`, `lifecycle-manager`, `quota-manager`,
+  `policy-engine`, `account-manager`, `region-manager` are not separate
+  crates** — each would be a thin wrapper forwarding to a Phase 1
+  primitive, exactly the one-crate-per-name anti-pattern the
+  non-negotiable rule exists to prevent. `cloud-control-plane` holds
+  those primitives directly.
+- **`control-api`** (a REST/gRPC layer) is deferred — the roadmap's own
+  execution order puts the API layer well after the control plane it
+  would expose.
+- **`cloud-runtime`** is deferred again, now to Phase 4 (compute
+  primitives) — a "runtime" only becomes a real primitive once
+  something is actually executing.
 - **The full IAM surface** (credentials, sessions, federation, JSON
   policy documents) is Phase 13 — `cloud-identity` only has enough of a
   `Principal` for `cloud-policy` to evaluate against.
 - **No AWS-named crate exists anywhere in this workspace.** `services/`
-  cannot start honestly until the primitives it would compose (Phase
-  2's control plane, then compute/storage/network primitives) are
-  themselves real.
+  cannot start honestly until the primitives it would compose (compute,
+  storage, network — later phases) are themselves real.
 
 ## See it compose
 
-`cloud-core`'s own test,
-[`provisioning_a_resource_composes_every_phase_1_primitive`](./crates/cloud-core/src/lib.rs),
-is the best single read for how these primitives fit together: it
-registers a region and an account, authors a policy (and proves an
-explicit deny beats a broader allow), creates a tagged resource and
-walks it through its lifecycle while checking the version invariant at
-every step, formats its internal ARN, records a creation event, and
-hits a quota limit on a second reservation — all using only the
-crates in the table above.
+Two tests are the best reads for how these primitives fit together:
+
+- `cloud-core`'s
+  [`provisioning_a_resource_composes_every_phase_1_primitive`](./crates/cloud-core/src/lib.rs)
+  — registers a region and an account, authors a policy (and proves an
+  explicit deny beats a broader allow), creates a tagged resource and
+  walks it through its lifecycle while checking the version invariant
+  at every step, formats its internal ARN, records a creation event,
+  and hits a quota limit on a second reservation, all using only Phase
+  1 primitives directly.
+- `cloud-provisioner`'s
+  [`apply_failure_rolls_back_both_quota_and_placement`](./crates/cloud-provisioner/src/lib.rs)
+  — the sharpest single test of Phase 2's actual claim: a pipeline
+  built from atomic parts is not itself atomic unless someone wires
+  the rollback, and this proves it's wired, not just asserted.
 
 ## Building and testing
 

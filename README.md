@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2098%2F100%20crates-brightgreen)
-![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2012-blue)
+![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2017-blue)
 ![deps](https://img.shields.io/badge/ISA%20forge-zero%20dependencies-lightgrey)
 
 **TLM JXCL** — a from-scratch, deterministic, byte-addressable 64-bit
@@ -84,7 +84,7 @@ flowchart TB
         vfe --> vfk
     end
 
-    subgraph CF["cloud-forge/Cargo.toml (12 crates)"]
+    subgraph CF["cloud-forge/Cargo.toml (17 crates)"]
         direction LR
         cfk["Primitive kernel<br/>cloud-resource, cloud-policy, …"]
         cfc["cloud-core facade"]
@@ -104,7 +104,7 @@ flowchart TB
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 12 | A from-first-principles cloud-resource substrate (Phase 1 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 17 | A from-first-principles cloud-resource substrate (Phase 2 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -385,39 +385,44 @@ still pending).
 
 ## `cloud-forge`: a from-first-principles cloud substrate
 
-A completely separate, 12-crate Cargo workspace attempting the
+A completely separate, 17-crate Cargo workspace attempting the
 substrate underneath an AWS-shaped cloud platform: resource identity,
-lifecycle, ownership, tagging, policy, events, and quota — the handful
-of concepts every cloud service (compute, storage, database,
-messaging, …) would reuse rather than reinvent. Its one governing rule:
-**do not create one crate per AWS service; build the primitives once,
-then compose services from those primitives.** No crate in this
-workspace is named after an AWS product, and none will be until it is a
+lifecycle, ownership, tagging, policy, events, quota, and now (Phase 2)
+an actual provisioning pipeline and control plane — the handful of
+concepts every cloud service (compute, storage, database, messaging,
+…) would reuse rather than reinvent. Its one governing rule: **do not
+create one crate per AWS service; build the primitives once, then
+compose services from those primitives.** No crate in this workspace
+is named after an AWS product, and none will be until it is a
 composition of already-real primitive crates.
 
 ```mermaid
 flowchart LR
-    subgraph cf["cloud-forge (12 crates)"]
+    subgraph cf["cloud-forge (17 crates)"]
         direction TB
         types["cloud-types / cloud-errors<br/>(validated ids, Arn, shared errors)"]
         model["cloud-resource / cloud-lifecycle / cloud-tags<br/>(the Resource&lt;T&gt; wrapper)"]
         access["cloud-region / cloud-account / cloud-identity / cloud-policy<br/>(deny-dominates evaluation)"]
         ops["cloud-events / cloud-quota"]
-        core["cloud-core<br/>(facade + integration test)"]
+        core["cloud-core<br/>(Phase 1 facade)"]
+        control["cloud-scheduler / cloud-reconciler /<br/>cloud-service-registry"]
+        pipeline["cloud-provisioner<br/>(AUTHORIZE→VALIDATE→PLAN→APPLY→VERIFY→AUDIT,<br/>with rollback)"]
+        plane["cloud-control-plane<br/>(create/get/list/delete)"]
         types --> model --> core
         access --> core
         ops --> core
+        core --> control --> pipeline --> plane
     end
 ```
 
-This is **Phase 1 of a much larger, explicitly staged roadmap** (a
-control plane in Phase 2, then compute/storage/database/messaging
-primitives, and only then AWS-shaped services composed on top). 94
-tests pass, clippy and fmt are clean, and `cloud-core`'s own
-integration test provisions a tagged, policy-checked, quota-limited
-resource end to end using nothing but the primitives in the diagram
-above — proof the composition the governing rule demands actually
-works, not just that each crate compiles in isolation.
+This is **Phase 2 of a much larger, explicitly staged roadmap**
+(compute/storage/database/messaging primitives next, and only then
+AWS-shaped services composed on top). 128 tests pass, clippy and fmt
+are clean, and `cloud-provisioner`'s own rollback tests prove the
+pipeline's atomicity claim directly: if `PLAN` or `APPLY` fails after
+`VALIDATE` already reserved quota, that reservation is released before
+the error returns — not just asserted, but tested against both failure
+points.
 
 **See [`cloud-forge/README.md`](./cloud-forge/README.md) and
 [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md)

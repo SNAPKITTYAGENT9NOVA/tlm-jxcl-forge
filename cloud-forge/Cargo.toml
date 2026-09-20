@@ -13,6 +13,11 @@ members = [
     "crates/cloud-events",
     "crates/cloud-quota",
     "crates/cloud-core",
+    "crates/cloud-scheduler",
+    "crates/cloud-service-registry",
+    "crates/cloud-reconciler",
+    "crates/cloud-provisioner",
+    "crates/cloud-control-plane",
 ]
 
 [profile.release]

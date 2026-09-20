@@ -145,11 +145,14 @@ jxcl:cloud:<partition>:<service>:<region>:<account>:<resource>
   (`created_at`/`updated_at`/tags/version) are exactly `cloud-resource`
   and `cloud-tags`'s fields; a separate crate would own nothing a
   caller couldn't already get from those two.
-- **`cloud-runtime` is deferred to Phase 2.** A "runtime" is only
-  meaningful once there's a scheduler or reconciler to run something
-  on; before that exists, a `cloud-runtime` crate would have no real
-  invariant to test — it would be a name, not a primitive. It's listed
-  as a Phase 2 (control-plane) item instead.
+- **`cloud-runtime` is deferred past Phase 2 too, now to Phase 4
+  (compute primitives).** Phase 2 does add a scheduler, but what it
+  schedules is *placement* (which `AzId` a resource is assigned to) —
+  a decision `cloud-scheduler` owns directly using `cloud-types`'s
+  existing `AzId`, with no new wrapper type needed. A "runtime" only
+  becomes a real, distinct primitive once something is actually
+  executing (a VM, a container, a function invocation) — Phase 4's
+  concern, not Phase 2's.
 - **`cloud-identity` is intentionally minimal in this phase**: a
   `Principal` enum (`User`/`Role`/`Service`, each carrying an id) —
   enough for `cloud-policy` to evaluate against. The full IAM surface
@@ -159,6 +162,61 @@ jxcl:cloud:<partition>:<service>:<region>:<account>:<resource>
   `services/s3`, etc. cannot be started honestly until the primitives
   they'd compose (compute, storage, network primitives — later phases)
   are themselves real.
+
+## Phase 2: the control plane
+
+Phase 2 is where Phase 1's primitives stop being independent data
+types and start composing into an actual pipeline: a request to create
+a resource gets authorized, checked against quota, placed somewhere,
+constructed, and recorded — with the whole operation succeeding
+atomically or rolling back cleanly. This is also where the roadmap's
+deterministic state machine
+
+```
+REQUEST -> AUTHENTICATE -> AUTHORIZE -> VALIDATE -> PLAN -> APPLY -> VERIFY -> COMMIT -> AUDIT
+```
+
+becomes a real, tested code path rather than a diagram. (`AUTHENTICATE`
+is not separately modeled here: this phase takes an already-resolved
+`Principal` as input, since credential/session verification is Phase
+13's IAM surface, not Phase 2's control-plane concern.)
+
+### What's real in Phase 2
+
+| Crate | Owns |
+|---|---|
+| `cloud-scheduler` | Placement: picks the least-loaded `AzId` in a region, from `cloud-region`'s registry and a caller-supplied usage count per AZ |
+| `cloud-service-registry` | A registry of named control-plane services and their health (`Healthy`/`Unhealthy`/`Unknown`) |
+| `cloud-reconciler` | Given a current and a desired `Lifecycle`, computes the shortest valid transition path through `cloud-lifecycle`'s state graph (via BFS), or reports the desired state as unreachable |
+| `cloud-provisioner` | The `AUTHORIZE -> VALIDATE -> PLAN -> APPLY -> VERIFY -> COMMIT -> AUDIT` pipeline itself, composing `cloud-policy` + `cloud-quota` + `cloud-scheduler` + `cloud-resource` + `cloud-events`, with each stage's failure distinguishable and every reservation made by an earlier stage rolled back if a later stage fails |
+| `cloud-control-plane` | `ControlPlane<T>`: holds the account/region registries, policy, quota tracker, event log, and a resource store; exposes `create` (via `cloud-provisioner`), `get`, `list`, `delete` |
+
+### What Phase 2 deliberately skips or defers
+
+- **`resource-manager`, `lifecycle-manager`, `quota-manager`,
+  `policy-engine`, `account-manager`, `region-manager` are not separate
+  crates.** Each would be a thin wrapper doing nothing but forwarding
+  to `cloud-resource`, `cloud-lifecycle`, `cloud-quota`, `cloud-policy`,
+  `cloud-account`, or `cloud-region` — exactly the one-crate-per-name
+  anti-pattern this workspace's non-negotiable rule exists to prevent.
+  `cloud-control-plane` holds these Phase 1 primitives directly instead
+  of through an extra indirection layer that owns nothing new.
+- **`control-api` (a REST/gRPC layer) is deferred.** The roadmap's own
+  execution order puts the API layer (Phase 30) well after the control
+  plane it exposes; building an HTTP surface before the control plane
+  it would serve is stable is building a service, not a primitive.
+- **`cloud-runtime` is deferred to Phase 4** — see above.
+
+### The rollback invariant
+
+`cloud-provisioner`'s pipeline makes a real claim worth stating
+explicitly: if `AUTHORIZE` succeeds but a later stage (`VALIDATE`,
+`PLAN`, `APPLY`, or `COMMIT`) fails, every resource reservation an
+earlier stage made (currently: `cloud-quota` usage) is released before
+the pipeline returns its error. This is tested directly — not inferred
+from "the individual stages are each atomic" — since a multi-stage
+pipeline built from atomic parts is not itself atomic unless someone
+wires the rollback path and verifies it.
 
 ## Definition of done, per crate
 
