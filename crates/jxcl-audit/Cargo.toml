@@ -2,8 +2,7 @@
 name = "jxcl-audit"
 version = "0.1.0"
 edition = "2021"
-description = "A structured audit-event schema and emission helper, distinct from jxcl-logging's generic initialization."
+description = "Audit logging for JXCL machine operations with comprehensive event tracking and severity levels."
 license = "AGPL-3.0-only OR LicenseRef-Commercial"
 
 [dependencies]
-jxcl-logging = { path = "../jxcl-logging" }

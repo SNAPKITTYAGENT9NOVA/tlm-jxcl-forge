@@ -1804,9 +1804,6 @@ dependencies = [
 [[package]]
 name = "jxcl-audit"
 version = "0.1.0"
-dependencies = [
- "jxcl-logging",
-]
 
 [[package]]
 name = "jxcl-binary"
