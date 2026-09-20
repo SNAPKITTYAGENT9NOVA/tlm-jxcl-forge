@@ -4,20 +4,8 @@
 
 //! The `jxcl` command-line interface: asm/disasm/run/inspect/validate subcommands.
 //!
-//! Owns: The CLI argument parsing and subcommand dispatch (main.rs's logic).
-//!
-//! Status: scaffolded -- real implementation lands per
-//! `docs/CRATE_GENERATION_PLAN.md`'s batch schedule for the
-//! `toolchain` category. Planned public API: main.
-#![forbid(unsafe_code)]
-#![allow(dead_code)]
+//! Primary interface: the `main` binary executable defined in `src/main.rs`.
+//! This library crate exists primarily to allow integration tests to be written
+//! in the `tests/` directory.
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn scaffold_placeholder() {
-        // Real tests land with this crate's implementation batch --
-        // see docs/crates.toml's `tests` field for what's planned:
-        // integration.
-    }
-}
+#![forbid(unsafe_code)]
