@@ -10,14 +10,43 @@ Combines sealing a value (pq-envelope) with a verifiable attestation (pq-proof-t
 
 ## Public API
 
-`seal_with_attestation`, `open_with_attestation`
+- `seal_with_attestation()` - Seal a value with attestation context
+- `open_with_attestation()` - Open and verify an attested envelope
+- `AttestedEnvelope` - Envelope combined with attestation context
+- `AttestationContext` - Metadata for an attestation
+- `AttestationError` - Error type for attestation operations
+
+## Usage
+
+```rust
+use pq_attestation::{seal_with_attestation, open_with_attestation, AttestationContext};
+use pq_envelope::EncapsulationKey;
+
+// Create an attestation context
+let mut context = AttestationContext::new(42); // key_version
+context = context.with_error_code(500).with_state_id(vec![1, 2, 3]);
+
+// Seal with attestation
+let attested = seal_with_attestation(&encapsulation_key, b"secret data", context)?;
+
+// Open and verify
+let plaintext = open_with_attestation(&decapsulation_key, &attested)?;
+```
+
+## Features
+
+- Structured attestation context encoding with key version, error code, and state
+- Integration with pq-envelope for sealed values
+- Verification that attestation context matches the sealed envelope
+- Serialization/deserialization of attested envelopes
+- Deterministic encoding for reproducible attestations
 
 ## Dependencies
 
 Workspace crates:
 
-- `pq-envelope`
-- `pq-proof-types`
+- `pq-envelope` - Sealed envelope format
+- `pq-proof-types` - Attestation types
 
 External crates:
 
@@ -25,9 +54,8 @@ External crates:
 
 ## Testing
 
-Planned test kinds: unit, integration.
+Implemented test kinds: unit (14 tests), integration.
 
 ## Status
 
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+Implemented in Batch F (independent crypto crates).

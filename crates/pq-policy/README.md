@@ -10,7 +10,30 @@ Consolidates scattered policy decisions (TLS-required-in-production, minimum see
 
 ## Public API
 
-`Policy`, `TlsRequiredInProduction`, `MinimumSeedLength`
+- `Policy` - Core trait for policy enforcement
+- `PolicyError` - Error type for policy violations
+- `PolicyContext` - Context information for policy checks
+- `TlsRequiredInProduction` - Built-in policy for TLS requirement in production
+- `MinimumSeedLength` - Built-in policy for minimum key/seed length enforcement
+- `CompositePolicy` - Composite policy that combines multiple policies
+
+## Usage
+
+```rust
+use pq_policy::{Policy, PolicyContext, TlsRequiredInProduction, MinimumSeedLength};
+
+let tls_policy = TlsRequiredInProduction;
+let seed_policy = MinimumSeedLength::recommended();
+
+let context = PolicyContext::new(
+    true,   // is_production
+    64,     // key_length in bytes
+    true,   // tls_enabled
+);
+
+tls_policy.check(&context)?;
+seed_policy.check(&context)?;
+```
 
 ## Dependencies
 
@@ -24,9 +47,8 @@ External crates:
 
 ## Testing
 
-Planned test kinds: unit, boundary.
+Implemented test kinds: unit (12 tests), boundary.
 
 ## Status
 
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+Implemented in Batch F (independent crypto crates).
