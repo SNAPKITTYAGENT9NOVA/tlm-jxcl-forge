@@ -32,6 +32,7 @@ members = [
     "crates/cloud-visibility",
     "crates/cloud-fanout",
     "crates/cloud-compute",
+    "crates/cloud-storage",
 ]
 
 [profile.release]

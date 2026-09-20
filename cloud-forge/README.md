@@ -1,16 +1,16 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-254%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-267%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2031%2F31%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2032%2F32%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%208%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%209%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
 compose from, built for real before any service-shaped crate existed —
-and, as of Phase 8, the first one (`cloud-compute`) actually composed
-from them. This is a **separate Cargo workspace** from the rest of this
+and, as of Phase 9, the first two (`cloud-compute`, Phase 8; `cloud-storage`,
+Phase 9) actually composed from them. This is a **separate Cargo workspace** from the rest of this
 repository's 100-crate `jxcl`/`pq-*` stack and from `verification-forge`
 — nothing here depends on either, and neither depends on this.
 
@@ -194,7 +194,32 @@ independent. See
 full reasoning and for why storage/database/messaging remain
 primitives without a composed service for now.
 
-**254 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 9, `cloud-storage` — the second composed service
+
+Phase 8's closing note named exactly this: the other three primitive
+categories built in Phases 5-7 remain uncomposed. Phase 9 composes the
+second — storage — following `cloud-compute`'s own shape:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-storage`](./crates/cloud-storage) | `StorageService`: `create_volume`/`transition_attachment`/`delete_volume`, composing nine existing crates — no new primitive | 13 |
+
+Unlike `cloud-compute`, `StorageService` places nothing onto a
+specific AZ — Phase 5 never built a `cloud-storage-capacity`
+equivalent to `cloud-capacity`, so a volume's size is tracked as an
+account-level `cloud-quota` reservation instead, the same pattern
+`cloud-compute` uses for instance count. `delete_volume` adds this
+workspace's first cross-primitive gate at the service level: it
+refuses unless the volume's `cloud-attachment::AttachmentState` is
+`Detached`, checked before any lifecycle reconciliation or quota
+release — a real business rule (an in-use volume can't be deleted),
+not a restatement of something a single primitive already enforces on
+its own. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
+full reasoning, including why attachment targets aren't validated
+against `cloud-compute`.
+
+**267 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -215,11 +240,18 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
 - **Image deregistration is not implemented** — whether an in-use
   image can be safely removed depends on resource-to-image references
   `cloud-image` alone cannot see.
-- **No `cloud-storage-capacity`, object/blob-storage, or `cloud-volume`
-  crate exists yet** — no composition, or the primitive it would need,
-  exists until a real storage-provisioning phase needs it (`cloud-compute`,
-  Phase 8, is the one service category this reasoning no longer applies
-  to).
+- **No `cloud-storage-capacity` crate exists yet** — no per-AZ
+  byte-capacity primitive to feed it; `cloud-storage` (Phase 9) tracks
+  volume size as an account-level `cloud-quota` reservation instead,
+  same as `cloud-compute` does for instance count.
+- **`cloud-storage` doesn't validate attachment targets** — attaching a
+  volume moves only its own `AttachmentState`; whether the id it's
+  attached to names a real `cloud-compute` instance is an
+  orchestration concern for whatever future layer calls both services.
+- **No snapshots, and no `cloud-checksum`/`cloud-retention`
+  integration in `cloud-storage`** — a volume has no content-integrity
+  check or backup lifecycle yet; those wire in once a snapshot concept
+  exists to attach them to.
 - **No erasure-coding encoder/decoder** — `cloud-redundancy` models
   the arithmetic a real erasure code guarantees, not the encoding
   itself.
@@ -277,6 +309,12 @@ Two tests are the best reads for how these primitives fit together:
   failure at `PLAN` still rolls back the `VALIDATE`-stage quota
   reservation, even though neither of those stages is `cloud-provisioner`'s
   own code anymore.
+- `cloud-storage`'s
+  [`delete_volume_refuses_an_attached_volume`](./crates/cloud-storage/src/lib.rs)
+  — a different kind of composition test: not rollback, but a service
+  reading one primitive's current state (`cloud-attachment`) to gate
+  an operation on a different resource store entirely, and proving the
+  refusal leaves the earlier quota reservation untouched.
 
 ## Building and testing
 

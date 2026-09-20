@@ -1,0 +1,22 @@
+[package]
+name = "cloud-storage"
+version = "0.1.0"
+edition = "2021"
+description = "StorageService: the second real composed service in this workspace, creating/attaching/deleting durable volumes by composing cloud-redundancy, cloud-attachment, cloud-reconciler, and the Phase 1/2/3 resource model -- no new primitive, only composition."
+license = "AGPL-3.0-only OR LicenseRef-Commercial"
+
+[dependencies]
+cloud-account = { path = "../cloud-account" }
+cloud-attachment = { path = "../cloud-attachment" }
+cloud-errors = { path = "../cloud-errors" }
+cloud-events = { path = "../cloud-events" }
+cloud-identity = { path = "../cloud-identity" }
+cloud-lifecycle = { path = "../cloud-lifecycle" }
+cloud-policy = { path = "../cloud-policy" }
+cloud-quota = { path = "../cloud-quota" }
+cloud-reconciler = { path = "../cloud-reconciler" }
+cloud-redundancy = { path = "../cloud-redundancy" }
+cloud-region = { path = "../cloud-region" }
+cloud-resource = { path = "../cloud-resource" }
+cloud-resource-registry = { path = "../cloud-resource-registry" }
+cloud-types = { path = "../cloud-types" }
