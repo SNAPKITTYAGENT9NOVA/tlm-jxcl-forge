@@ -552,6 +552,82 @@ different kinds of thing even when tightly related.
   queue/topic shape to be meaningful; modeling it against primitives
   alone risked producing an untestable abstraction.
 
+## Phase 8: `cloud-compute`, the first real composed service
+
+Phases 4-7 built sixteen primitive crates across four service
+categories (compute, storage, database, messaging) and, at every
+single one, explicitly deferred composing them into anything -- "no
+`cloud-compute` (or similarly named) crate exists yet," repeated
+almost verbatim in each phase's own section above. Phase 8 is where
+that deferral ends for compute, the category with the most complete
+primitive set: `cloud-runtime` and `cloud-capacity` and `cloud-image`
+(Phase 4), plus `cloud-resource-registry` (Phase 3) and the Phase 1/2
+resource model, are enough to build a real "launch an instance"
+operation without inventing a single new primitive.
+
+| Crate | Owns |
+|---|---|
+| [`cloud-compute`](./crates/cloud-compute) | `ComputeService`: `launch`/`transition_runtime`/`terminate`, composing eleven existing crates |
+
+### Why this doesn't reuse `cloud-provisioner`/`cloud-control-plane`
+
+Phase 2's pipeline is deliberately generic: it works for any resource
+type and places with `cloud_scheduler::place_least_loaded`, which
+takes no capacity into account because most resources (a policy, a
+bucket in later phases) have none to check. `ComputeService` needs
+`place_least_loaded_with_capacity` (Phase 4) instead, since an
+instance genuinely cannot be placed somewhere without room for it.
+Two ways existed to get there: teach the generic pipeline about
+vCPU/memory (a one-off special case baked into a crate every other
+resource type also goes through -- exactly the anti-pattern the
+non-negotiable rule exists to prevent), or have `cloud-compute` run
+its own pipeline directly against the same underlying primitives.
+`cloud-compute` does the latter: it reimplements the shape of
+`AUTHORIZE -> VALIDATE -> PLAN -> APPLY` (policy check, quota
+reservation, capacity-aware placement, resource construction plus ARN
+registration) with the same rollback discipline `cloud-provisioner`
+established, but calling `cloud-capacity`/`cloud-image`/`cloud-runtime`
+directly rather than through a generic layer that doesn't know they
+exist.
+
+### The rollback chain `launch` upholds
+
+`launch` reserves, in order: a quota unit, then placement capacity
+(which `place_least_loaded_with_capacity` reserves atomically with
+its own AZ-usage increment), then an ARN registration. A failure at
+any later stage releases every earlier reservation before returning --
+tested directly for the capacity-exhaustion case (`QuotaExceeded` from
+`PLAN` rolls back the `VALIDATE`-stage quota unit) exactly as
+`cloud-provisioner`'s own tests do for its stages.
+
+### `RuntimeState` lives in its own store, deliberately
+
+`ComputeService` keeps `RuntimeState` in a separate map from
+`Resource<InstanceSpec>`, not as a field inside the resource or its
+payload. This is not an implementation shortcut: `cloud-runtime`'s own
+docs (Phase 4) describe execution state and the resource record as two
+things that vary independently, and storing them together would
+re-couple what Phase 4 deliberately kept apart. `transition_runtime`
+touches only the runtime store; a resource's own `version`/`updated_at`
+never changes just because the instance was started or stopped.
+
+### What Phase 8 deliberately does not include
+
+- **No image deregistration, no instance resize, no attached
+  volumes.** `terminate` releases exactly what `launch` reserved
+  (quota, capacity); nothing else about an instance's lifecycle beyond
+  launch/run/stop/terminate is modeled yet.
+- **`cloud-storage`, `cloud-database`, `cloud-messaging` (or similarly
+  named) services do not exist yet.** Phase 8 is compute's turn only --
+  the other three service categories built in Phases 5-7 remain
+  primitives without a composed service, for exactly the reason this
+  phase just finished demonstrating takes real, deliberate design work
+  rather than a copy-paste of `cloud-compute`'s shape.
+- **No HTTP/gRPC API surface.** `control-api` remains deferred from
+  Phase 2's own reasoning: an API layer belongs after the service it
+  exposes is itself real, and `cloud-compute` is the first phase where
+  that precondition starts to hold for any one category.
+
 ## Definition of done, per crate
 
 Reusing the roadmap's own maturity levels, scoped to what a primitive

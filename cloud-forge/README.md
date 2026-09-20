@@ -1,15 +1,16 @@
 # cloud-forge
 
-![tests](https://img.shields.io/badge/tests-241%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-254%20passing-brightgreen)
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
-![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2030%2F30%20crates-brightgreen)
+![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2031%2F31%20crates-brightgreen)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
-![status](https://img.shields.io/badge/status-phase%207%20of%2046-yellow)
+![status](https://img.shields.io/badge/status-phase%208%20of%2046-yellow)
 
 A from-first-principles cloud-resource substrate: the primitives every
 AWS-shaped service (compute, storage, database, messaging, …) would
-compose from, built for real before any service-shaped crate exists.
-This is a **separate Cargo workspace** from the rest of this
+compose from, built for real before any service-shaped crate existed —
+and, as of Phase 8, the first one (`cloud-compute`) actually composed
+from them. This is a **separate Cargo workspace** from the rest of this
 repository's 100-crate `jxcl`/`pq-*` stack and from `verification-forge`
 — nothing here depends on either, and neither depends on this.
 
@@ -166,7 +167,34 @@ for its own, genuinely total, order. See
 full reasoning, and for why no `cloud-queue`/`cloud-topic` or FIFO
 ordering primitive exists yet.
 
-**241 tests pass** (`cargo test --workspace --release` from this
+## What's here: Phase 8, `cloud-compute` — the first real composed service
+
+Phases 4-7 built sixteen primitive crates and, at every single one,
+deferred composing them into anything. Phase 8 ends that deferral for
+compute, the category with the most complete primitive set:
+
+| Crate | Owns | Tests |
+|---|---|---:|
+| [`cloud-compute`](./crates/cloud-compute) | `ComputeService`: `launch`/`transition_runtime`/`terminate`, composing eleven existing crates — no new primitive | 13 |
+
+`ComputeService` deliberately does **not** reuse
+`cloud-provisioner`/`cloud-control-plane` (Phase 2): those pipelines
+place with `cloud_scheduler::place_least_loaded`, which knows nothing
+about vCPU/memory, and teaching a generic pipeline about compute
+capacity would be exactly the one-off special-casing this workspace's
+rule exists to prevent. Instead `cloud-compute` runs its own
+`AUTHORIZE -> VALIDATE -> PLAN -> APPLY`-shaped pipeline directly
+against `cloud-capacity`/`cloud-image`/`cloud-runtime`, with the same
+rollback discipline: a capacity-exhaustion failure at `PLAN` rolls back
+the `VALIDATE`-stage quota reservation, tested directly. `RuntimeState`
+lives in its own store, separate from `Resource<InstanceSpec>` — never
+re-coupling what `cloud-runtime` (Phase 4) deliberately kept
+independent. See
+[`docs/CLOUD_ARCHITECTURE.md`](./docs/CLOUD_ARCHITECTURE.md) for the
+full reasoning and for why storage/database/messaging remain
+primitives without a composed service for now.
+
+**254 tests pass** (`cargo test --workspace --release` from this
 directory), all `cargo clippy --workspace --all-targets -- -D
 warnings` clean, all `cargo fmt --all -- --check` clean.
 
@@ -184,24 +212,20 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
 - **`control-api`** (a REST/gRPC layer) is deferred — the roadmap's own
   execution order puts the API layer well after the control plane it
   would expose.
-- **No `cloud-compute` (or similarly named) crate exists yet.** Wiring
-  `cloud-runtime` + `cloud-capacity` + `cloud-image` into an actual
-  "launch an instance" operation is the first genuinely compute-shaped
-  service this workspace would build, and it doesn't get built (or
-  named) until it's a real composition of already-real primitives.
 - **Image deregistration is not implemented** — whether an in-use
   image can be safely removed depends on resource-to-image references
   `cloud-image` alone cannot see.
 - **No `cloud-storage-capacity`, object/blob-storage, or `cloud-volume`
-  crate exists yet** — same reasoning as `cloud-compute` above: no
-  composition, or the primitive it would need, exists until a real
-  storage-provisioning phase needs it.
+  crate exists yet** — no composition, or the primitive it would need,
+  exists until a real storage-provisioning phase needs it (`cloud-compute`,
+  Phase 8, is the one service category this reasoning no longer applies
+  to).
 - **No erasure-coding encoder/decoder** — `cloud-redundancy` models
   the arithmetic a real erasure code guarantees, not the encoding
   itself.
 - **No `cloud-database` (or similarly named) crate, and no
   `cloud-table`/`cloud-index`/`cloud-query` crates.** Same reasoning as
-  `cloud-compute`/storage above — no composition until it's real.
+  storage above — no composition until it's real.
 - **No query language, execution engine, or storage engine** — this
   phase answers what guarantee a database offers and what data may be
   discarded, not how data is stored or queried.
@@ -209,7 +233,7 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
   version-ordering invariant; executing a migration's actual contents
   belongs to whatever future service calls the ledger.
 - **No `cloud-queue`/`cloud-topic` (or similarly named) crate.** Same
-  reasoning as `cloud-compute`/storage/database above — no composition
+  reasoning as storage/database above — no composition
   until it's real.
 - **`cloud-fanout` does not deliver anything** — only the
   topic-to-subscriber mapping; fanning a message out (and tracking
@@ -217,6 +241,11 @@ warnings` clean, all `cargo fmt --all -- --check` clean.
 - **No message ordering (FIFO) primitive** — ordering interacts with
   partitioning and fanout in ways that need a concrete queue/topic
   shape to be meaningful.
+- **`cloud-compute` has no instance resize, no attached volumes, and
+  no HTTP/gRPC API surface** — `terminate` releases exactly what
+  `launch` reserved; nothing about an instance's lifecycle beyond
+  launch/run/stop/terminate is modeled yet, and `control-api` remains
+  deferred from Phase 2's own reasoning.
 - **The full IAM surface** (credentials, sessions, federation, JSON
   policy documents) is Phase 13 — `cloud-identity` only has enough of a
   `Principal` for `cloud-policy` to evaluate against.
@@ -241,6 +270,13 @@ Two tests are the best reads for how these primitives fit together:
   — the sharpest single test of Phase 2's actual claim: a pipeline
   built from atomic parts is not itself atomic unless someone wires
   the rollback, and this proves it's wired, not just asserted.
+- `cloud-compute`'s
+  [`exhausting_capacity_fails_the_launch_and_reserves_no_quota`](./crates/cloud-compute/src/lib.rs)
+  — the same rollback claim one layer up, now across eleven composed
+  crates instead of `cloud-provisioner`'s five: a capacity-exhaustion
+  failure at `PLAN` still rolls back the `VALIDATE`-stage quota
+  reservation, even though neither of those stages is `cloud-provisioner`'s
+  own code anymore.
 
 ## Building and testing
 

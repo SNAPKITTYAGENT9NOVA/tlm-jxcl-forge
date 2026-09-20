@@ -31,6 +31,7 @@ members = [
     "crates/cloud-delivery",
     "crates/cloud-visibility",
     "crates/cloud-fanout",
+    "crates/cloud-compute",
 ]
 
 [profile.release]
