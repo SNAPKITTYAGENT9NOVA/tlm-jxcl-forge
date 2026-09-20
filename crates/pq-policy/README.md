@@ -51,8 +51,7 @@ Implemented test kinds: unit (12 tests), boundary.
 
 ## Status
 
-`planned` in `docs/crates.toml` -- see
-`docs/CRATE_GENERATION_PLAN.md` for the implementation batch schedule.
+Implemented in Batch F (independent crypto crates).
 
 ## License
 
