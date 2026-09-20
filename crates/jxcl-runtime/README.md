@@ -41,24 +41,22 @@ Workspace crates:
 
 External crates:
 
-- `tokio` (version 1, with "rt" feature for runtime building)
+- `tokio` (version 1, with "rt-multi-thread" feature for multi-threaded runtime building)
 
 ## Testing
 
-Implemented test kinds: unit (7 tests).
+Implemented test kinds: unit (6 tests).
 
 Tests cover:
 
-- `build_runtime_succeeds`: Verifies that a runtime can be built and is usable for simple async tasks.
 - `read_worker_thread_count_default_cpu_count`: Checks fallback to CPU count when env var is unset.
 - `read_worker_thread_count_parses_env_var`: Validates parsing of an explicit thread count from the env var.
 - `read_worker_thread_count_falls_back_on_invalid_value`: Ensures invalid/unparseable values fall back to CPU count.
 - `read_worker_thread_count_falls_back_on_empty_var`: Confirms empty env var falls back to default.
 - `read_worker_thread_count_panics_on_zero`: Validates that a thread count of 0 panics.
-- `panic_hook_is_installed`: Verifies the panic hook machinery works.
 - `num_cpus_returns_positive`: Confirms the CPU-count helper returns a positive value.
 
-All env-var tests use a Mutex lock (`ENV_LOCK`) to serialize access and prevent race conditions.
+All env-var tests use a Mutex lock (`ENV_LOCK`) with poisoning recovery to serialize access and prevent race conditions. Note: `build_runtime` itself is not directly unit-tested since it modifies global state (panic hook), but its behavior is verified via the helper function tests and can be integration-tested at startup.
 
 ## License
 
