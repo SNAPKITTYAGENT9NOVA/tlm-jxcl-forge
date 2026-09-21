@@ -1,0 +1,70 @@
+LICENSE NOTICE
+==============
+
+This repository is distributed under a dual-license model.
+
+Copyright
+---------
+
+Copyright (C) 2026 ERRANT DIGITAL INSTITUTE OF TECHNOLOGY (SEIT NGO)
+% SNAPKITTY COLLECTIVE
+
+Operating/project brand: SnapKitty Collective
+
+Address: 1974 Union Street, San Francisco, CA 94123, United States
+
+All rights not expressly granted under the license(s) described below
+are reserved to the copyright holder. See COPYRIGHT.md for the full
+copyright notice and its scope.
+
+Licensing structure
+--------------------
+
+1. **Open-source license.** The GNU Affero General Public License
+   v3.0 (AGPLv3), reproduced verbatim and unmodified in `LICENSE-AGPL`
+   in this same directory. Unless you have signed a separate
+   commercial license agreement with the copyright holder (below),
+   your use of this repository's source code is governed solely by
+   the terms in `LICENSE-AGPL`.
+
+2. **Commercial license.** A separately negotiated commercial license
+   is available as an alternative to the AGPLv3 for parties who cannot
+   or do not wish to comply with its terms (for example: closed-source
+   redistribution, or operating a modified version as a network
+   service without publishing the modified source, which the AGPLv3
+   otherwise requires). `LICENSE-COMMERCIAL` in this same directory is
+   a licensing-program template describing what such an agreement can
+   cover; it is not itself a signed or binding agreement -- see that
+   file's own header.
+
+Licensing contacts
+-------------------
+
+- **Primary licensing contact:** Jessica -- Jessica@collectivekitty.com
+- **Technical architect:** Ahmed Parr -- Ahmedparr93@gmail.com
+
+Trademarks
+----------
+
+"ERRANT DIGITAL INSTITUTE OF TECHNOLOGY", "SEIT NGO", "SNAPKITTY
+COLLECTIVE", "SnapKitty", and other project-specific names, logos, and
+marks are trademarks of the copyright holder and are licensed
+separately from the copyright grants above -- neither the AGPLv3 nor a
+commercial license under `LICENSE-COMMERCIAL` includes a trademark
+license. See `TRADEMARKS.md`.
+
+Third-party notices
+--------------------
+
+This repository depends on third-party, independently-licensed
+software packages (see each Cargo workspace's `Cargo.toml`/
+`Cargo.lock` for the current dependency list at any given time). Those
+dependencies retain their own original licenses and are not
+relicensed by this notice or by either license above.
+
+Precedence
+----------
+
+This notice is a summary for convenience and does not itself grant any
+rights. In case of any conflict, the full text of `LICENSE-AGPL`, or a
+separately signed commercial license agreement, governs.
