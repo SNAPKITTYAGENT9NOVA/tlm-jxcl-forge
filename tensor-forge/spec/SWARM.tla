@@ -1,109 +1,149 @@
 ---------------- MODULE SWARM ----------------
 EXTENDS Naturals, Sequences, TLC
 
-CONSTANTS Agents, MaxLines, HASH
-VARIABLES A1, A2, A3, L, State, Time, Hash, Proof,
-          Verified, Committed, TemporalLock, Status
+(* A three-agent generate/verify/temporal-commit loop over `MaxLines`
+   candidate lines. `GoodLines` is the model's stand-in for the real
+   Syntax/Type/Invariant/ProofOf verifier: the subset of `1..MaxLines`
+   that would pass review. Every variable holds the *current* value
+   (round-indexed via `line`/`Len(hashTrail)`, not stored as an
+   unbounded function from Nat), so the state space is finite and
+   `TLC` can actually explore it. *)
 
-ASSUME Agents = {1, 2, 3}
-ASSUME MaxLines \in Nat /\ MaxLines = 10000
+CONSTANTS MaxLines, GoodLines
+VARIABLES line, a1, a2, a3, time, hashTrail, verified, committed,
+          temporalLock, status
 
-(* ---------- Line-count monotonicity ---------- *)
-DeltaPos == \A r \in Nat: L[r+1] > L[r]
+ASSUME MaxLines \in Nat /\ MaxLines > 0
+ASSUME GoodLines \subseteq 1..MaxLines
 
-(* ---------- Generator A1 ---------- *)
-Generator(r) ==
-  /\ L' = L[r] + 1
-  /\ L' > L[r]
-  /\ A1' = 1
+Hash(prev, ln) == prev + ln + 1
 
-(* ---------- Verifier A2 ---------- *)
-Verifier(x) ==
-  IF Syntax(x) /\ Type(x) /\ Invariant(x) /\ ProofOf(x)
-  THEN 1 ELSE 0
+vars == <<line, a1, a2, a3, time, hashTrail, verified, committed,
+          temporalLock, status>>
 
-Reject(x) == Verifier(x) = 0
+Terminal == status \in {"FINALIZE", "HALT"}
 
-(* ---------- Temporal arbiter A3 ---------- *)
-TemporalStep(r) ==
-  /\ Time[r+1] > Time[r]
-  /\ State[r+1] = F(State[r], A1[r], Time[r])
-  /\ A3' = 1
-
-TemporalValid == \A r \in Nat: Time[r] < Time[r+1]
-
-Halt3 == A3 = 0 => Status' = "HALT"
-
-Rollback ==
-  /\ A2 = 0
-  /\ A1' = "ROLLBACK"
-  /\ TemporalLock' = 1
-
-Commit ==
-  /\ A1 = 1 /\ A2 = 1 /\ A3 = 1
-  /\ Hash[r+1] = HASH(Hash[r] \o Proof[r])
-  /\ Hash[r+1] # Hash[r]
-  /\ Committed' = Committed \cup {r+1}
-
-Immutable ==
-  \A r \in Nat: Committed[r] => UNCHANGED <<Hash[r], Proof[r]>>
-
-(* ---------- Loop / Finalize / Halt ---------- *)
-Loop ==
-  /\ L[r] < MaxLines
-  /\ A1 = 1 /\ A2 = 1 /\ A3 = 1
-  /\ Status' = "LOOP"
-
-Finalize ==
-  /\ L[r] >= MaxLines
-  /\ \A l \in 1..MaxLines: Verified[l] = 1
-  /\ Status' = "FINALIZE"
-  /\ VerifiedOutput \subseteq (MPL \cap PURE_MATH)
-
-HaltFail ==
-  /\ \E l \in 1..MaxLines: Verified[l] = 0
-  /\ Status' = "HALT"
-
-(* ---------- SWARM pipeline ---------- *)
-SwarmStep(r) ==
-  \/ Loop
-  \/ Finalize
-  \/ HaltFail
-  \/ Rollback
-  \/ Halt3
-
-(* ---------- Environment ---------- *)
 Init ==
-  /\ A1 = 0 /\ A2 = 0 /\ A3 = 0
-  /\ L = [r \in Nat |-> 0]
-  /\ State = [r \in Nat |-> {}]
-  /\ Time = [r \in Nat |-> 0]
-  /\ Hash = [r \in Nat |-> {}]
-  /\ Proof = [r \in Nat |-> {}]
-  /\ Verified = [l \in 1..MaxLines |-> 0]
-  /\ Committed = {}
-  /\ TemporalLock = 0
-  /\ Status = "INIT"
+  /\ line = 0
+  /\ a1 = "IDLE"
+  /\ a2 = 0
+  /\ a3 = 0
+  /\ time = 0
+  /\ hashTrail = <<0>>
+  /\ verified = [l \in 1..MaxLines |-> FALSE]
+  /\ committed = {}
+  /\ temporalLock = 0
+  /\ status = "GENERATE"
 
+(* A1: generator. Advances the line counter and raises its own flag;
+   blocked while `temporalLock` is set (a prior Rollback halted the
+   pipeline). *)
+GenerateStep ==
+  /\ status = "GENERATE"
+  /\ temporalLock = 0
+  /\ line' = line + 1
+  /\ a1' = "RAISED"
+  /\ status' = "VERIFY"
+  /\ UNCHANGED <<a2, a3, time, hashTrail, verified, committed, temporalLock>>
+
+(* A2: verifier. `line \in GoodLines` stands in for
+   `Syntax /\ Type /\ Invariant /\ ProofOf` all holding for this line. *)
+VerifyStep ==
+  /\ status = "VERIFY"
+  /\ a2' = IF line \in GoodLines THEN 1 ELSE 0
+  /\ status' = IF line \in GoodLines THEN "TEMPORAL" ELSE "ROLLBACK"
+  /\ UNCHANGED <<line, a1, a3, time, hashTrail, verified, committed, temporalLock>>
+
+(* A3: temporal arbiter. Strictly advances `time`. *)
+TemporalStep ==
+  /\ status = "TEMPORAL"
+  /\ a2 = 1
+  /\ time' = time + 1
+  /\ a3' = 1
+  /\ status' = "COMMIT"
+  /\ UNCHANGED <<line, a1, a2, hashTrail, verified, committed, temporalLock>>
+
+(* A2 rejected: roll back and latch the temporal lock, halting the
+   pipeline for good (matches the boxed safety clause
+   `TemporalLock = 1 => A1 = "ROLLBACK"`). *)
+RollbackStep ==
+  /\ status = "ROLLBACK"
+  /\ a2 = 0
+  /\ a1' = "ROLLBACK"
+  /\ temporalLock' = 1
+  /\ status' = "HALT"
+  /\ UNCHANGED <<line, a2, a3, time, hashTrail, verified, committed>>
+
+(* All three agents agree: chain the hash, mark the line verified and
+   committed, reset the per-round flags, and either loop back for the
+   next line or move on to the final check. *)
+CommitStep ==
+  /\ status = "COMMIT"
+  /\ a1 = "RAISED" /\ a2 = 1 /\ a3 = 1
+  /\ hashTrail' = Append(hashTrail, Hash(hashTrail[Len(hashTrail)], line))
+  /\ verified' = [verified EXCEPT ![line] = TRUE]
+  /\ committed' = committed \cup {line}
+  /\ a1' = "IDLE"
+  /\ a2' = 0
+  /\ a3' = 0
+  /\ status' = IF line >= MaxLines THEN "CHECK" ELSE "GENERATE"
+  /\ UNCHANGED <<line, time, temporalLock>>
+
+FinalizeStep ==
+  /\ status = "CHECK"
+  /\ \A l \in 1..MaxLines: verified[l]
+  /\ status' = "FINALIZE"
+  /\ UNCHANGED <<line, a1, a2, a3, time, hashTrail, verified, committed, temporalLock>>
+
+HaltFailStep ==
+  /\ status = "CHECK"
+  /\ \E l \in 1..MaxLines: ~verified[l]
+  /\ status' = "HALT"
+  /\ UNCHANGED <<line, a1, a2, a3, time, hashTrail, verified, committed, temporalLock>>
+
+RealNext ==
+  \/ GenerateStep
+  \/ VerifyStep
+  \/ TemporalStep
+  \/ RollbackStep
+  \/ CommitStep
+  \/ FinalizeStep
+  \/ HaltFailStep
+
+(* Absorbing self-loop once terminal; kept out of `RealNext` (and so
+   out of the `WF_vars(RealNext)` fairness obligation below) for the
+   same reason as in NArrayLogic.tla: a fairness requirement on an
+   `UNCHANGED vars` action can never be honestly satisfied once it is
+   the only action left enabled. *)
 Next ==
-  \E r \in Nat: SwarmStep(r)
+  \/ RealNext
+  \/ /\ Terminal
+     /\ UNCHANGED vars
 
-Spec == Init /\ [][Next]_<<A1, A2, A3, L, State, Time,
-                          Hash, Proof, Verified,
-                          Committed, TemporalLock, Status>>
+Spec == Init /\ [][Next]_vars /\ WF_vars(RealNext)
 
-(* ---------- Liveness / safety ---------- *)
-Safety ==
-  /\ \A r \in Nat: Committed[r] => Hash[r+1] # Hash[r]
-  /\ \A r \in Nat: Time[r] < Time[r+1]
-  /\ TemporalLock = 1 => A1 = "ROLLBACK"
+TypeOK ==
+  /\ line \in 0..MaxLines
+  /\ a1 \in {"IDLE", "RAISED", "ROLLBACK"}
+  /\ a2 \in {0, 1}
+  /\ a3 \in {0, 1}
+  /\ time \in Nat
+  /\ hashTrail \in Seq(Nat)
+  /\ Len(hashTrail) >= 1
+  /\ verified \in [1..MaxLines -> BOOLEAN]
+  /\ committed \subseteq 1..MaxLines
+  /\ temporalLock \in {0, 1}
+  /\ status \in
+       {"GENERATE", "VERIFY", "TEMPORAL", "ROLLBACK", "COMMIT",
+        "CHECK", "FINALIZE", "HALT"}
 
-Liveness ==
-  (L < MaxLines) ~> (L >= MaxLines)
-  /\ (L >= MaxLines /\ \A l \in 1..MaxLines: Verified[l] = 1)
-     ~> (Status = "FINALIZE")
+(* The two safety clauses the boxed spec calls out by name. *)
+TemporalMonotone == \A i \in 1..(Len(hashTrail) - 1): hashTrail[i] < hashTrail[i + 1]
+TemporalLockImpliesRollback == temporalLock = 1 => a1 = "ROLLBACK"
+CommittedImpliesVerified == committed \subseteq {l \in 1..MaxLines: verified[l]}
 
-ASSUME ProvableSound ==
-  \A ln, pf: Provable(ln, pf) => TRUE
+Safety == TemporalMonotone /\ TemporalLockImpliesRollback /\ CommittedImpliesVerified
+
+EventuallyTerminal == <>Terminal
 
 ================================================================
