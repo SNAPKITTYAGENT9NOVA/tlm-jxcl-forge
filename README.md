@@ -5,6 +5,8 @@
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2098%2F100%20crates-brightgreen)
 ![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2039%20%2B%203-blue)
+![lines](https://img.shields.io/badge/lines-66%2C645%20LOC-brightblue)
+![formal](https://img.shields.io/badge/formal%20verification-Alloy%20%2B%20Lean4%20%2B%20MATLAB-purple)
 ![deps](https://img.shields.io/badge/ISA%20forge-zero%20dependencies-lightgrey)
 
 **TLM JXCL** — a from-scratch, deterministic, byte-addressable 64-bit
@@ -35,6 +37,10 @@ headline number.
 - [`verification-forge`: a from-scratch proof kernel](#verification-forge-a-from-scratch-proof-kernel)
 - [`cloud-forge`: a from-first-principles cloud substrate](#cloud-forge-a-from-first-principles-cloud-substrate)
 - [`tensor-forge`: an ndarray-based tensor library](#tensor-forge-an-ndarray-based-tensor-library)
+- [Phase 5: Formal verification and MATLAB certification](#phase-5-formal-verification-and-matlab-certification)
+  - [Alloy Freehand Lemmas framework](#alloy-freehand-lemmas-framework)
+  - [MATLAB certification modules](#matlab-certification-modules)
+  - [DSL compiler for lemma specifications](#dsl-compiler-for-lemma-specifications)
 - [Why 100 crates, and how to trust that number](#why-100-crates-and-how-to-trust-that-number)
 - [Networking, services, and cross-cutting concerns](#networking-services-and-cross-cutting-concerns)
 - [Testing methodology](#testing-methodology)
@@ -66,8 +72,7 @@ crates, for the same reason `verification-forge` is one.
 
 ## Repository map
 
-This repository holds **four independent Cargo workspaces** that never
-depend on each other:
+This repository holds **four independent Cargo workspaces** plus two formalization frameworks:
 
 ```mermaid
 flowchart TB
@@ -102,25 +107,38 @@ flowchart TB
         tfc --> tfl --> tff
     end
 
+    subgraph P5["Phase 5: Formal Verification"]
+        direction LR
+        alloy["Alloy Framework<br/>Freehand Lemmas<br/>State-based Semantics"]
+        matlab["MATLAB Certification<br/>LU, QR, SVD, Cholesky<br/>Multi-invariant verification"]
+        dsl["DSL Compiler<br/>Natural-language → Alloy<br/>Lemma specifications"]
+        alloy --> dsl
+        matlab -.cross-validation.- alloy
+    end
+
     ROOT -.no shared code.- VF
     ROOT -.no shared code.- CF
     ROOT -.no shared code.- TF
     VF -.no shared code.- CF
     VF -.no shared code.- TF
     CF -.no shared code.- TF
+    P5 -.formal verification of.- TF
 
     style ROOT fill:#2c5282,color:#fff,stroke:#1a365d
     style VF fill:#2d3748,color:#fff,stroke:#1a202c
     style CF fill:#553c2c,color:#fff,stroke:#3d2b1f
     style TF fill:#22543d,color:#fff,stroke:#1a3a2c
+    style P5 fill:#8b4513,color:#fff,stroke:#654321
 ```
 
-| Workspace | Crates | What it is | Where to read more |
-|---|---:|---|---|
-| root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
-| [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
-| [`tensor-forge/`](./tensor-forge) | 3 | An `ndarray`-based arbitrary-rank tensor library with pure-Rust linear algebra | [`tensor-forge/README.md`](./tensor-forge/README.md) |
-| [`cloud-forge/`](./cloud-forge) | 39 | A from-first-principles cloud-resource substrate (Phase 16 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| Workspace / Framework | Scope | What it is | Where to read more |
+|---|---|---|---|
+| root (`/Cargo.toml`) | 100 crates | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
+| [`verification-forge/`](./verification-forge) | 21 crates | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
+| [`tensor-forge/`](./tensor-forge) | 3 crates | An `ndarray`-based arbitrary-rank tensor library with pure-Rust linear algebra | [`tensor-forge/README.md`](./tensor-forge/README.md) |
+| [`cloud-forge/`](./cloud-forge) | 39 crates | A from-first-principles cloud-resource substrate (Phase 16 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
+| [`alloy/`](./alloy) | Framework (513 LOC) | State-based semantic propositions for validating human-authored lemmas | [`alloy/QUICKSTART.md`](./alloy/QUICKSTART.md) |
+| [`matlab/`](./matlab) | Framework (2,527 LOC MATLAB/Lean) | Certification modules for matrix decompositions with cross-validation | [`matlab/README.md`](./matlab/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
 to [`verification-forge`](#verification-forge-a-from-scratch-proof-kernel)
@@ -539,6 +557,130 @@ unoptimized-contraction-order `einsum`) and where to reach for
 **See [`tensor-forge/README.md`](./tensor-forge/README.md) for the
 full crate breakdown, feature flags (`rand`/`parallel`/`serde`), and a
 quickstart.**
+
+## Phase 5: Formal verification and MATLAB certification
+
+This phase adds two complementary formalization frameworks for verifying
+the correctness of numerical algorithms and human-authored proofs. It
+delivers: state-based semantic propositions for mechanically validating
+lemmas in Alloy, MATLAB certification modules with bounded exhaustive
+testing for matrix decompositions, and a natural-language DSL that
+compiles to Alloy semantic specifications.
+
+### Alloy Freehand Lemmas framework
+
+A rigorous formalization of human-authored lemmas using state-based semantic
+propositions rather than uninterpreted atoms. Each proposition denotes a set
+of model states (`⟦P⟧ = P.holds ⊆ State`), and logical connectives are defined
+denotionally:
+
+- **Negation** (`¬P`): `⟦¬P⟧ = State \ ⟦P⟧`
+- **Conjunction** (`P ∧ Q`): `⟦P ∧ Q⟧ = ⟦P⟧ ∩ ⟦Q⟧`
+- **Disjunction** (`P ∨ Q`): `⟦P ∨ Q⟧ = ⟦P⟧ ∪ ⟦Q⟧`
+- **Implication** (`P ⇒ Q`): `⟦P ⇒ Q⟧ = (State \ ⟦P⟧) ∪ ⟦Q⟧`
+
+A lemma with assumptions `{P₁, P₂, ..., Pₙ}` and conclusion `Q` is sound iff:
+
+```
+∀s ∈ State : (∀p ∈ assumptions : s ∈ ⟦p⟧) ⇒ s ∈ ⟦Q⟧
+```
+
+**Files** ([`alloy/`](./alloy), 2,147 lines total):
+
+| File | Purpose | Size |
+|---|---|---|
+| `FreehandLemmas.als` | 11-tier Alloy specification: Domain → State → Propositions → Connectives → Semantics → Lemmas → Invariants → Atomic Propositions → Examples → Verification → Assertions | 513 LOC |
+| `FreehandLemmas-Semantics.md` | Complete denotational semantics, mathematical notation, verification strategy, scope matrix | 741 LOC |
+| `QUICKSTART.md` | Core predicates table, semantic operations, scope recommendations, common patterns, pitfalls | 206 LOC |
+| `lemma-dsl.py` | DSL compiler: lexer, parser, AST, Alloy code generator (see next section) | 687 LOC |
+
+**Quick start:**
+
+```alloy
+# Find a tautology (law of excluded middle)
+run ExampleTautology for 3
+
+# Find a counterexample
+run {
+    some l: Lemma, s: State |
+        ViolatesLemma[l, s]
+} for 3 but 2 Lemma, 2 Proposition, 2 State
+
+# Verify acyclicity of lemma dependencies
+check NoCyclicLemmaDependencies for 5 but 3 Lemma
+```
+
+### MATLAB certification modules
+
+Multi-invariant verification framework for matrix decompositions (`tensor-forge`
+integration). Each module certifies a decomposition satisfies structural
+properties and reconstructs the original matrix. Cross-validates against
+Lean 4 theorems.
+
+**Certifications** ([`matlab/`](./matlab), 2,527 lines):
+
+| Module | Decomposition | Invariants | Tests | Lean Cross-Validation |
+|---|---|---|---|---|
+| `+lu` | `P*A = L*U` | Reconstruction, L lower triangular, U upper triangular, L unit diagonal | 21 | `LinearSolve.solve_correct` |
+| `+qr` | `A = Q*R` | Reconstruction, Q orthogonal, R upper triangular | 18 | `Stability.orthogonal_inv_axiom` |
+| `+svd` | `A = U*Σ*V'` | Reconstruction, U/V orthogonal, Σ diagonal, singular values non-negative | 24 | `LinearSolve.sensitivity_bound` |
+| `+cholesky` | `A = L*L'` | Reconstruction, L lower triangular, positive diagonal, A symmetric; SPD detection | 28 | `Stability.convergence_with_tolerance` |
+
+**Test coverage spans:**
+
+- Full-rank matrices (square, tall, wide)
+- Special matrices (identity, triangular, diagonal, ill-conditioned)
+- Numerical stability and tolerance sensitivity
+- Individual invariant verification
+- Determinant and condition-number properties
+- Complex matrices
+- Lean cross-validation against Lean 4 theorems
+
+**Example:**
+
+```matlab
+[A, LU, error] = lu.certifyDecomposition(A);
+if LU.certified
+    fprintf('P*A = L*U verified\n');
+    fprintf('Reconstruction error: %e\n', error.reconstruction);
+else
+    fprintf('Certification failed: %s\n', LU.reason);
+end
+```
+
+See [`matlab/README.md`](./matlab/README.md) for API documentation and
+[`matlab/tests/`](./matlab/tests) for test suites (5 files, 1,300+ LOC).
+
+### DSL compiler for lemma specifications
+
+A Python-based compiler that transforms natural-language lemma definitions
+into Alloy semantic propositions (`alloy/lemma-dsl.py`, 687 lines). Supports:
+
+- **Lexer**: Keywords (`lemma`, `assume`, `show`, `depends_on`), operators (`¬`, `∧`, `∨`, `⟹`)
+- **Parser**: Recursive descent with operator precedence (Implication → Disjunction → Conjunction → Negation)
+- **AST**: Atom, Negation, Conjunction, Disjunction, Implication, Quantified, LemmaDefinition, Program
+- **Code Generation**: Produces Alloy specifications with semantic facts and propositions
+
+**Example DSL:**
+
+```
+lemma ExcludedMiddle:
+  assume nothing
+  show P ∨ ¬P
+
+lemma Transitivity:
+  assume (P ⇒ Q) ∧ (Q ⇒ R)
+  show P ⇒ R
+
+lemma Contrapositive:
+  assume P ⇒ Q
+  show ¬Q ⇒ ¬P
+  depends_on Transitivity
+```
+
+Compiles to Alloy with explicit semantic facts ensuring correct interpretation.
+Enables the full pipeline: natural-language → DSL → Alloy propositions → SAT
+analysis → counterexample discovery or verified-within-scope certification.
 
 ## Why 100 crates, and how to trust that number
 
