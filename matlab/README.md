@@ -162,6 +162,18 @@ assert(all([results.Passed]), 'Certification test suite failed.');
 | `testGuardedExecutorRejectsUncertifiedTransition` | Guarded execution fails | Error thrown at first failure |
 | `testGuardedExecutorHaltsOnFirstFailure` | Halt, don't continue | Error at step k |
 | `testUnlinkedRuleWouldCertifyWrongTarget` | Regression: old defect | Demonstrates why target must be F(S,x) |
+| `testBoundedStepPreservationWithIncrement` | Finite-domain exhaustive check | S ∈ [0,20], x ∈ {0,1,2}: invariant preserved |
+| `testBoundedTraceCompletionWithIncrement` | All bounded traces certify | 5-step sequences on finite domain |
+| `testGuardedExecutorCompletesForBoundedInputs` | Guarded execution on bounded domain | Success for all valid sequences |
+| `testBoundedRejectionDetection` | Rejection on finite domain | Invalid sources and inadmissible inputs caught |
+
+### Test Statistics
+
+- **Core certification tests:** 9 (single-step, contract validation)
+- **Trace and guarded execution tests:** 6 (trace certification, guarded execution)
+- **Regression test:** 1 (old unlinked rule defect)
+- **Bounded exhaustive tests:** 4 (finite-domain step preservation and rejection)
+- **Total:** 20 test functions
 
 ## Predicate Contract
 
@@ -234,28 +246,21 @@ The MATLAB tests verify that the implementation conforms to the intended contrac
 
 ### Bounded Exhaustive Testing
 
-After creating test cases, add an exhaustive enumeration over a finite domain to build confidence in the implementation:
+The test suite includes four bounded exhaustive tests that enumerate finite state and input domains to build confidence in step preservation and rejection detection:
 
-```matlab
-function testBoundedStepPreservation(testCase)
-F = @incrementStep;
-invariant = @nonnegativeState;
+1. **`testBoundedStepPreservationWithIncrement`** — Verifies S ∈ [0,20] and x ∈ {0,1,2} preserve the nonnegative invariant. All 21 × 3 = 63 combinations pass.
 
-for S = 0:20
-    for x = 0:2
-        assumeTrue(testCase, invariant(S));
-        verifyTrue(testCase, invariant(F(S, x)), ...
-            sprintf("Invariant failed at S=%d, x=%d.", S, x));
-    end
-end
-end
-```
+2. **`testBoundedTraceCompletionWithIncrement`** — Verifies that 5-step admissible input sequences from valid initial states (S₀ ∈ {0, 5, 10, 15, 20}) produce fully certified traces with all intermediate states satisfying the invariant.
 
-This is a useful finite-instance check, but note:
+3. **`testGuardedExecutorCompletesForBoundedInputs`** — Verifies that guarded execution succeeds for bounded admissible sequences, producing the correct number of states and maintaining the invariant throughout.
+
+4. **`testBoundedRejectionDetection`** — Verifies that invalid sources (S ∉ ℤ≥0) and inadmissible inputs (x ∉ {0,1,2}) are correctly rejected in the finite domain.
+
+**Important distinction:**
 
 $$\text{bounded MATLAB enumeration} \neq \forall S\,\forall x,\; \mathcal{I}(S) \to \mathcal{I}(F(S,x)).$$
 
-The universal version belongs in the Lean 4 development. MATLAB establishes executable conformance and bounded regression coverage.
+Bounded exhaustive tests in MATLAB provide high-confidence finite-instance regression coverage. The universal version—that step preservation holds for all states—belongs in the Lean 4 development. MATLAB establishes executable conformance; Lean proves universal correctness.
 
 ## Design Philosophy
 

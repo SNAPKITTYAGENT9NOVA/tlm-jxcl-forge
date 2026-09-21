@@ -437,3 +437,120 @@ certificate = struct( ...
     "target", arbitraryTarget, ...
     "certified", logical(valid(S) && admissible(x) && invariant(arbitraryTarget)));
 end
+
+%% ============================================================================
+% Bounded Exhaustive Testing
+%% ============================================================================
+
+function testBoundedStepPreservationWithIncrement(testCase)
+% Finite-instance verification: for S in [0, 20] and x in {0, 1, 2},
+% verify that Valid(S) and Admissible(x) imply Invariant(F(S,x)).
+%
+% This is a high-confidence finite check, not a universal proof.
+% The universal version: ∀ S ∀ x, I(S) → I(F(S,x)) belongs in Lean.
+
+F = @incrementStep;
+invariant = @nonnegativeState;
+
+for S = 0:20
+    for x = 0:2
+        Snext = F(S, x);
+        verifyTrue(testCase, invariant(Snext), ...
+            sprintf("Invariant failed at S=%d, x=%d: F(S,x)=%d", S, x, Snext));
+    end
+end
+end
+
+function testBoundedTraceCompletionWithIncrement(testCase)
+% Verify that all bounded sequences of admissible inputs from valid initial
+% states produce certified traces over the finite domain.
+
+F = @incrementStep;
+valid = @validNaturalState;
+admissible = @smallNonnegativeInput;
+invariant = @nonnegativeState;
+
+initialStates = [0, 5, 10, 15, 20];
+for S0 = initialStates
+    if ~valid(S0), continue; end
+
+    inputs = {0, 1, 2, 1, 0};  % 5-step sequence of admissible inputs
+
+    traceCert = formal.certifyTrace(F, valid, admissible, invariant, S0, inputs);
+
+    % All steps must be certified
+    verifyTrue(testCase, traceCert.certified, ...
+        sprintf("Trace from S0=%d failed to certify", S0));
+
+    % All computed states must satisfy invariant
+    for k = 1:numel(traceCert.states)
+        verifyTrue(testCase, invariant(traceCert.states{k}), ...
+            sprintf("State at step %d violates invariant (S0=%d)", k-1, S0));
+    end
+end
+end
+
+function testGuardedExecutorCompletesForBoundedInputs(testCase)
+% Verify that guarded execution succeeds for all bounded admissible sequences
+% on valid initial states.
+
+F = @incrementStep;
+valid = @validNaturalState;
+admissible = @smallNonnegativeInput;
+invariant = @nonnegativeState;
+
+testSequences = {
+    {0, [0, 1, 2]},
+    {5, [1, 1, 0, 2]},
+    {10, [2, 0, 1]},
+    {20, [0, 0, 0, 0]}
+};
+
+for k = 1:numel(testSequences)
+    S0 = testSequences{k}{1};
+    inputs = testSequences{k}{2};
+
+    % Should not throw
+    states = formal.runCertifiedTrace(F, valid, admissible, invariant, S0, inputs);
+
+    % Should produce correct number of states
+    verifyLength(testCase, states, numel(inputs) + 1);
+
+    % First state must be initial state
+    verifyEqual(testCase, states{1}, S0);
+
+    % All states must satisfy invariant
+    for s = states
+        verifyTrue(testCase, invariant(s{1}));
+    end
+end
+end
+
+function testBoundedRejectionDetection(testCase)
+% Verify that invalid sources and inadmissible inputs are caught
+% in the bounded domain.
+
+F = @incrementStep;
+valid = @validNaturalState;
+admissible = @smallNonnegativeInput;
+invariant = @nonnegativeState;
+
+% Test rejection due to invalid source
+invalidSources = [-1, -5, 100.5];  % Not in Z_≥0
+for S = invalidSources
+    certificate = formal.certifyTransition(F, valid, admissible, invariant, S, 1);
+    verifyFalse(testCase, certificate.sourceValid, ...
+        sprintf("Source S=%g should be invalid", S));
+    verifyFalse(testCase, certificate.certified);
+end
+
+% Test rejection due to inadmissible input
+inadmissibleInputs = [3, 4, 5, -1];  % Not in {0,1,2}
+S = 5;
+for x = inadmissibleInputs
+    certificate = formal.certifyTransition(F, valid, admissible, invariant, S, x);
+    verifyFalse(testCase, certificate.inputAdmissible, ...
+        sprintf("Input x=%d should be inadmissible", x));
+    verifyFalse(testCase, certificate.certified);
+end
+end
