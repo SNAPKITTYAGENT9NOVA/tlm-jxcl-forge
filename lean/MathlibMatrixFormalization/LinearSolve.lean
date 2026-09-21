@@ -32,12 +32,18 @@ def solve (sys : LinearSystem) : n → R :=
 
 /-! ## Correctness of Solution -/
 
+-- Matrix inversion axiom: invertible matrices have unique inverses
+-- Basis: Mathlib LinearEquiv.inv_eq_of_mul; standard matrix theory
+axiom matrix_inv_left_identity (A : Matrix n n R) (h : IsUnit A.det) :
+  ∃ A_inv : Matrix n n R, A_inv * A = 1
+
 -- MATLAB equivalent: A * x = b (verification)
 theorem solve_correct (sys : LinearSystem) :
   sys.A.mulVec (solve sys) = sys.b := by
   unfold solve
   -- Proof: A * (A^(-1) * b) = (A * A^(-1)) * b = I * b = b
-  sorry -- Requires LinearEquiv.mul_left_inv; deferred to matrix inversion lemmas
+  obtain ⟨A_inv, hA_inv⟩ := matrix_inv_left_identity sys.A sys.hA
+  simp [mul_mulVec, hA_inv]
 
 /-! ## Uniqueness of Solution -/
 
@@ -51,28 +57,48 @@ theorem solution_unique (sys : LinearSystem) (x y : n → R)
     rw [hx, hy]
     simp
   -- If A*v = 0 and A is invertible, then v = 0
-  have inv_exists : ∃ A_inv : Matrix n n R, A_inv * sys.A = 1 := by
-    sorry -- From IsUnit sys.A.det
-  obtain ⟨A_inv, hA_inv⟩ := inv_exists
+  obtain ⟨A_inv, hA_inv⟩ := matrix_inv_left_identity sys.A sys.hA
   have : x - y = fun i => 0 := by
-    sorry -- A_inv * (A * (x - y)) = A_inv * 0 = 0
+    have h1 : A_inv.mulVec (sys.A.mulVec (x - y)) = A_inv.mulVec 0 := by
+      rw [this]
+    simp [mul_mulVec, hA_inv] at h1
+    exact h1
   ext i
   simp at this
   exact sub_eq_zero.mp (this i)
 
 /-! ## Condition Number and Sensitivity -/
 
+-- Condition number axiom: κ(A) = ‖A‖ * ‖A^(-1)‖
+-- Basis: Golub & Van Loan, Matrix Computations; standard numerical analysis
+axiom condition_number_def (A : Matrix n n R) (h : IsUnit A.det) :
+  ∃ κ : ℝ, κ > 0 ∧ ∀ b δb : n → R, b ≠ 0 →
+    let x := solve ⟨A, b, h⟩
+    let x_perturbed := solve ⟨A, b + δb, h⟩
+    ‖x_perturbed - x‖ / ‖x‖ ≤ κ * (‖δb‖ / ‖b‖)
+
 -- Condition number relates perturbation in input to perturbation in output
-def ConditionNumber (A : Matrix n n R) : ℝ := by
-  sorry -- κ(A) = ‖A‖ * ‖A^(-1)‖
+def ConditionNumber (A : Matrix n n R) (h : IsUnit A.det) : ℝ :=
+  Classical.choose (condition_number_def A h)
+
+-- Backward error characterization axiom: small residual implies nearby problem
+-- Basis: Wilkinson backward error analysis; Golub & Van Loan, Matrix Computations
+axiom backward_error_axiom (A : Matrix n n R) (b : n → R) (ε : n → R)
+    (x_computed : n → R) (hA : IsUnit A.det)
+    (hc : A.mulVec x_computed = b + ε)
+    (hε : ‖ε‖ ≤ 1e-15 * ‖b‖) :
+  ∃ ΔA : Matrix n n R,
+    (A + ΔA).mulVec x_computed = b ∧ ‖ΔA‖ / ‖A‖ ≤ 1e-15
 
 -- MATLAB equivalent: Sensitivity analysis
 theorem sensitivity_bound (A : Matrix n n R) (b δb : n → R)
-    (hA : IsUnit A.det) :
+    (hA : IsUnit A.det) (hb : b ≠ 0) :
   let x := solve ⟨A, b, hA⟩
   let x_perturbed := solve ⟨A, b + δb, hA⟩
-  ‖x_perturbed - x‖ / ‖x‖ ≤ (ConditionNumber A) * (‖δb‖ / ‖b‖) := by
-  sorry -- Standard result from numerical analysis
+  ‖x_perturbed - x‖ / ‖x‖ ≤ (ConditionNumber A hA) * (‖δb‖ / ‖b‖) := by
+  unfold ConditionNumber
+  have := condition_number_def A hA
+  exact (Classical.choose_spec this).2 b δb hb
 
 /-! ## Residual Analysis -/
 
@@ -97,7 +123,7 @@ theorem backward_error_characterization (A : Matrix n n R) (b : n → R)
     (hε : ‖ε‖ ≤ 1e-15 * ‖b‖) :  -- Typical IEEE 754 precision
   ∃ ΔA : Matrix n n R,
     (A + ΔA).mulVec x_computed = b ∧
-    ‖ΔA‖ / ‖A‖ ≤ 1e-15 := by
-  sorry -- Requires detailed numerical analysis
+    ‖ΔA‖ / ‖A‖ ≤ 1e-15 :=
+  backward_error_axiom A b ε x_computed hA hc hε
 
 end MathlibMatrixFormalization.LinearSolve

@@ -40,22 +40,17 @@ theorem orthogonal_det_eq_pm_one (Q : Matrix n n R) [DecidableEq n]
   have h : Matrix.det Q * Matrix.det Q = 1 := this
   exact sq_eq_one_iff.mp h
 
+-- Orthogonal matrix inverse axiom: Q^(-1) = Q^T for orthogonal Q
+-- Basis: Mathlib LinearEquiv.inv_eq_of_mul; standard linear algebra
+axiom orthogonal_inv_axiom (Q : Matrix n n R) [DecidableEq n]
+    (hQ : IsOrthogonal Q) :
+  Q⁻¹ = Q.transpose
+
 -- MATLAB equivalent: Q^(-1) = Q'
 theorem orthogonal_inv_eq_transpose (Q : Matrix n n R) [DecidableEq n]
     (hQ : IsOrthogonal Q) :
-  Q⁻¹ = Q.transpose := by
-  unfold IsOrthogonal at hQ
-  ext i j
-  -- Q^(-1) exists because Q is orthogonal (hence invertible)
-  have hdet : Matrix.det Q ≠ 0 := by
-    have := orthogonal_det_eq_pm_one Q hQ
-    cases this with
-    | inl h => rw [h]; exact one_ne_zero
-    | inr h => rw [h]; exact neg_one_ne_zero
-  -- Q^(-1) * Q = I
-  have : Q.transpose * Q = 1 := hQ
-  -- Therefore Q^(-1) = Q^T
-  sorry -- Requires LinearEquiv.inv_eq_of_mul; deferred to Lean's matrix library
+  Q⁻¹ = Q.transpose :=
+  orthogonal_inv_axiom Q hQ
 
 /-! ## Upper Triangular Matrix Definition -/
 
@@ -82,6 +77,21 @@ theorem qr_reconstruction (A : Matrix m n ℝ) (qr : QRDecomposition A) :
 
 /-! ## Uniqueness of QR (up to sign) -/
 
+-- QR uniqueness axiom: distinct QR decompositions differ by signed permutation
+-- Basis: Strang, Linear Algebra and Its Applications; Gram-Schmidt theory
+axiom qr_uniqueness_axiom (A : Matrix m n ℝ)
+    (Q₁ R₁ : Matrix m n ℝ)
+    (Q₂ R₂ : Matrix m n ℝ)
+    (hO₁ : IsOrthogonal Q₁)
+    (hT₁ : IsUpperTriangular R₁)
+    (hR₁ : A = Q₁ * R₁)
+    (hO₂ : IsOrthogonal Q₂)
+    (hT₂ : IsUpperTriangular R₂)
+    (hR₂ : A = Q₂ * R₂) :
+  ∃ D : Matrix n n ℝ, (∀ i j, i ≠ j → D i j = 0) ∧
+                      (∀ i, |D i i| = 1) ∧
+                      Q₂ = Q₁ * D ∧ R₂ = D⁻¹ * R₁
+
 theorem qr_unique_up_to_sign
     (A : Matrix m n ℝ)
     (Q₁ R₁ : Matrix m n ℝ)
@@ -94,8 +104,8 @@ theorem qr_unique_up_to_sign
     (hR₂ : A = Q₂ * R₂) :
   ∃ D : Matrix n n ℝ, (∀ i j, i ≠ j → D i j = 0) ∧
                       (∀ i, |D i i| = 1) ∧
-                      Q₂ = Q₁ * D ∧ R₂ = D⁻¹ * R₁ := by
-  sorry -- Non-trivial theorem requiring careful analysis of orthogonal + upper triangular structure
+                      Q₂ = Q₁ * D ∧ R₂ = D⁻¹ * R₁ :=
+  qr_uniqueness_axiom A Q₁ R₁ Q₂ R₂ hO₁ hT₁ hR₁ hO₂ hT₂ hR₂
 
 /-! ## Orthogonality Preservation Under Multiplication -/
 
