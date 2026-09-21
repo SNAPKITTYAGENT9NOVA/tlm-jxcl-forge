@@ -4,17 +4,19 @@
 ![license](https://img.shields.io/badge/license-AGPLv3%20%2F%20Commercial-blue)
 ![rust](https://img.shields.io/badge/rust-2021%20edition-orange)
 ![unsafe](https://img.shields.io/badge/unsafe-forbidden%20in%2098%2F100%20crates-brightgreen)
-![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2033-blue)
+![crates](https://img.shields.io/badge/crates-100%20%2B%2021%20%2B%2039%20%2B%203-blue)
 ![deps](https://img.shields.io/badge/ISA%20forge-zero%20dependencies-lightgrey)
 
 **TLM JXCL** — a from-scratch, deterministic, byte-addressable 64-bit
 instruction-set architecture and toolchain, grown into a 100-crate Rust
 workspace covering the ISA itself, a post-quantum-encrypted caching and
 storage stack, and zero-knowledge error attestation. Alongside it live
-two fully independent workspaces: `verification-forge`, a from-scratch
-formal verification kernel, and `cloud-forge`, a from-first-principles
+three fully independent workspaces: `verification-forge`, a from-scratch
+formal verification kernel; `cloud-forge`, a from-first-principles
 cloud-resource substrate (build the primitives an AWS-shaped platform
-would need, before any service-named crate exists). Every crate is
+would need, before any service-named crate exists); and `tensor-forge`,
+an `ndarray`-based arbitrary-rank tensor library with its own pure-Rust
+linear algebra. Every crate is
 real: either genuine new functionality, or code extracted verbatim from
 this repository's original six-crate baseline into its own
 independently-testable module — never a thin wrapper padding a
@@ -32,6 +34,7 @@ headline number.
 - [Verifiable error attestations (`pq-error-proof`)](#verifiable-error-attestations-pq-error-proof)
 - [`verification-forge`: a from-scratch proof kernel](#verification-forge-a-from-scratch-proof-kernel)
 - [`cloud-forge`: a from-first-principles cloud substrate](#cloud-forge-a-from-first-principles-cloud-substrate)
+- [`tensor-forge`: an ndarray-based tensor library](#tensor-forge-an-ndarray-based-tensor-library)
 - [Why 100 crates, and how to trust that number](#why-100-crates-and-how-to-trust-that-number)
 - [Networking, services, and cross-cutting concerns](#networking-services-and-cross-cutting-concerns)
 - [Testing methodology](#testing-methodology)
@@ -63,7 +66,7 @@ crates, for the same reason `verification-forge` is one.
 
 ## Repository map
 
-This repository holds **two independent Cargo workspaces** that never
+This repository holds **four independent Cargo workspaces** that never
 depend on each other:
 
 ```mermaid
@@ -91,19 +94,32 @@ flowchart TB
         cfk --> cfc
     end
 
+    subgraph TF["tensor-forge/Cargo.toml (3 crates)"]
+        direction LR
+        tfc["tensor-core<br/>Tensor&lt;T&gt; on ndarray"]
+        tfl["tensor-linalg<br/>matmul/decompositions"]
+        tff["tensor-forge facade"]
+        tfc --> tfl --> tff
+    end
+
     ROOT -.no shared code.- VF
     ROOT -.no shared code.- CF
+    ROOT -.no shared code.- TF
     VF -.no shared code.- CF
+    VF -.no shared code.- TF
+    CF -.no shared code.- TF
 
     style ROOT fill:#2c5282,color:#fff,stroke:#1a365d
     style VF fill:#2d3748,color:#fff,stroke:#1a202c
     style CF fill:#553c2c,color:#fff,stroke:#3d2b1f
+    style TF fill:#22543d,color:#fff,stroke:#1a3a2c
 ```
 
 | Workspace | Crates | What it is | Where to read more |
 |---|---:|---|---|
 | root (`/Cargo.toml`) | 100 | TLM JXCL ISA, post-quantum crypto/storage, zero-knowledge proofs, one reference service | this file |
 | [`verification-forge/`](./verification-forge) | 21 | A from-scratch, Lean4/Kani-inspired formal verification kernel | [`verification-forge/README.md`](./verification-forge/README.md) |
+| [`tensor-forge/`](./tensor-forge) | 3 | An `ndarray`-based arbitrary-rank tensor library with pure-Rust linear algebra | [`tensor-forge/README.md`](./tensor-forge/README.md) |
 | [`cloud-forge/`](./cloud-forge) | 39 | A from-first-principles cloud-resource substrate (Phase 16 of a much larger roadmap) | [`cloud-forge/README.md`](./cloud-forge/README.md) |
 
 If you only came here for the formal-verification project, skip ahead
@@ -489,6 +505,41 @@ that reservation is released before the error returns.
 for the full 46-phase roadmap, what each phase deliberately leaves out
 (and why), and the crate-by-crate breakdown.**
 
+## `tensor-forge`: an ndarray-based tensor library
+
+A third completely separate workspace: an arbitrary-rank tensor
+library built directly on [`ndarray`](https://docs.rs/ndarray), split
+into three crates — `tensor-core` (the `Tensor<T>` type: creation,
+dynamic-rank indexing/slicing with negative indices and steps,
+broadcasting, elementwise arithmetic and math, reductions, C/Fortran
+memory layout conversion, and `einops`-style `rearrange`/`reduce`/
+`repeat`), `tensor-linalg` (`matmul`/`tensordot`/a reference `einsum`,
+plus pure-Rust `lu`/`solve`/`det`/`inverse`, Householder `qr`,
+`cholesky`, symmetric `eig` via cyclic Jacobi rotations, and `svd` via
+one-sided Jacobi rotations), and a `tensor-forge` facade crate that
+re-exports both behind one dependency and a combined prelude.
+
+Every decomposition is verified by reconstructing the original input
+(`P A = L U`, `Q` orthogonal with `Q R = A`, `L L^T = A`, `A v = \lambda
+v` per eigenpair, `U \Sigma V^T = A`) rather than against a hand-typed
+"expected" answer, and `tensor-forge`'s own integration test threads a
+batch of images through an `einops` layout change, a `matmul`, and a
+`solve` in one pipeline to exercise all three crates together. 66 tests
+and 1 doctest pass; clippy and fmt are clean.
+
+Unlike this repository's other two side workspaces, `tensor-forge`
+deliberately reaches for LAPACK-grade algorithms (QR, Cholesky, Jacobi
+eigenvalues/SVD) in pure Rust rather than binding to a system BLAS/
+LAPACK — see [`tensor-forge/README.md`](./tensor-forge/README.md)'s
+"Design notes and deliberate scope limits" for exactly what that
+trades away (no blocking/tiling, symmetric-only `eig`, an
+unoptimized-contraction-order `einsum`) and where to reach for
+`ndarray-linalg` or `faer` instead.
+
+**See [`tensor-forge/README.md`](./tensor-forge/README.md) for the
+full crate breakdown, feature flags (`rand`/`parallel`/`serde`), and a
+quickstart.**
+
 ## Why 100 crates, and how to trust that number
 
 The root workspace's crate count grew from an original baseline of six
@@ -708,6 +759,7 @@ request — a change that fails any of them locally will fail in CI too.
 | [`verification-forge/README.md`](./verification-forge/README.md) | The formal-verification workspace: architecture, invariants, roadmap |
 | [`cloud-forge/README.md`](./cloud-forge/README.md) | The cloud-resource-substrate workspace: crate index, what's implemented |
 | [`cloud-forge/docs/CLOUD_ARCHITECTURE.md`](./cloud-forge/docs/CLOUD_ARCHITECTURE.md) | The full 46-phase roadmap, layering, and Phase 1 scope decisions |
+| [`tensor-forge/README.md`](./tensor-forge/README.md) | The tensor-library workspace: crate index, feature flags, quickstart, deliberate scope limits |
 
 ## License
 

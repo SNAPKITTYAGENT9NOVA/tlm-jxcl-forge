@@ -1,0 +1,20 @@
+[package]
+name = "tensor-forge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Facade crate: tensor-core + tensor-linalg behind one dependency and prelude, with rand/parallel/serde passthrough features."
+
+[dependencies]
+tensor-core = { workspace = true }
+tensor-linalg = { workspace = true }
+
+[dev-dependencies]
+approx = { workspace = true }
+
+[features]
+default = []
+rand = ["tensor-core/rand"]
+parallel = ["tensor-core/parallel"]
+serde = ["tensor-core/serde"]
