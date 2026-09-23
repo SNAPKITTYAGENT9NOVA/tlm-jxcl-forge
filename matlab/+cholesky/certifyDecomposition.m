@@ -43,7 +43,7 @@ n = size(A, 1);
 
 % Invariant 1: Reconstruction ||A - L*L'||
 if isPositiveDefinite
-    reconstructionError = norm(A - L*L', 'fro') / norm(A, 'fro');
+    reconstructionError = norm(A - L*L', 'fro') / (norm(A, 'fro') + eps);
 else
     reconstructionError = inf;
 end
@@ -53,7 +53,7 @@ upperPart = triu(L, 1);
 lowerTriangularError = norm(upperPart, 'fro') / (norm(L, 'fro') + eps);
 
 % Invariant 3: A is symmetric
-symmetryError = norm(A - A', 'fro') / norm(A, 'fro');
+symmetryError = norm(A - A', 'fro') / (norm(A, 'fro') + eps);
 
 % Invariant 4: Diagonal of L is positive (positive definiteness indicator)
 if isPositiveDefinite

@@ -108,6 +108,8 @@ classdef testCholeskyCertification < matlab.unittest.TestCase
             % Zero is on the boundary (positive semidefinite but not strictly positive)
             testCase.verifyFalse(cert.certified, ...
                 'Zero matrix should fail strict positivity test');
+            testCase.verifyFalse(isnan(cert.symmetry), ...
+                'Zero matrix symmetry error must be finite, not 0/0');
         end
 
         % ============ Numerical Stability ============

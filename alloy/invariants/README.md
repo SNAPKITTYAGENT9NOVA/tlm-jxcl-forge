@@ -86,14 +86,23 @@ exercised numerically by the Crystal LU/QR/Cholesky kernels and
 4. **Ill-founded propositions.** Without a well-foundedness fact, a
    `Not` can be its own operand, and `holds = State - holds` then forces
    the state space to be empty. `core.als` adds `WellFounded`.
+5. **MATLAB SVD certifier threw on non-square input.**
+   `matlab/+svd/certifyDecomposition.m` compared the full `U'*U` (m×m)
+   against `eye(min(m,n))`, and built `diag(diag(S))` as a square
+   matrix. Both throw a dimension error for any tall or wide `A`. The
+   identities are now sized from `U` and `V`, and the off-diagonal mask
+   is `S .* ~eye(size(S))`.
+6. **MATLAB certifiers returned NaN on a zero matrix.** QR, SVD and
+   Cholesky divided by `norm(A,'fro')`, which gives `0/0`. They now divide
+   by `norm(A,'fro') + eps`, as LU already did.
 
-## Defects found, not fixed here (MATLAB not available to test)
+Fixes 5 and 6 are covered by new cases in `matlab/tests/`. They are also
+exercised under GNU Octave by `matlab/tests/octave/run.sh`, which runs in
+CI because MATLAB is not available there. Without the fixes, that script
+reports 8 failures.
 
-- `matlab/+svd/certifyDecomposition.m` compares the full `U'*U` (m×m)
-  against `eye(min(m,n))`, and builds `diag(diag(S))` as a square matrix.
-  Both throw on non-square input. The Crystal `Certify.svd` sizes the
-  identity from `U`'s columns and handles rectangular `S`
-  (`certify_spec` "including rectangular").
-- All four MATLAB certifiers divide by `norm(A,'fro')`, so a zero matrix
-  gives `0/0 = NaN` and silently fails certification. The Crystal port
-  divides by `max(norm, eps)` instead.
+## CI
+
+The `alloy + crystal invariants` job in `.github/workflows/ci.yml` runs
+`check.sh` against a checksum-pinned Alloy 6.2.0 jar, then runs
+`crystal tool format --check` and `crystal spec` on Crystal 1.14.0.

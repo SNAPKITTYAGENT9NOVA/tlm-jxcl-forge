@@ -36,23 +36,22 @@ end
 % Compute SVD
 [U, S, V] = svd(A);
 
-[m, n] = size(A);
-
 % Invariant 1: Reconstruction ||A - U*S*V'||
-reconstructionError = norm(A - U*S*V', 'fro') / norm(A, 'fro');
+reconstructionError = norm(A - U*S*V', 'fro') / (norm(A, 'fro') + eps);
 
-% Invariant 2: U is orthogonal
+% Invariant 2: U is orthogonal (U is m x m from the full SVD)
 UtU = U' * U;
-I_m = eye(min(m, n));
-orthogonalityU = norm(UtU - I_m, 'fro') / norm(I_m, 'fro');
+I_U = eye(size(U, 2));
+orthogonalityU = norm(UtU - I_U, 'fro') / norm(I_U, 'fro');
 
-% Invariant 3: V is orthogonal
+% Invariant 3: V is orthogonal (V is n x n)
 VtV = V' * V;
-I_n = eye(n);
-orthogonalityV = norm(VtV - I_n, 'fro') / norm(I_n, 'fro');
+I_V = eye(size(V, 2));
+orthogonalityV = norm(VtV - I_V, 'fro') / norm(I_V, 'fro');
 
 % Invariant 4: S is diagonal with nonnegative singular values
-offDiagonal = S - diag(diag(S));
+% (S is m x n, so mask the diagonal rather than rebuilding a square diag)
+offDiagonal = S .* ~eye(size(S));
 diagonalError = norm(offDiagonal, 'fro') / (norm(S, 'fro') + eps);
 
 singularValues = diag(S);
