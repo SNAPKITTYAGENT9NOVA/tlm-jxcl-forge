@@ -304,6 +304,31 @@ classdef testSVDCertification < matlab.unittest.TestCase
                 'Lean theorem: singular values must be non-negative');
         end
 
+        % ============ Regression: rectangular and zero input ============
+
+        function testRectangularIdentitiesMatchFactorShapes(testCase)
+            % U is m x m and V is n x n in the full SVD; the orthogonality
+            % checks must use identities of those sizes, not min(m, n).
+            for sz = {[10, 5], [5, 10], [3, 1], [1, 3]}
+                A = randn(sz{1});
+                cert = svd.certifyDecomposition(A, testCase.tolerance);
+                testCase.verifyTrue(cert.certified, ...
+                    sprintf('%dx%d SVD should certify', sz{1}(1), sz{1}(2)));
+                testCase.verifyLessThan(cert.orthogonalityU, testCase.tolerance);
+                testCase.verifyLessThan(cert.orthogonalityV, testCase.tolerance);
+                testCase.verifyLessThan(cert.diagonal, testCase.tolerance);
+            end
+        end
+
+        function testZeroMatrixIsFiniteAndCertified(testCase)
+            % norm(A) = 0 must not produce 0/0 = NaN.
+            for sz = {[3, 3], [3, 2]}
+                cert = svd.certifyDecomposition(zeros(sz{1}), testCase.tolerance);
+                testCase.verifyFalse(isnan(cert.reconstruction));
+                testCase.verifyTrue(cert.certified);
+            end
+        end
+
     end
 
 end

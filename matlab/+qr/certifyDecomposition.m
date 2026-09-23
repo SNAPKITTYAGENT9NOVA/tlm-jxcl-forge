@@ -35,7 +35,7 @@ end
 [m, n] = size(A);
 
 % Invariant 1: Reconstruction ||A - Q*R||
-reconstructionError = norm(A - Q*R, 'fro') / norm(A, 'fro');
+reconstructionError = norm(A - Q*R, 'fro') / (norm(A, 'fro') + eps);
 
 % Invariant 2: Orthogonality ||Q'*Q - I||
 orthogonalityError = norm(Q' * Q - eye(m), 'fro') / norm(eye(m), 'fro');

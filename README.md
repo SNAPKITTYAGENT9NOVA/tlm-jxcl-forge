@@ -983,12 +983,15 @@ explicit `expect`: 22 invariants must be UNSAT, and 10 counter-algorithms
 and witness runs must be SAT, proving that superseded or naive claims are
 false and that the search can reach counterexamples. All of it is mirrored as an executable
 [Crystal](./alloy/invariants/crystal) shard (29 specs). `check.sh` fails on
-any result that differs from its expectation.
+any result that differs from its expectation, and both suites run in CI.
 
 Hardening fixed a DULA classifier bug: every Alloy `UNSAT` result was
 recorded as a counterexample. It also fixed a syntax error that stopped
 `FreehandLemmas.als` from parsing, and flagged the original checks that
-actually return counterexamples. See
+actually return counterexamples. It also fixed the MATLAB SVD certifier,
+which threw on non-square input, and the QR, SVD and Cholesky certifiers,
+which returned NaN on a zero matrix. The MATLAB certifiers are exercised
+under GNU Octave in CI (`matlab/tests/octave/run.sh`). See
 [`alloy/invariants/README.md`](./alloy/invariants/README.md) for the full
 inventory.
 
@@ -1131,12 +1134,16 @@ checking whether it's accepted or rejected as expected.
 
 ## Quality gates
 
-CI (`.github/workflows/ci.yml`) runs three jobs on every push and pull
+CI (`.github/workflows/ci.yml`) runs five jobs on every push and pull
 request against `main`:
 
 - `cargo fmt --all -- --check`
 - `cargo clippy --workspace --all-targets -- -D warnings`
 - `cargo build --workspace --all-targets` and `cargo test --workspace`
+- `alloy/invariants/check.sh` (Alloy 6.2.0, checksum-pinned), plus
+  `crystal tool format --check` and `crystal spec` for the Crystal mirror
+- `matlab/tests/octave/run.sh`: the MATLAB decomposition certifiers under
+  GNU Octave, since MATLAB itself is not available in CI
 
 98 of the root workspace's 100 crates carry `#![forbid(unsafe_code)]`
 outright (the two exceptions link against system TLS/database client

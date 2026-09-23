@@ -49,3 +49,44 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y redis-server libssl-dev
       - run: cargo build --workspace --all-targets
       - run: cargo test --workspace
+
+  invariants:
+    name: alloy + crystal invariants
+    runs-on: ubuntu-latest
+    env:
+      ALLOY_VERSION: "6.2.0"
+      ALLOY_SHA256: 6b8c1cb5bc93bedfc7c61435c4e1ab6e688a242dc702a394628d9a9801edb78d
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Download Alloy (checksum-pinned)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/alloy.jar" \
+            "https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v${ALLOY_VERSION}/org.alloytools.alloy.dist.jar"
+          echo "${ALLOY_SHA256}  $RUNNER_TEMP/alloy.jar" | sha256sum -c -
+      - name: Alloy invariants and counter-algorithms
+        run: ALLOY_JAR="$RUNNER_TEMP/alloy.jar" alloy/invariants/check.sh
+      - uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: "1.14.0"
+      # Crystal's runtime links against libevent.
+      - name: Install libevent
+        run: sudo apt-get update && sudo apt-get install -y libevent-dev
+      - name: Crystal format
+        working-directory: alloy/invariants/crystal
+        run: crystal tool format --check
+      - name: Crystal specs
+        working-directory: alloy/invariants/crystal
+        run: crystal spec
+
+  matlab-octave:
+    name: matlab certifiers (octave)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GNU Octave
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends octave
+      - run: matlab/tests/octave/run.sh

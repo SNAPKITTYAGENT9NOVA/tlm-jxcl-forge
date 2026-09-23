@@ -53,6 +53,15 @@ end
 % Special Matrices
 %% ============================================================================
 
+function testQRZeroMatrixIsFiniteAndCertified(testCase)
+% norm(A) = 0 must not produce 0/0 = NaN in the reconstruction error.
+
+certificate = qr.certifyDecomposition(zeros(3), 1e-10);
+
+verifyFalse(testCase, isnan(certificate.reconstruction));
+verifyTrue(testCase, certificate.certified);
+end
+
 function testQRCertifiesOrthogonalMatrix(testCase)
 % QR of an already-orthogonal matrix should have Q ≈ A, R ≈ I.
 
