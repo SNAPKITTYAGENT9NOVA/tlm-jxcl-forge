@@ -847,6 +847,132 @@ alloy_spec = compiler.compile(dsl_source)
 # → Instance found: ¬(P ∧ Q) ⊨ ¬P ∨ ¬Q verified within scope
 ```
 
+### DULA: Emacs integration for recursive assertion analysis
+
+DULA (**Deterministic Universal Lemma Analysis**) is a standalone Emacs Lisp
+library that bridges Lean source code, semantic propositions, and Alloy bounded
+countermodel checking. It enables interactive, incremental verification of
+assertions extracted directly from Lean source, with recursive analysis and
+JSON export for verification artifacts.
+
+**Purpose** ([`tools/emacs/dula-lean-alloy.el`](./tools/emacs/dula-lean-alloy.el), 2,148 lines):
+
+DULA closes the gap between theorem proving (where you write and verify proofs
+in Lean) and bounded model checking (where Alloy searches for counterexamples
+within a specified scope). The library:
+
+1. Extracts assertion points from Lean source code (via regex or manual marking)
+2. Wraps assertions in semantic propositions (atoms, logical connectives, quantifiers)
+3. Generates bounded Alloy countermodel checks
+4. Runs Alloy and collects counterexamples or verification certificates
+5. Recurses into sub-assertions when a counterexample is found
+6. Exports the full analysis tree as JSON for downstream tools
+
+**Architecture:**
+
+```
+Lean source (LinearSolve.lean, Stability.lean, …)
+         ↓ [dula-lean-register-source]
+Assertion points (line, column, name)
+         ↓ [dula-proposition-create]
+Semantic propositions (Atom, And, Or, Implies, Not, Quantified)
+         ↓ [dula-proposition-to-alloy]
+Alloy boolean expressions
+         ↓ [dula-alloy-check, run Alloy Analyzer]
+Bounded counterexample (scope 3–10) or "no counterexample found"
+         ↓ [dula-counterlemma-from-model]
+Counterlemma struct with witness state
+         ↓ [dula-recursive-assert]
+Recursive sub-assertion analysis (breadth-first, depth limit 32)
+         ↓ [dula-export-state]
+JSON export (propositions, assertions, counterlemmas, tree structure)
+```
+
+**Core functions:**
+
+| Function | Purpose |
+|---|---|
+| `dula-proposition-create` | Build semantic propositions: `Atom`, `Not`, `And`, `Or`, `Implies`, `Equivalent`, `Forall`, `Exists` |
+| `dula-proposition-to-alloy` | Compile proposition to Alloy boolean expression with explicit set-theoretic semantics |
+| `dula-alloy-check` | Generate Alloy `run` command and bounded counterexample search |
+| `dula-recursive-assert` | Analyze assertions breadth-first, recursing into sub-propositions when counterexamples appear |
+| `dula-lean-register-source` | Extract assertion points from Lean source via configurable regex or manual `-- DULA:` markers |
+| `dula-functor-bind` | Bind functors with source and target sorts for relational reasoning |
+| `dula-export-state` | Export all propositions, assertions, counterlemmas, and the analysis tree as JSON |
+| `dula-analyze-current-buffer` | Interactive command: analyze all assertions in the current Emacs buffer |
+| `dula-analyze-region` | Interactive command: analyze assertions in a selected region |
+| `dula-analyze-assertion` | Interactive command: analyze a single named assertion by ID |
+
+**Configuration** (all customizable via `customize-group dula-lean-alloy`):
+
+```elisp
+dula-lean-command              ;; "lean" — Lean 4 executable
+dula-alloy-command             ;; "java" — JVM to run Alloy
+dula-alloy-jar                 ;; Path to alloy.jar, or nil for external tool
+dula-alloy-run-command         ;; External Alloy command template (optional)
+dula-default-scope             ;; 5 — default Alloy scope for searches
+dula-counterexample-directory  ;; /tmp/dula-counterexamples/ — artifact storage
+dula-recursion-limit           ;; 32 — max assertion recursion depth
+dula-functor-strict            ;; t — require explicit sort declarations
+```
+
+**Data structures** (all Emacs cl-defstruct, serializable to JSON):
+
+```elisp
+dula-proposition      ;; Semantic meaning: atom, logical connective, quantifier
+dula-assertion        ;; Named assertion with source location, status, results
+dula-counterlemma     ;; Counterexample witness + Alloy scope + Lean statement
+dula-functor          ;; Relational binder: source sort → target sort
+dula-node             ;; Tree node: assertion, parent/children, depth
+```
+
+**Workflow example** (Emacs interactive):
+
+```elisp
+;; 1. Load DULA library
+(require 'dula-lean-alloy)
+
+;; 2. Open a Lean file with assertions marked:
+;;    -- DULA: LinearSolve/backward_error
+;;    theorem backward_error_bound : ...
+
+;; 3. Analyze current buffer
+M-x dula-analyze-current-buffer
+
+;; Output:
+;; ✓ Extracted 8 assertion points from LinearSolve.lean
+;; ✓ Created 8 propositions
+;; ✓ Generated Alloy specifications
+;; ✓ Alloy scope 5: no counterexample found for backward_error_bound
+;; ✓ Assertion tree depth: 3, total nodes: 21
+;; ✓ Exported to /tmp/dula-counterexamples/analysis-20260921T232530+0000.json
+
+;; 4. Export to JSON (for CI/CD pipeline analysis)
+M-x dula-export-state
+;; → Proposition registry, assertion graph, counterlemma witnesses
+```
+
+**Integration with Phase 5 workflow:**
+
+1. **Lean theorems define** structural properties (e.g., "A = Q·R with Q orthogonal")
+2. **DULA extracts assertions** from Lean source and wraps them in propositions
+3. **Alloy searches** for bounded counterexamples within a configurable scope (default 5)
+4. **When found**: Counterlemma is generated; recursive sub-assertions are analyzed
+5. **When not found**: Assertion is marked "verified under scope N" (bounded evidence)
+6. **MATLAB validates** the same assertions numerically on concrete matrices
+7. **JSON export** feeds verification artifacts into documentation and CI/CD
+
+**Scope and limitations:**
+
+- DULA searches are *bounded* — a scope-5 Alloy run proves no counterexample exists
+  with ≤5 atoms per sort, not that none exists globally
+- Lean remains the proof authority; Alloy is a bounded verification oracle
+- Interactive use requires Emacs; batch use via `dula-export-state` and external JSON consumers
+- Alloy scope must be tuned per assertion (too low: false negatives; too high: solver timeout)
+
+See [`tools/emacs/dula-lean-alloy.el`](./tools/emacs/dula-lean-alloy.el) for the
+full library (2,148 lines, no external Emacs dependencies beyond `cl-lib`, `json`).
+
 ### Integration and cross-validation
 
 The three frameworks work together:
