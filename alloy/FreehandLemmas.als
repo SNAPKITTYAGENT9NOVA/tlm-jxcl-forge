@@ -469,7 +469,8 @@ run ExampleConcreteTransitivity
 /**
  * CHECK 1: Acyclicity of lemma dependencies
  *
- * This should always succeed (no counterexample found).
+ * NOTE: this model has no fact forbidding cycles, so Alloy does find a
+ * counterexample. invariants/core.als adds the DependencyDAG fact.
  */
 check NoCyclicLemmaDependencies for 5 but 3 Lemma
 
@@ -495,6 +496,10 @@ check ExcludedMiddleIsSound for 3 but 2 Lemma, 3 Proposition, 5 State
  * CHECK 3: Contradiction implies anything (ex falso)
  *
  * If the assumptions are contradictory, the lemma is sound.
+ *
+ * NOTE: as written this asserts that EVERY lemma is sound, so Alloy finds
+ * counterexamples at every scope below. The correctly stated invariant
+ * (contradictory assumptions => sound) is invariants/lemmas.als ExFalso.
  */
 assert ExFalsoIsSound {
     all l: Lemma, s: State |
@@ -509,5 +514,3 @@ check ExFalsoIsSound for 4 but 2 Lemma, 3 Proposition, 5 State
 check ExFalsoIsSound for 2 but 1 Lemma, 2 Proposition, 3 State
 check ExFalsoIsSound for 4 but 2 Lemma, 3 Proposition, 5 State
 check ExFalsoIsSound for 6 but 3 Lemma, 4 Proposition, 7 State
-
-end
