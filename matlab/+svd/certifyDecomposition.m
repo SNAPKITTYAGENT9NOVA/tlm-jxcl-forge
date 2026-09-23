@@ -36,7 +36,6 @@ end
 % Compute SVD
 [U, S, V] = svd(A);
 
-
 % Invariant 1: Reconstruction ||A - U*S*V'||
 reconstructionError = norm(A - U*S*V', 'fro') / (norm(A, 'fro') + eps);
 
