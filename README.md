@@ -41,6 +41,7 @@ headline number.
   - [Alloy Freehand Lemmas framework](#alloy-freehand-lemmas-framework)
   - [MATLAB certification modules](#matlab-certification-modules)
   - [DSL compiler for lemma specifications](#dsl-compiler-for-lemma-specifications)
+  - [Hardened invariants and counter-algorithms](#hardened-invariants-and-counter-algorithms)
 - [Why 100 crates, and how to trust that number](#why-100-crates-and-how-to-trust-that-number)
 - [Networking, services, and cross-cutting concerns](#networking-services-and-cross-cutting-concerns)
 - [Testing methodology](#testing-methodology)
@@ -972,6 +973,24 @@ M-x dula-export-state
 
 See [`tools/emacs/dula-lean-alloy.el`](./tools/emacs/dula-lean-alloy.el) for the
 full library (2,148 lines, no external Emacs dependencies beyond `cl-lib`, `json`).
+
+### Hardened invariants and counter-algorithms
+
+[`alloy/invariants/`](./alloy/invariants) collects every invariant and
+counterexample search from the Alloy model, the MATLAB certifiers, the
+trace certifier and DULA. Each is restated as an Alloy command with an
+explicit `expect`: 22 invariants must be UNSAT, and 10 counter-algorithms
+and witness runs must be SAT, proving that superseded or naive claims are
+false and that the search can reach counterexamples. All of it is mirrored as an executable
+[Crystal](./alloy/invariants/crystal) shard (29 specs). `check.sh` fails on
+any result that differs from its expectation.
+
+Hardening fixed a DULA classifier bug: every Alloy `UNSAT` result was
+recorded as a counterexample. It also fixed a syntax error that stopped
+`FreehandLemmas.als` from parsing, and flagged the original checks that
+actually return counterexamples. See
+[`alloy/invariants/README.md`](./alloy/invariants/README.md) for the full
+inventory.
 
 ### Integration and cross-validation
 

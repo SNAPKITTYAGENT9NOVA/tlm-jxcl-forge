@@ -475,18 +475,23 @@ Returns `(STATUS . OUTPUT)'."
       (user-error "No Alloy runner configured; set dula-alloy-jar or dula-alloy-run-command"))
     (dula--shell-output (car command) (cdr command))))
 
-(defun dula-alloy-output-counterexample-p (output)
-  "Heuristically detect an Alloy counterexample in OUTPUT."
-  (or (string-match-p "Counterexample" output)
-      (string-match-p "SAT" output)
-      (string-match-p "Instance" output)
-      (string-match-p "found" output)))
-
 (defun dula-alloy-output-unsat-p (output)
-  "Heuristically detect an Alloy UNSAT result in OUTPUT."
-  (or (string-match-p "UNSAT" output)
-      (string-match-p "No instance" output)
-      (string-match-p "no counterexample" (downcase output))))
+  "Detect an Alloy UNSAT (no counterexample within scope) result in OUTPUT."
+  (let ((case-fold-search nil))
+    (or (string-match-p "\\_<UNSAT\\_>" output)
+        (let ((case-fold-search t))
+          (string-match-p "no \\(?:instance\\|counterexample\\) found" output)))))
+
+(defun dula-alloy-output-counterexample-p (output)
+  "Detect an Alloy SAT (counterexample or instance found) result in OUTPUT.
+UNSAT output is never a counterexample: \"UNSAT\" contains \"SAT\" and
+\"No counterexample found\" contains \"found\", so plain substring
+matching misclassifies every verified result."
+  (and (not (dula-alloy-output-unsat-p output))
+       (let ((case-fold-search nil))
+         (or (string-match-p "\\_<SAT\\_>" output)
+             (let ((case-fold-search t))
+               (string-match-p "\\(?:counterexample\\|instance\\) found" output))))))
 
 ;;; Counterlemma creation
 
@@ -494,7 +499,9 @@ Returns `(STATUS . OUTPUT)'."
   "Create a counterlemma artifact from ASSERTION, SCOPE and Alloy OUTPUT."
   (let* ((formula (dula-assertion-counterformula assertion))
          (found (dula-alloy-output-counterexample-p output))
-         (status (if found 'counterexample-found 'no-counterexample-found))
+         (status (cond (found 'counterexample-found)
+                       ((dula-alloy-output-unsat-p output) 'no-counterexample-found)
+                       (t 'pending)))
          (c (make-dula-counterlemma
              :id (dula--uuid "counter")
              :assertion (dula-assertion-id assertion)
